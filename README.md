@@ -1,4 +1,4 @@
-# ⛳ Golf Finder
+# ⛳ GolfMe
 
 Trouvez et comparez les golfs autour de votre lieu de vacances : distance et temps de trajet, horaires d'ouverture,
 statut « ouvert / fermé », tarifs green fee (basse / haute saison, semaine / week-end), le tout sur une carte interactive.
@@ -70,7 +70,7 @@ Un tarif non confirmé porte la mention **« Tarif indicatif — à confirmer au
 ## Architecture
 
 ```
-golf-finder/
+golfme/
 ├── shared/types.ts          Types partagés client / serveur
 ├── server/                  API Express (Node ≥ 22.13), proxy des services externes
 │   ├── index.ts             Point d'entrée (sert aussi le front en production)
@@ -122,7 +122,7 @@ npm run seed              # insère les golfs de démonstration (facultatif)
 | `API_PORT` | non (8787) | Port de l'API en développement. En production, `PORT` (fourni par l'hébergeur) est utilisé s'il est vide |
 | `ADMIN_PASSWORD` | pour l'admin | Mot de passe de `/admin`. Si absent ou égal à `change-moi`, l'admin est désactivée |
 | `ADMIN_SESSION_SECRET` | pour l'admin | Secret de signature des sessions (16 caractères minimum). `openssl rand -base64 36` |
-| `DATABASE_PATH` | non | Fichier SQLite (défaut `./data/golf-finder.db`) |
+| `DATABASE_PATH` | non | Fichier SQLite (défaut `./data/golfme.db`) |
 | `SHOW_DEMO_DATA` | non (true) | Afficher les golfs de démonstration |
 | `CACHE_TTL_HOURS` | non (24) | Durée du cache des API externes |
 | `CONTACT_EMAIL` | **avant mise en ligne** | Adresse de contact envoyée dans le User-Agent (exigé par les conditions OSM / Nominatim) |
@@ -227,8 +227,8 @@ de Vercel et Netlify ont un système de fichiers éphémère : la base y serait 
 **Docker** (VPS, Fly.io, Railway…) :
 
 ```bash
-docker build -t golf-finder .
-docker run -p 8787:8787 -v golf-data:/data --env-file .env golf-finder
+docker build -t golfme .
+docker run -p 8787:8787 -v golf-data:/data --env-file .env golfme
 ```
 
 ### Option B — Front sur Vercel ou Netlify, API ailleurs

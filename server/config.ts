@@ -13,10 +13,10 @@ export const config = {
   isProd: process.env.NODE_ENV === 'production',
   adminPassword: process.env.ADMIN_PASSWORD ?? '',
   adminSecret: process.env.ADMIN_SESSION_SECRET ?? '',
-  databasePath: process.env.DATABASE_PATH === ':memory:' ? ':memory:' : path.resolve(process.env.DATABASE_PATH || './data/golf-finder.db'),
+  databasePath: process.env.DATABASE_PATH === ':memory:' ? ':memory:' : path.resolve(process.env.DATABASE_PATH || './data/golfme.db'),
   showDemo: bool(process.env.SHOW_DEMO_DATA, true),
   cacheTtlMs: Number(process.env.CACHE_TTL_HOURS ?? 24) * 3600_000,
-  userAgent: `GolfFinder/1.0 (+self-hosted${contact ? `; ${contact}` : ''})`,
+  userAgent: `GolfMe/1.0 (+self-hosted${contact ? `; ${contact}` : ''})`,
   contactEmail: contact || null,
   overpassUrls: (
     process.env.OVERPASS_URLS ||
@@ -32,7 +32,7 @@ export const config = {
   authSecret: process.env.AUTH_SECRET || '',
   appUrl: (process.env.APP_URL || 'http://localhost:5173').replace(/\/$/, ''),
   emailServer: process.env.EMAIL_SERVER?.trim() || null,
-  emailFrom: process.env.EMAIL_FROM?.trim() || 'Golf Finder <no-reply@golf-finder.local>',
+  emailFrom: process.env.EMAIL_FROM?.trim() || 'GolfMe <no-reply@golfme.local>',
   google: process.env.AUTH_GOOGLE_ID && process.env.AUTH_GOOGLE_SECRET ? { id: process.env.AUTH_GOOGLE_ID, secret: process.env.AUTH_GOOGLE_SECRET } : null,
   apple: process.env.AUTH_APPLE_ID && process.env.AUTH_APPLE_SECRET ? { id: process.env.AUTH_APPLE_ID, secret: process.env.AUTH_APPLE_SECRET } : null,
 };
