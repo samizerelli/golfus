@@ -2,7 +2,7 @@
   "version": "0.0.1",
   "configurations": [
     {
-      "name": "golfme",
+      "name": "golfus",
       "runtimeExecutable": "/Users/sami/.local/node/bin/npm",
       "runtimeArgs": ["run", "dev"],
       "port": 5173,

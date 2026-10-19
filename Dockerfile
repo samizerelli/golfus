@@ -6,7 +6,7 @@ RUN npm ci
 COPY . .
 RUN npm run build
 ENV NODE_ENV=production
-ENV DATABASE_PATH=/data/golfme.db
+ENV DATABASE_PATH=/data/golfus.db
 VOLUME ["/data"]
 EXPOSE 8787
 CMD ["npm", "start"]

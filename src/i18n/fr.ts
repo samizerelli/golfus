@@ -1,5 +1,5 @@
 export const fr = {
-  'app.name': 'GolfMe',
+  'app.name': 'Golfus',
   'app.tagline': 'Les golfs autour de vous, comparés',
   'nav.explore': 'Explorer',
   'nav.profile': 'Profil',
@@ -115,7 +115,7 @@ export const fr = {
   'book.none': 'Aucun moyen de réservation n’est communiqué pour ce golf.',
   'book.search': 'Rechercher le golf sur le web',
   'book.searchTerms': 'golf réservation',
-  'book.notice': 'GolfMe ne réserve pas à votre place : votre départ n’est confirmé que lorsque le golf vous l’a confirmé.',
+  'book.notice': 'Golfus ne réserve pas à votre place : votre départ n’est confirmé que lorsque le golf vous l’a confirmé.',
   'book.subject': 'Demande de départ – {date} à {time}',
   'book.body': 'Bonjour,\n\nJe souhaiterais réserver un départ au {golf} pour {players} joueur(s) le {date} vers {time}.\nPourriez-vous me confirmer la disponibilité et le tarif ?\n\nMerci beaucoup.',
   'action.directions': 'Itinéraire',
@@ -247,7 +247,7 @@ export const fr = {
   'reviews.average': 'Note moyenne {r} sur 5',
 
   'share.copied': 'Lien copié dans le presse-papiers',
-  'share.text': '{name} — GolfMe',
+  'share.text': '{name} — Golfus',
 
   'fav.title': 'Mes favoris',
   'fav.empty': 'Aucun favori pour le moment. Touchez le cœur sur un golf pour l’ajouter.',

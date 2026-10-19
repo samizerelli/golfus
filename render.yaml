@@ -1,7 +1,7 @@
 # Déploiement « Blueprint » sur Render (https://render.com) : front + API + disque persistant pour SQLite
 services:
   - type: web
-    name: golfme
+    name: golfus
     runtime: node
     plan: starter # un disque persistant nécessite une offre payante (~7 $/mois)
     buildCommand: npm ci && npm run build && npm run seed
@@ -10,7 +10,7 @@ services:
       - key: NODE_VERSION
         value: '24'
       - key: DATABASE_PATH
-        value: /var/data/golfme.db
+        value: /var/data/golfus.db
       - key: ADMIN_PASSWORD
         sync: false
       - key: ADMIN_SESSION_SECRET

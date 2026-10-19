@@ -1,5 +1,5 @@
 /**
- * API GolfMe sur Netlify Functions.
+ * API Golfus sur Netlify Functions.
  *
  * Limites de cet hébergement (sans serveur permanent) :
  * - la base SQLite vit dans /tmp : elle est recréée à chaque démarrage à froid de la fonction
@@ -9,7 +9,7 @@
  */
 import serverless from 'serverless-http';
 
-process.env.DATABASE_PATH ??= '/tmp/golfme.db';
+process.env.DATABASE_PATH ??= '/tmp/golfus.db';
 process.env.NODE_ENV ??= 'production';
 process.env.OVERPASS_BUDGET_MS ??= '4500';
 process.env.OVERPASS_TIMEOUT_MS ??= '4000';

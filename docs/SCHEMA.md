@@ -1,4 +1,4 @@
-# Schéma de base de données — GolfMe (réseau social simple)
+# Schéma de base de données — Golfus (réseau social simple)
 
 Base **SQLite** (`node:sqlite`), migrations numérotées dans `server/db/migrations.ts` (table `schema_migrations`).
 SQLite suffit tant que l'application tourne sur un seul serveur ; Postgres ne serait utile qu'avec plusieurs
@@ -14,7 +14,7 @@ instances ou un hébergement serverless.
 | `outing_guests` | invité ami (user_id) ou extérieur (guest_name + jeton) ; réponse `pending`/`yes`/`maybe`/`no` | unique(outing_id,user_id), (user_id) |
 | `notifications` | centre de notifications ; `pushed_at` pour l'envoi push | (user_id, id) |
 | `push_subscriptions` | abonnements Web Push (PWA) | unique(endpoint), (user_id) |
-| `bookings` | réservation lancée depuis GolfMe (`online`/`request`) ; `started` → `confirmed` **uniquement** si l'utilisateur l'indique | (user_id, status) |
+| `bookings` | réservation lancée depuis Golfus (`online`/`request`) ; `started` → `confirmed` **uniquement** si l'utilisateur l'indique | (user_id, status) |
 | `golf_comments` | avis : note 1-5 + texte, `visible`/`hidden` | **unique(golf_id, user_id)**, (golf_id, created_at) |
 | `comment_reports` | signalements pour la modération /admin | (status), unique(comment_id, reporter_id) |
 | `rounds` | partie jouée : golf, date, 9/18 trous, score total, note perso — **privée** | (user_id, played_on), (user_id, golf_id) |

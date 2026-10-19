@@ -16,7 +16,7 @@ function Page({ title, children }: { title: string; children: ReactNode }) {
         )}
         {children}
         <p className="pt-4">
-          <Link to="/">← GolfMe</Link>
+          <Link to="/">← Golfus</Link>
         </p>
       </article>
     </div>

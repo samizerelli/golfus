@@ -1,7 +1,7 @@
 import type { Dict } from './fr';
 
 export const en: Dict = {
-  'app.name': 'GolfMe',
+  'app.name': 'Golfus',
   'app.tagline': 'Golf courses around you, compared',
   'nav.explore': 'Explore',
   'nav.profile': 'Profile',
@@ -117,7 +117,7 @@ export const en: Dict = {
   'book.none': 'No booking option is provided for this golf course.',
   'book.search': 'Search for the club on the web',
   'book.searchTerms': 'golf tee time booking',
-  'book.notice': 'GolfMe does not book on your behalf: your tee time is only confirmed once the club confirms it.',
+  'book.notice': 'Golfus does not book on your behalf: your tee time is only confirmed once the club confirms it.',
   'book.subject': 'Tee time request – {date} at {time}',
   'book.body': 'Hello,\n\nI would like to book a tee time at {golf} for {players} player(s) on {date} around {time}.\nCould you please confirm availability and the green fee?\n\nMany thanks.',
   'action.directions': 'Directions',
@@ -249,7 +249,7 @@ export const en: Dict = {
   'reviews.average': 'Average rating {r} out of 5',
 
   'share.copied': 'Link copied to clipboard',
-  'share.text': '{name} — GolfMe',
+  'share.text': '{name} — Golfus',
 
   'fav.title': 'My favourites',
   'fav.empty': 'No favourites yet. Tap the heart on a golf course to add it.',
