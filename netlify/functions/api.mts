@@ -1,5 +1,5 @@
 /**
- * API Golfus sur Netlify Functions.
+ * API GolfUs sur Netlify Functions.
  *
  * Limites de cet hébergement (sans serveur permanent) :
  * - la base SQLite vit dans /tmp : elle est recréée à chaque démarrage à froid de la fonction

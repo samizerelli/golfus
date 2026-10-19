@@ -1,7 +1,7 @@
 import type { Dict } from './fr';
 
 export const es: Dict = {
-  'app.name': 'Golfus',
+  'app.name': 'GolfUs',
   'app.tagline': 'Los campos de golf cerca de ti, comparados',
   'nav.explore': 'Explorar',
   'nav.profile': 'Perfil',
@@ -117,7 +117,7 @@ export const es: Dict = {
   'book.none': 'Este campo no indica ningún medio de reserva.',
   'book.search': 'Buscar el club en la web',
   'book.searchTerms': 'golf reserva',
-  'book.notice': 'Golfus no reserva por ti: tu salida solo está confirmada cuando el club te la confirma.',
+  'book.notice': 'GolfUs no reserva por ti: tu salida solo está confirmada cuando el club te la confirma.',
   'book.subject': 'Solicitud de salida – {date} a las {time}',
   'book.body': 'Hola:\n\nMe gustaría reservar una salida en {golf} para {players} jugador(es) el {date} hacia las {time}.\n¿Podrían confirmarme la disponibilidad y el precio?\n\nMuchas gracias.',
   'action.directions': 'Cómo llegar',
@@ -249,7 +249,7 @@ export const es: Dict = {
   'reviews.average': 'Valoración media {r} de 5',
 
   'share.copied': 'Enlace copiado al portapapeles',
-  'share.text': '{name} — Golfus',
+  'share.text': '{name} — GolfUs',
 
   'fav.title': 'Mis favoritos',
   'fav.empty': 'Aún no tienes favoritos. Toca el corazón de un campo para añadirlo.',

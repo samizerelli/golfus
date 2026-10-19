@@ -343,7 +343,7 @@ export function HomePage() {
           <div className="space-y-3 p-4 pb-2">
             <div className="flex items-center gap-2.5 px-1">
               <Logo className="size-9" />
-              <span className="text-lg font-semibold tracking-tight">Golfus</span>
+              <span className="text-lg font-semibold tracking-tight">GolfUs</span>
             </div>
             {search}
             <LocateError loc={loc} />

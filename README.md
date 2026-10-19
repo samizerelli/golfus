@@ -1,4 +1,4 @@
-# ⛳ Golfus
+# ⛳ GolfUs
 
 Trouvez et comparez les golfs autour de votre lieu de vacances : distance et temps de trajet, horaires d'ouverture,
 statut « ouvert / fermé », tarifs green fee (basse / haute saison, semaine / week-end), le tout sur une carte interactive.

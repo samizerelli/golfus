@@ -16,7 +16,7 @@ const app = createApp((a) => {
 
 pruneCache();
 app.listen(config.port, () => {
-  console.log(`⛳ Golfus API sur http://localhost:${config.port}`);
+  console.log(`⛳ GolfUs API sur http://localhost:${config.port}`);
   if (!assertAdminConfigured()) console.warn('⚠️  ADMIN_PASSWORD / ADMIN_SESSION_SECRET non configurés : /admin désactivé.');
   if (!config.contactEmail) console.warn('ℹ️  CONTACT_EMAIL vide : renseignez-le avant une mise en ligne (conditions OSM).');
 });
