@@ -428,7 +428,7 @@ h3 {
 /* Mobile : l'attribution reste visible sous la barre de filtres (le tiroir masque le bas de la carte) */
 @media (max-width: 1023px) {
   .leaflet-top.leaflet-right {
-    top: calc(env(safe-area-inset-top) + 128px);
+    top: env(safe-area-inset-top);
   }
   .leaflet-top.leaflet-right .leaflet-control-attribution {
     border-radius: 10px 0 0 10px;

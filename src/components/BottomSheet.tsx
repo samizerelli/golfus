@@ -8,7 +8,7 @@ const ORDER: Snap[] = ['peek', 'half', 'full'];
 /** Hauteurs des 3 crans, calculées sur la hauteur visible réelle (équivalent 100dvh) */
 function heights() {
   const vh = window.visualViewport?.height ?? window.innerHeight;
-  return { peek: 196, half: Math.round(vh * 0.5), full: Math.round(vh - 150) };
+  return { peek: 196, half: Math.round(vh * 0.5), full: Math.round(vh - 64) };
 }
 
 /**
@@ -16,7 +16,7 @@ function heights() {
  * Glisser la poignée : la vitesse du geste est prise en compte (inertie) pour choisir le cran.
  * Toucher la poignée ou Entrée : passe au cran suivant.
  */
-export function BottomSheet({ snap, onSnap, header, children }: { snap: Snap; onSnap: (s: Snap) => void; header: ReactNode; children: ReactNode }) {
+export function BottomSheet({ snap, onSnap, header, children }: { snap: Snap; onSnap: (s: Snap) => void; header?: ReactNode; children: ReactNode }) {
   const { t } = useI18n();
   const [h, setH] = useState(heights);
   const [drag, setDrag] = useState<number | null>(null);
@@ -93,8 +93,8 @@ export function BottomSheet({ snap, onSnap, header, children }: { snap: Snap; on
       >
         <span className="h-[5px] w-10 rounded-full bg-[rgba(15,26,36,0.22)] dark:bg-white/30" aria-hidden />
       </button>
-      <div className="shrink-0 px-4">{header}</div>
-      <div data-scroll className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-3 pb-[calc(6.5rem+env(safe-area-inset-bottom))]">
+      {header && <div className="shrink-0 px-4">{header}</div>}
+      <div data-scroll className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-3 pb-[calc(5.5rem+env(safe-area-inset-bottom))]">
         {children}
       </div>
     </div>

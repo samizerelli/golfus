@@ -1,24 +1,13 @@
 import { useQuery } from '@tanstack/react-query';
 import { useMemo } from 'react';
-import type { GolfSummary, TravelInfo } from '../../shared/types';
-import { useSearch, type Filters } from '../state/search';
+import type { TravelInfo } from '../../shared/types';
+import { useSearch } from '../state/search';
+import { matchGolf, passes, type GolfMatch } from './criteria';
 import { api } from './api';
-import { parseHours, stateAt, useHoursLib } from './hours';
-import { minGreenFee } from './prices';
-import { useSettings } from './settings';
-
-function passes(g: GolfSummary, f: Filters, playAt: Date, minEur: number | null) {
-  if (f.maxPriceEur !== null && (minEur === null || minEur > f.maxPriceEur + 0.5)) return false;
-  if (f.holes === '9' && !(g.holes !== null && g.holes <= 9)) return false;
-  if (f.holes === '18' && !(g.holes !== null && g.holes >= 18)) return false;
-  if (f.openAtTime && stateAt(parseHours(g.openingHours, g.lat, g.lon), playAt) !== 'open') return false;
-  for (const s of f.services) if (g.services[s] !== true) return false;
-  return true;
-}
+import { useHoursLib } from './hours';
 
 export function useResults() {
-  const { origin, radius, filters, sort, playAt } = useSearch();
-  const { convert } = useSettings();
+  const { origin, radius, criteria } = useSearch();
   const hoursReady = useHoursLib();
 
   const golfsQ = useQuery({
@@ -43,16 +32,15 @@ export function useResults() {
   }, [travelQ.data]);
   const travelLoading = travelQ.isLoading;
 
-  const visible = useMemo(() => {
-    const withMin = all.map((g) => ({ g, min: minGreenFee(g, convert) }));
-    const list = withMin.filter(({ g, min }) => passes(g, filters, playAt, min));
-    const byDist = (a: GolfSummary, b: GolfSummary) => (a.distanceKm ?? 0) - (b.distanceKm ?? 0);
-    if (sort === 'price') list.sort((a, b) => (a.min ?? Infinity) - (b.min ?? Infinity) || byDist(a.g, b.g));
-    else if (sort === 'rating')
-      list.sort((a, b) => (b.g.rating?.average ?? -1) - (a.g.rating?.average ?? -1) || byDist(a.g, b.g));
-    else list.sort((a, b) => byDist(a.g, b.g));
-    return list.map((x) => x.g);
-  }, [all, filters, sort, playAt, convert, hoursReady]);
+  // Critères de l'écran 1 appliqués réellement ; tri par distance
+  const { visible, matches } = useMemo(() => {
+    const matches = new Map<string, GolfMatch>();
+    for (const g of all) matches.set(g.id, matchGolf(g, criteria));
+    const visible = all.filter((g) => passes(matches.get(g.id)!, criteria)).sort((a, b) => (a.distanceKm ?? 0) - (b.distanceKm ?? 0));
+    return { visible, matches };
+    // hoursReady : on recalcule quand la bibliothèque d'horaires est chargée
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [all, criteria, hoursReady]);
 
-  return { golfsQ, all, visible, travel, travelLoading };
+  return { golfsQ, all, visible, matches, travel, travelLoading };
 }

@@ -140,6 +140,16 @@ export async function searchGolfs(lat: number, lon: number, radiusKm: number): P
   // morceaux de ce même golf (trous, practice) : on les écarte pour éviter les doublons.
   const named = osm.filter((g) => g.name);
   osm = osm.filter((g) => g.name || !named.some((n) => haversineKm(n.lat, n.lon, g.lat, g.lon) < 2));
+  // Un même golf peut être décrit par plusieurs objets OSM (contour + point) : même nom à moins de 1,5 km
+  // → on garde l'objet le plus renseigné
+  const richness = (g: OsmGolf) => [g.website, g.phone, g.openingHours, g.holes, g.par, g.address, g.photo].filter((v) => v != null).length;
+  const norm = (n: string | null) => (n ?? '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, ' ').trim();
+  const kept: OsmGolf[] = [];
+  for (const g of [...osm].sort((a, b) => richness(b) - richness(a))) {
+    if (g.name && kept.some((k) => norm(k.name) === norm(g.name) && haversineKm(k.lat, k.lon, g.lat, g.lon) < 1.5)) continue;
+    kept.push(g);
+  }
+  osm = kept;
 
   // Golfs saisis manuellement (démo ou ajouts) dans la zone : recherche par boîte englobante
   const dLat = radiusKm / 111;

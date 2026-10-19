@@ -8,7 +8,7 @@ import { forwardRef, useEffect, type ButtonHTMLAttributes, type HTMLAttributes, 
 import { cx } from './ui';
 
 export { BottomSheet as GlassSheet } from './BottomSheet';
-export { GlassNav as GlassNavBar } from './GlassNav';
+export { ActionRail as GlassNavBar } from './ActionRail';
 
 export const GlassCard = forwardRef<HTMLDivElement, HTMLAttributes<HTMLDivElement> & { strong?: boolean; refract?: boolean }>(
   function GlassCard({ className, strong, refract, ...p }, ref) {

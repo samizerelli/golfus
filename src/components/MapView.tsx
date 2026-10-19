@@ -14,6 +14,7 @@ export interface Insets {
   top: number;
   bottom: number;
   left: number;
+  right?: number;
 }
 
 const esc = (s: string) => s.replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
@@ -35,7 +36,7 @@ function FitToResults({ origin, golfs, radiusKm, insets }: { origin: Origin | nu
     if (key === last.current || !origin) return;
     last.current = key;
     const pts = golfs.slice(0, 15).map((g) => L.latLng(g.lat, g.lon));
-    const opts = { paddingTopLeft: [insets.left + 30, insets.top + 30] as L.PointTuple, paddingBottomRight: [30, insets.bottom + 30] as L.PointTuple, maxZoom: 13 };
+    const opts = { paddingTopLeft: [insets.left + 30, insets.top + 30] as L.PointTuple, paddingBottomRight: [(insets.right ?? 0) + 30, insets.bottom + 30] as L.PointTuple, maxZoom: 13 };
     if (pts.length) map.flyToBounds(L.latLngBounds([L.latLng(origin.lat, origin.lon), ...pts]), { ...opts, duration: 0.9 });
     else map.flyTo([origin.lat, origin.lon], radiusKm > 50 ? 8 : radiusKm > 25 ? 9 : 10, { duration: 0.9 });
   }, [key, origin, golfs, radiusKm, map, insets]);
@@ -51,6 +52,24 @@ function AttributionTop() {
       c.remove();
     };
   }, [map]);
+  return null;
+}
+
+/** Écran 3 : zoom fluide sur le golf choisi, en évitant les panneaux */
+function FocusGolf({ golf, insets }: { golf: GolfSummary | null; insets: Insets }) {
+  const map = useMap();
+  useEffect(() => {
+    if (!golf) return;
+    const d = 0.01;
+    map.flyToBounds(
+      [
+        [golf.lat - d, golf.lon - d],
+        [golf.lat + d, golf.lon + d],
+      ],
+      { paddingTopLeft: [insets.left + 40, insets.top + 40], paddingBottomRight: [(insets.right ?? 0) + 40, insets.bottom + 40], maxZoom: 14, duration: 0.8 },
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [golf?.id, map]);
   return null;
 }
 
@@ -72,8 +91,10 @@ function GolfMarkers({
   labelFor,
   unnamedLabel,
   insets,
+  highlightId,
 }: {
   golfs: GolfSummary[];
+  highlightId: string | null;
   selectedId: string | null;
   onSelect: (id: string) => void;
   labelFor: (g: GolfSummary) => string | null;
@@ -88,6 +109,7 @@ function GolfMarkers({
   const selectedRef = useRef(selectedId);
   const insetsRef = useRef(insets);
   insetsRef.current = insets;
+  const highlightRef = useRef<string | null>(null);
 
   useEffect(() => {
     const g = L.markerClusterGroup({
@@ -105,7 +127,7 @@ function GolfMarkers({
       if (map.getZoom() >= map.getMaxZoom() - 1) return c.spiderfy();
       map.flyToBounds(c.getBounds(), {
         paddingTopLeft: [ins.left + 40, ins.top + 40],
-        paddingBottomRight: [40, ins.bottom + 40],
+        paddingBottomRight: [(ins.right ?? 0) + 40, ins.bottom + 40],
         maxZoom: 16,
         duration: 0.6,
       });
@@ -155,6 +177,17 @@ function GolfMarkers({
     if (prev && prev !== selectedId) markers.current.get(prev)?.m.setZIndexOffset(0);
   }, [selectedId, map]);
 
+  // Surbrillance au survol de la liste : on change seulement l'apparence du marqueur
+  useEffect(() => {
+    const prev = highlightRef.current;
+    highlightRef.current = highlightId;
+    for (const id of [prev, highlightId]) {
+      const e = id ? markers.current.get(id) : null;
+      if (e) e.m.setIcon(pillIcon(e.label, id === highlightId || id === selectedRef.current, e.g.isDemo));
+      if (e) e.m.setZIndexOffset(id === highlightId ? 900 : id === selectedRef.current ? 1000 : 0);
+    }
+  }, [highlightId]);
+
   return null;
 }
 
@@ -169,6 +202,9 @@ export function MapView({
   unnamedLabel,
   labelFor,
   insets = { top: 0, bottom: 0, left: 0 },
+  showRadius = true,
+  focus = null,
+  highlightId = null,
 }: {
   origin: Origin | null;
   golfs: GolfSummary[];
@@ -179,6 +215,10 @@ export function MapView({
   labelFor: (g: GolfSummary) => string | null;
   /** Zones couvertes par l'interface (barre de recherche, tiroir, panneau) à éviter lors du cadrage */
   insets?: Insets;
+  showRadius?: boolean;
+  /** Golf sur lequel centrer la carte (écran 3) */
+  focus?: GolfSummary | null;
+  highlightId?: string | null;
 }) {
   const { t } = useI18n();
 
@@ -193,19 +233,20 @@ export function MapView({
           className="map-tiles"
         />
         <AutoResize />
-        <FitToResults origin={origin} golfs={golfs} radiusKm={radiusKm} insets={insets} />
+        {!focus && <FitToResults origin={origin} golfs={golfs} radiusKm={radiusKm} insets={insets} />}
+        <FocusGolf golf={focus} insets={insets} />
         {origin && (
           <>
-            <Circle
+            {showRadius && <Circle
               center={[origin.lat, origin.lon]}
               radius={radiusKm * 1000}
               pathOptions={{ color: '#7fb6e6', weight: 1.5, dashArray: '4 8', fillColor: '#7fb6e6', fillOpacity: 0.06 }}
               interactive={false}
-            />
+            />}
             <Marker position={[origin.lat, origin.lon]} icon={userIcon} title={t('map.you')} alt={t('map.you')} keyboard={false} />
           </>
         )}
-        <GolfMarkers golfs={golfs} selectedId={selectedId} onSelect={onSelect} labelFor={labelFor} unnamedLabel={unnamedLabel} insets={insets} />
+        <GolfMarkers golfs={golfs} selectedId={selectedId} highlightId={highlightId} onSelect={onSelect} labelFor={labelFor} unnamedLabel={unnamedLabel} insets={insets} />
       </MapContainer>
     </section>
   );

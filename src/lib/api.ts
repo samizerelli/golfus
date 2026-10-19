@@ -11,6 +11,50 @@ import type {
 
 const BASE = (import.meta.env.VITE_API_BASE ?? '').replace(/\/$/, '') + '/api';
 
+export interface Friend {
+  id: string;
+  name: string | null;
+  image: string | null;
+  handicapIndex: number | null;
+}
+export interface OutingInput {
+  golfId: string;
+  golfName: string;
+  golfLat: number | null;
+  golfLon: number | null;
+  date: string;
+  timeFrom: string;
+  timeTo: string;
+  holes: 9 | 18 | null;
+  players: number;
+  message: string | null;
+  friendIds: string[];
+}
+export interface Outing {
+  id: string;
+  organizer: { id: string; name: string | null };
+  isOrganizer: boolean;
+  golf: { id: string; name: string; lat: number | null; lon: number | null };
+  date: string;
+  timeFrom: string;
+  timeTo: string;
+  holes: number | null;
+  players: number;
+  message: string | null;
+  status: 'active' | 'cancelled';
+  createdAt: string;
+  shareToken?: string;
+  myResponse: 'pending' | 'yes' | 'maybe' | 'no' | null;
+  guests: { id?: string; userId?: string | null; name: string | null; image?: string | null; external: boolean; response: 'pending' | 'yes' | 'maybe' | 'no' }[];
+}
+export interface Notification {
+  id: number;
+  type: 'friend_request' | 'friend_accepted' | 'outing_invite' | 'outing_response' | 'outing_cancelled';
+  payload: Record<string, string | boolean | undefined>;
+  readAt: string | null;
+  createdAt: string;
+}
+
 export interface Me {
   id: string;
   email: string;
@@ -115,6 +159,23 @@ export const api = {
   logoutAll: () => request<{ ok: true }>('/me/logout-all', { method: 'POST' }),
   deleteMe: (confirmEmail: string) => request<{ ok: true }>('/me', { method: 'DELETE', body: JSON.stringify({ confirmEmail }) }),
   exportUrl: () => BASE + '/me/export',
+
+  // ───── Amis, parties, notifications ─────
+  friends: () => request<{ friends: Friend[]; incoming: Friend[]; outgoing: Friend[] }>('/friends'),
+  searchUsers: (q: string) => request<Friend[]>(`/users/search?${new URLSearchParams({ q })}`),
+  requestFriend: (userId: string) => request<{ status: string }>('/friends/request', { method: 'POST', body: JSON.stringify({ userId }) }),
+  acceptFriend: (id: string) => request<{ ok: true }>(`/friends/${id}/accept`, { method: 'POST' }),
+  removeFriend: (id: string) => request<{ ok: true }>(`/friends/${id}`, { method: 'DELETE' }),
+  createOuting: (body: OutingInput) => request<Outing>('/outings', { method: 'POST', body: JSON.stringify(body) }),
+  outings: () => request<Outing[]>('/outings'),
+  respondOuting: (id: string, response: 'yes' | 'maybe' | 'no') =>
+    request<Outing>(`/outings/${id}/respond`, { method: 'POST', body: JSON.stringify({ response }) }),
+  cancelOuting: (id: string) => request<{ ok: true }>(`/outings/${id}/cancel`, { method: 'POST' }),
+  invitation: (token: string) => request<Outing>(`/invitations/${encodeURIComponent(token)}`),
+  respondInvitation: (token: string, body: { name: string; response: 'yes' | 'maybe' | 'no'; guestToken?: string }) =>
+    request<{ ok: true; guestToken: string }>(`/invitations/${encodeURIComponent(token)}/respond`, { method: 'POST', body: JSON.stringify(body) }),
+  notifications: () => request<{ unread: number; items: Notification[] }>('/notifications'),
+  readNotifications: () => request<{ ok: true }>('/notifications/read', { method: 'POST' }),
 
   admin: {
     session: () => request<{ configured: boolean; admin: boolean }>('/admin/session'),

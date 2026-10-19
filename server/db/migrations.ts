@@ -108,6 +108,64 @@ CREATE TABLE dev_outbox (
 );
 `,
   },
+  {
+    id: 3,
+    name: 'amis, invitations à jouer, notifications',
+    sql: `
+CREATE TABLE friendships (
+  user_a TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  user_b TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  status TEXT NOT NULL CHECK (status IN ('pending','accepted')),
+  requested_by TEXT NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  PRIMARY KEY (user_a, user_b),
+  CHECK (user_a < user_b)
+);
+CREATE INDEX friendships_b ON friendships(user_b);
+
+CREATE TABLE outings (
+  id TEXT PRIMARY KEY,
+  organizer_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  golf_id TEXT NOT NULL,
+  golf_name TEXT NOT NULL,
+  golf_lat DOUBLE PRECISION,
+  golf_lon DOUBLE PRECISION,
+  date TEXT NOT NULL,
+  time_from TEXT NOT NULL,
+  time_to TEXT NOT NULL,
+  holes INTEGER,
+  players INTEGER NOT NULL,
+  message TEXT,
+  share_token TEXT NOT NULL UNIQUE,
+  status TEXT NOT NULL DEFAULT 'active' CHECK (status IN ('active','cancelled')),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE INDEX outings_organizer ON outings(organizer_id, date);
+
+CREATE TABLE outing_guests (
+  id TEXT PRIMARY KEY,
+  outing_id TEXT NOT NULL REFERENCES outings(id) ON DELETE CASCADE,
+  user_id TEXT REFERENCES users(id) ON DELETE CASCADE,
+  guest_name TEXT,
+  guest_token TEXT UNIQUE,
+  response TEXT NOT NULL DEFAULT 'pending' CHECK (response IN ('pending','yes','maybe','no')),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  UNIQUE (outing_id, user_id)
+);
+CREATE INDEX outing_guests_user ON outing_guests(user_id);
+
+CREATE TABLE notifications (
+  id SERIAL PRIMARY KEY,
+  user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  type TEXT NOT NULL,
+  payload TEXT NOT NULL DEFAULT '{}',
+  read_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE INDEX notifications_user ON notifications(user_id, id);
+`,
+  },
 ];
 
 interface MigDriver {

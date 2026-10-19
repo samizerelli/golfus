@@ -1,0 +1,153 @@
+import { useQuery } from '@tanstack/react-query';
+import { useCallback, useEffect, useMemo, useRef, useState, type MutableRefObject } from 'react';
+import { Outlet, useMatch, useOutletContext } from 'react-router-dom';
+import type { GolfSummary } from '../../shared/types';
+import { ActionRail } from '../components/ActionRail';
+import { BottomSheet, type Snap } from '../components/BottomSheet';
+import { GolfSideCards, InviteForm } from '../components/InviteScreen';
+import { Logo } from '../components/Logo';
+import { MapView } from '../components/MapView';
+import { ResultsList } from '../components/ResultsList';
+import { SearchForm } from '../components/SearchForm';
+import { haptic } from '../components/ui';
+import { useI18n } from '../i18n';
+import { api } from '../lib/api';
+import { cheapestGreenFee } from '../lib/prices';
+import { useSettings } from '../lib/settings';
+import { useMediaQuery } from '../lib/useMediaQuery';
+import { useResults } from '../lib/useResults';
+import { useSearch } from '../state/search';
+
+interface Ctx {
+  cardRefs: MutableRefObject<Map<string, HTMLElement>>;
+  desktop: boolean;
+  inviteGolf: GolfSummary | null;
+}
+const useLayout = () => useOutletContext<Ctx>();
+
+/** Fait défiler uniquement la liste (scrollIntoView déplacerait aussi la carte). */
+function scrollListTo(el: HTMLElement | undefined) {
+  const sc = el?.closest<HTMLElement>('[data-scroll]');
+  if (!el || !sc) return;
+  sc.scrollTo({ top: sc.scrollTop + el.getBoundingClientRect().top - sc.getBoundingClientRect().top - 8, behavior: 'smooth' });
+}
+
+/** Écrans 1 et 2 (route « / ») */
+export function HomeScreen() {
+  const { view } = useSearch();
+  const { cardRefs } = useLayout();
+  return (
+    <div key={view} className="animate-rise">
+      {view === 'search' ? <SearchForm /> : <ResultsList cardRefs={cardRefs} />}
+    </div>
+  );
+}
+
+/** Écran 3 (route « /inviter/:id ») */
+export function InviteRoute() {
+  const { desktop, inviteGolf } = useLayout();
+  return (
+    <div className="animate-rise flex min-h-full flex-col gap-4">
+      {!desktop && inviteGolf && <GolfSideCards golf={inviteGolf} compact />}
+      <InviteForm golf={inviteGolf} />
+    </div>
+  );
+}
+
+/**
+ * Mise en page commune aux 3 écrans : carte plein écran toujours visible en fond,
+ * panneau de verre à gauche (tiroir à 3 crans sur mobile), menu d'actions à droite.
+ */
+export function MapLayout() {
+  const { t } = useI18n();
+  const desktop = useMediaQuery('(min-width: 1024px)');
+  const invite = useMatch('/inviter/:id');
+  const inviteId = invite?.params.id ? decodeURIComponent(invite.params.id) : null;
+  const { origin, radius, view, selectedId, setSelectedId, hoverId } = useSearch();
+  const { visible, all } = useResults();
+  const { money, convert } = useSettings();
+  const cardRefs = useRef(new Map<string, HTMLElement>());
+  const [snap, setSnap] = useState<Snap>('half');
+
+  const fromList = inviteId ? (all.find((g) => g.id === inviteId) ?? null) : null;
+  const detail = useQuery({ queryKey: ['golf', inviteId], queryFn: () => api.golf(inviteId!), enabled: !!inviteId && !fromList, staleTime: 10 * 60_000 });
+  const inviteGolf = fromList ?? detail.data ?? null;
+
+  // Sur mobile, chaque changement d'écran remet le tiroir à mi-hauteur
+  useEffect(() => {
+    if (!desktop) setSnap(inviteId ? 'full' : 'half');
+  }, [view, inviteId, desktop]);
+
+  const golfsOnMap = useMemo(() => (inviteId ? (inviteGolf ? [inviteGolf] : []) : view === 'results' ? visible : []), [inviteId, inviteGolf, view, visible]);
+  const insets = useMemo(
+    () => (desktop ? { top: 0, bottom: 0, left: 460, right: inviteId ? 440 : 90 } : { top: 0, bottom: Math.round(window.innerHeight * 0.5), left: 0, right: 0 }),
+    [desktop, inviteId],
+  );
+
+  const labelFor = useCallback(
+    (g: GolfSummary) => {
+      const p = cheapestGreenFee(g, convert);
+      return p ? money(p.amount, p.currency).text.replace('≈ ', '') : null;
+    },
+    [money, convert],
+  );
+
+  // Clic sur un marqueur : la carte correspondante de la liste est mise en surbrillance et amenée à l'écran
+  const selectFromMap = useCallback(
+    (id: string) => {
+      if (inviteId) return;
+      haptic();
+      setSelectedId(id);
+      if (!desktop) setSnap((s) => (s === 'peek' ? 'half' : s));
+      setTimeout(() => scrollListTo(cardRefs.current.get(id)), 350);
+    },
+    [desktop, inviteId, setSelectedId],
+  );
+
+  const ctx: Ctx = { cardRefs, desktop, inviteGolf };
+  const content = <Outlet context={ctx} />;
+
+  return (
+    <div className="relative min-h-0 flex-1 overflow-hidden">
+      <MapView
+        origin={origin}
+        golfs={golfsOnMap}
+        radiusKm={radius}
+        selectedId={inviteId ?? selectedId}
+        onSelect={selectFromMap}
+        unnamedLabel={t('card.unnamed')}
+        labelFor={labelFor}
+        insets={insets}
+        showRadius={view === 'results' && !inviteId}
+        focus={inviteId ? inviteGolf : null}
+        highlightId={inviteId ? null : hoverId}
+      />
+
+      {desktop ? (
+        <aside className="glass glass-rounded absolute top-4 bottom-4 left-4 z-[1000] flex w-[420px] flex-col">
+          <div className="flex items-center gap-2.5 px-5 pt-4 pb-2">
+            <Logo className="size-9" />
+            <span className="text-lg font-semibold tracking-tight">
+              Golf<span className="text-gold-ink">Us</span>
+            </span>
+          </div>
+          <div data-scroll className="flex min-h-0 flex-1 flex-col overflow-y-auto px-5 pb-5">
+            {content}
+          </div>
+        </aside>
+      ) : (
+        <BottomSheet snap={snap} onSnap={setSnap} header={null}>
+          {content}
+        </BottomSheet>
+      )}
+
+      {desktop && inviteId && inviteGolf && (
+        <div className="animate-rise absolute top-4 right-[92px] z-[1000] w-[340px]">
+          <GolfSideCards golf={inviteGolf} />
+        </div>
+      )}
+
+      <ActionRail />
+    </div>
+  );
+}

@@ -137,6 +137,10 @@ accountRouter.get('/me/export', requireUser, userRateLimit('export', 5, 3600_000
     exported_at: new Date().toISOString(),
     account: await meOf(id),
     linked_accounts: await db.all('SELECT provider, type FROM accounts WHERE user_id = ?', id),
+    friendships: await db.all('SELECT * FROM friendships WHERE user_a = ? OR user_b = ?', id, id),
+    outings_organized: await db.all('SELECT * FROM outings WHERE organizer_id = ?', id),
+    outing_responses: await db.all('SELECT outing_id, response, updated_at FROM outing_guests WHERE user_id = ?', id),
+    notifications: await db.all('SELECT type, payload, created_at, read_at FROM notifications WHERE user_id = ?', id),
   };
   res.setHeader('Content-Disposition', `attachment; filename="golfus-export-${new Date().toISOString().slice(0, 10)}.json"`);
   res.json(data);
