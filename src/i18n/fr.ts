@@ -73,6 +73,7 @@ export const fr = {
   'account.deleteConfirm': 'Cette action est définitive. Saisissez votre e-mail pour confirmer :',
   'account.deleteButton': 'Supprimer définitivement',
   'account.admin': 'Administration',
+  'nav.login': 'Connexion',
   'nav.home': 'Accueil',
   'nav.favorites': 'Favoris',
   'nav.settings': 'Réglages',

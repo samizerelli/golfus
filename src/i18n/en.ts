@@ -75,6 +75,7 @@ export const en: Dict = {
   'account.deleteConfirm': 'This cannot be undone. Type your email to confirm:',
   'account.deleteButton': 'Delete permanently',
   'account.admin': 'Administration',
+  'nav.login': 'Sign in',
   'nav.home': 'Home',
   'nav.favorites': 'Favourites',
   'nav.settings': 'Settings',

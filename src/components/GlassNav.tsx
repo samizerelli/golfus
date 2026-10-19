@@ -2,7 +2,9 @@ import { Compass, Heart, UserRound } from 'lucide-react';
 import { useLayoutEffect, useRef, useState } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { useI18n } from '../i18n';
+import { useAuth } from '../lib/auth';
 import { useFavorites } from '../lib/favorites';
+import { Avatar } from './AccountPanel';
 import { cx, haptic } from './ui';
 
 const ITEMS = [
@@ -18,6 +20,7 @@ const ITEMS = [
 export function GlassNav({ className }: { className?: string }) {
   const { t } = useI18n();
   const { favorites } = useFavorites();
+  const { user } = useAuth();
   const { pathname } = useLocation();
   const refs = useRef<(HTMLAnchorElement | null)[]>([]);
   const listRef = useRef<HTMLUListElement>(null);
@@ -38,7 +41,7 @@ export function GlassNav({ className }: { className?: string }) {
       }
       return { x, w: el.offsetWidth };
     });
-  }, [active, t]);
+  }, [active, t, user]);
 
   return (
     <nav aria-label="Navigation" className={cx('glass glass-refract pointer-events-auto rounded-full p-1.5', className)}>
@@ -67,14 +70,15 @@ export function GlassNav({ className }: { className?: string }) {
               }
             >
               <span className="relative">
-                <Icon className="size-[19px]" aria-hidden />
+                {to === '/profil' && user ? <Avatar src={user.image} name={user.name} size={20} /> : <Icon className="size-[19px]" aria-hidden />}
                 {to === '/favoris' && favorites.length > 0 && (
                   <span className="absolute -top-1.5 -right-2 grid h-4 min-w-4 place-items-center rounded-full bg-gold-500 px-1 text-[10px] font-bold text-[#0f1a24]">
                     {favorites.length}
                   </span>
                 )}
               </span>
-              <span>{t(key)}</span>
+              {/* Invité : l'onglet Profil devient « Connexion » pour que l'espace de connexion soit visible */}
+              <span>{to === '/profil' && !user ? t('nav.login') : t(key)}</span>
             </NavLink>
           </li>
         ))}

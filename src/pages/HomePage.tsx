@@ -1,5 +1,5 @@
 import { useQueryClient } from '@tanstack/react-query';
-import { CloudOff, Compass, SearchX, ShieldCheck, WifiOff } from 'lucide-react';
+import { CloudOff, Compass, LogIn, SearchX, ShieldCheck, WifiOff } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { RADII_KM, type GolfSummary, type RadiusKm } from '../../shared/types';
@@ -9,7 +9,9 @@ import { GolfCard, GolfCardSkeleton } from '../components/GolfCard';
 import { Logo } from '../components/Logo';
 import { MapView } from '../components/MapView';
 import { LocateError, LocateInline, LocationSearch, useLocate } from '../components/SearchControls';
-import { Button, haptic, Notice } from '../components/ui';
+import { Avatar } from '../components/AccountPanel';
+import { Button, buttonClass, haptic, Notice } from '../components/ui';
+import { useAuth } from '../lib/auth';
 import { useI18n } from '../i18n';
 import { ApiError } from '../lib/api';
 import { cheapestGreenFee } from '../lib/prices';
@@ -33,6 +35,23 @@ const TRY_PLACES = [
   { label: 'Cannes', lat: 43.5528, lon: 7.0174 },
   { label: 'Lausanne', lat: 46.5197, lon: 6.6323 },
 ];
+
+/** Bouton compte (ordinateur) : « Se connecter » pour un invité, photo + prénom une fois connecté. */
+function AccountButton() {
+  const { t } = useI18n();
+  const { user } = useAuth();
+  return user ? (
+    <Link to="/profil" className="frost glass-interactive flex h-11 items-center gap-2 rounded-full pr-4 pl-1.5 text-sm font-semibold">
+      <Avatar src={user.image} name={user.name} size={32} />
+      <span className="max-w-[9rem] truncate">{user.name}</span>
+    </Link>
+  ) : (
+    <Link to="/connexion" className={buttonClass('primary', 'sm')}>
+      <LogIn className="size-4" aria-hidden />
+      {t('auth.tabLogin')}
+    </Link>
+  );
+}
 
 function useOnline() {
   const [online, setOnline] = useState(() => navigator.onLine);
@@ -343,7 +362,8 @@ export function HomePage() {
           <div className="space-y-3 p-4 pb-2">
             <div className="flex items-center gap-2.5 px-1">
               <Logo className="size-9" />
-              <span className="text-lg font-semibold tracking-tight">GolfUs</span>
+              <span className="flex-1 text-lg font-semibold tracking-tight">GolfUs</span>
+              <AccountButton />
             </div>
             {search}
             <LocateError loc={loc} />

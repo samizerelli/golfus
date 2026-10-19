@@ -75,6 +75,7 @@ export const es: Dict = {
   'account.deleteConfirm': 'Esta acción es definitiva. Escribe tu correo para confirmar:',
   'account.deleteButton': 'Eliminar definitivamente',
   'account.admin': 'Administración',
+  'nav.login': 'Acceder',
   'nav.home': 'Inicio',
   'nav.favorites': 'Favoritos',
   'nav.settings': 'Ajustes',
