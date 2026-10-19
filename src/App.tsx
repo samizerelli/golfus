@@ -1,7 +1,9 @@
-import { lazy, Suspense } from 'react';
+import { lazy, Suspense, useState } from 'react';
 import { Route, Routes, useLocation } from 'react-router-dom';
 import { GlassFx } from './components/glass';
 import { GlassNav } from './components/GlassNav';
+import { Intro, introSeen } from './components/Intro';
+import { useAuth } from './lib/auth';
 import { useI18n } from './i18n';
 import { FavoritesPage } from './pages/FavoritesPage';
 import { GolfPage } from './pages/GolfPage';
@@ -17,9 +19,14 @@ export default function App() {
   const { t } = useI18n();
   const { pathname } = useLocation();
   const showNav = NAV_PATHS.includes(pathname);
+  const { user, loading } = useAuth();
+  // Intro « I wanna play » : visiteur non connecté, à l'arrivée sur l'accueil, une fois par session
+  const [introOpen, setIntroOpen] = useState(() => !introSeen());
+  const showIntro = introOpen && !loading && !user && pathname === '/';
   return (
     <div className="flex h-dvh flex-col">
       <GlassFx />
+      {showIntro && <Intro onClose={() => setIntroOpen(false)} />}
       <a
         href="#main"
         className="sr-only z-[2000] rounded-full bg-fairway-700 px-4 py-2 text-white focus:not-sr-only focus:fixed focus:top-2 focus:left-2"

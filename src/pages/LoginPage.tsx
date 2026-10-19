@@ -28,7 +28,7 @@ export function LoginPage() {
   const navigate = useNavigate();
   const [params] = useSearchParams();
   const providers = useQuery({ queryKey: ['auth-providers'], queryFn: api.authProviders, staleTime: Infinity });
-  const [mode, setMode] = useState<Mode>('login');
+  const [mode, setMode] = useState<Mode>(params.get('mode') === 'register' ? 'register' : 'login');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');

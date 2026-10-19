@@ -1,5 +1,5 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { createContext, useContext, useMemo, type ReactNode } from 'react';
+import { createContext, useContext, useEffect, useMemo, type ReactNode } from 'react';
 import { api, auth, type Me } from './api';
 
 interface Ctx {
@@ -15,6 +15,16 @@ const AuthContext = createContext<Ctx | null>(null);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const qc = useQueryClient();
   const me = useQuery({ queryKey: ['me'], queryFn: api.me, staleTime: 60_000, retry: false });
+  // Mémorise qu'un compte a été utilisé sur cet appareil : l'intro proposera alors la connexion
+  useEffect(() => {
+    if (me.data?.user) {
+      try {
+        localStorage.setItem('gf.hadAccount', '1');
+      } catch {
+        /* stockage indisponible */
+      }
+    }
+  }, [me.data]);
   const value = useMemo<Ctx>(
     () => ({
       user: me.data?.user ?? null,

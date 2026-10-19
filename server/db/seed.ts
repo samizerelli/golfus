@@ -256,12 +256,14 @@ export async function seedDemo() {
 
 // Exécution en ligne de commande : npm run seed [-- --clear]
 if (process.argv[1]?.endsWith('seed.ts')) {
-  if (process.argv.includes('--clear')) {
-    await db.run('DELETE FROM reviews WHERE is_demo = 1');
-    await db.run('DELETE FROM golfs WHERE is_demo = 1');
-    console.log('Données de démonstration supprimées.');
-  } else {
-    const r = await seedDemo();
-    console.log(`✅ ${r.golfs} golfs de DÉMONSTRATION et ${r.reviews} avis fictifs insérés.`);
-  }
+  (async () => {
+    if (process.argv.includes('--clear')) {
+      await db.run('DELETE FROM reviews WHERE is_demo = 1');
+      await db.run('DELETE FROM golfs WHERE is_demo = 1');
+      console.log('Données de démonstration supprimées.');
+    } else {
+      const r = await seedDemo();
+      console.log(`✅ ${r.golfs} golfs de DÉMONSTRATION et ${r.reviews} avis fictifs insérés.`);
+    }
+  })();
 }

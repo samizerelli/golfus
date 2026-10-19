@@ -76,6 +76,8 @@ export const es: Dict = {
   'account.deleteButton': 'Eliminar definitivamente',
   'account.admin': 'Administración',
   'nav.login': 'Acceder',
+  'intro.hint': 'Toca la bola para {action}',
+  'intro.guest': 'Continuar sin cuenta',
   'nav.home': 'Inicio',
   'nav.favorites': 'Favoritos',
   'nav.settings': 'Ajustes',

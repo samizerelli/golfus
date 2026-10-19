@@ -565,3 +565,44 @@ h3 {
   width: 256.6px !important;
   height: 256.6px !important;
 }
+
+/* ───────────── Intro « I wanna play » ───────────── */
+.intro {
+  background:
+    radial-gradient(70% 45% at 50% 42%, rgba(143, 199, 176, 0.28), transparent 70%),
+    repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.025) 0 48px, transparent 48px 96px),
+    linear-gradient(180deg, #0b2a20 0%, #0f3d2e 55%, #0a2219 100%);
+}
+.intro-ball {
+  animation: ball-float 3.2s ease-in-out infinite;
+}
+.intro-shadow {
+  animation: shadow-float 3.2s ease-in-out infinite;
+}
+@keyframes ball-float {
+  50% {
+    transform: translateY(-14px) rotate(-3deg);
+  }
+}
+@keyframes shadow-float {
+  50% {
+    transform: scale(0.82);
+    opacity: 0.6;
+  }
+}
+/* Au toucher : la balle s'envole */
+.intro-ball.is-pressed {
+  animation: ball-shot 420ms cubic-bezier(0.5, 0, 0.75, 0) forwards;
+}
+@keyframes ball-shot {
+  to {
+    transform: translateY(-70vh) scale(0.35) rotate(-200deg);
+    opacity: 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .intro-ball,
+  .intro-shadow {
+    animation: none !important;
+  }
+}

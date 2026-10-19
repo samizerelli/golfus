@@ -74,6 +74,8 @@ export const fr = {
   'account.deleteButton': 'Supprimer définitivement',
   'account.admin': 'Administration',
   'nav.login': 'Connexion',
+  'intro.hint': 'Touchez la balle pour {action}',
+  'intro.guest': 'Continuer sans compte',
   'nav.home': 'Accueil',
   'nav.favorites': 'Favoris',
   'nav.settings': 'Réglages',

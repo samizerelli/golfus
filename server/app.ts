@@ -13,6 +13,14 @@ export function createApp(extra?: (app: express.Express) => void) {
   app.disable('x-powered-by');
   app.set('trust proxy', 1);
   app.use(express.json({ limit: '200kb' }));
+  // Derrière le relais Netlify : l'hôte public est transmis dans X-Forwarded-Host (utilisé par Auth.js pour ses URL)
+  if (process.env.TRUST_FORWARDED_HOST === '1') {
+    app.use((req, _res, next) => {
+      const fwd = req.get('x-forwarded-host');
+      if (fwd) req.headers.host = fwd;
+      next();
+    });
+  }
 
   // En-têtes de sécurité de base
   app.use((_req, res, next) => {
