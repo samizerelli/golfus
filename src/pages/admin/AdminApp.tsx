@@ -1,6 +1,6 @@
 // Espace d'administration (en français uniquement : il est destiné à l'exploitant du site).
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { LogOut, Plus, Trash2 } from 'lucide-react';
+import { KeyRound, LogOut, Plus, ShieldCheck, Trash2, Users } from 'lucide-react';
 import { useEffect, useMemo, useState, type FormEvent, type ReactNode } from 'react';
 import { Link, Route, Routes, useNavigate, useParams } from 'react-router-dom';
 import {
@@ -113,9 +113,14 @@ function AdminList() {
     <div className="mx-auto w-full max-w-4xl space-y-4 p-4">
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-semibold">Administration</h1>
+        <div className="flex gap-2">
+        <Link to="/admin/utilisateurs" className={buttonClass('secondary', 'sm')}>
+          <Users className="size-4" aria-hidden /> Utilisateurs
+        </Link>
         <Button size="sm" onClick={() => logout.mutate()}>
           <LogOut className="size-4" aria-hidden /> Déconnexion
         </Button>
+        </div>
       </div>
 
       <Card title="Compléter un golf OpenStreetMap">
@@ -169,7 +174,7 @@ function AdminList() {
                     </td>
                     <td className="py-2">{g.priceCount}</td>
                     <td className="py-2">{{ verified: 'Vérifié', indicative: 'Indicatif', unknown: '—' }[g.priceReliability] ?? g.priceReliability}</td>
-                    <td className="py-2 text-muted">{new Date(g.updatedAt.replace(' ', 'T') + 'Z').toLocaleDateString('fr-FR')}</td>
+                    <td className="py-2 text-muted">{new Date(g.updatedAt).toLocaleDateString('fr-FR')}</td>
                   </tr>
                 ))}
               </tbody>
@@ -645,6 +650,70 @@ function AdminEdit({ create = false }: { create?: boolean }) {
   );
 }
 
+function AdminUsers() {
+  const qc = useQueryClient();
+  const [q, setQ] = useState('');
+  const users = useQuery({ queryKey: ['admin-users', q], queryFn: () => api.admin.users(q) });
+  const [temp, setTemp] = useState<{ email: string; pw: string } | null>(null);
+  const reset = useMutation({
+    mutationFn: (u: { id: string; email: string }) => api.admin.resetPassword(u.id).then((r) => ({ email: u.email, pw: r.temporaryPassword })),
+    onSuccess: setTemp,
+  });
+  const role = useMutation({
+    mutationFn: (u: { id: string; role: 'user' | 'admin' }) => api.admin.setRole(u.id, u.role),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['admin-users'] }),
+  });
+  const del = useMutation({ mutationFn: (id: string) => api.admin.deleteUser(id), onSuccess: () => qc.invalidateQueries({ queryKey: ['admin-users'] }) });
+  const date = (d: string | null) => (d ? new Date(d).toLocaleDateString('fr-FR') : '—');
+
+  return (
+    <div className="mx-auto w-full max-w-4xl space-y-4 p-4">
+      <Link to="/admin" className="text-sm text-muted underline underline-offset-2">
+        ← Administration
+      </Link>
+      <h1 className="text-3xl font-semibold">Utilisateurs</h1>
+      <input className={input} placeholder="Rechercher par e-mail ou prénom…" value={q} onChange={(e) => setQ(e.target.value)} aria-label="Rechercher un utilisateur" />
+      {temp && (
+        <Notice tone="warn">
+          Mot de passe provisoire pour <strong>{temp.email}</strong> : <code className="rounded bg-white/70 px-1.5 py-0.5 select-all">{temp.pw}</code>
+          <br />
+          Transmettez-le à la personne (il n'est affiché qu'une fois) ; elle pourra le changer dans son espace.
+        </Notice>
+      )}
+      <Card title={`${users.data?.length ?? 0} compte(s)`}>
+        {users.isLoading && <p className="text-muted">Chargement…</p>}
+        <ul className="divide-y divide-[var(--line)]">
+          {users.data?.map((u) => (
+            <li key={u.id} className="flex flex-wrap items-center justify-between gap-2 py-3">
+              <div className="min-w-0">
+                <p className="truncate font-medium">
+                  {u.name || '—'} {u.role === 'admin' && <span className="ml-1 rounded-full bg-gold-200 px-2 py-0.5 text-xs text-gold-800">admin</span>}
+                </p>
+                <p className="truncate text-sm text-muted">{u.email}</p>
+                <p className="text-xs text-muted">
+                  Inscrit le {date(u.createdAt)} · dernière connexion : {date(u.lastLoginAt)}
+                </p>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <Button size="sm" onClick={() => confirm(`Générer un mot de passe provisoire pour ${u.email} ?`) && reset.mutate(u)}>
+                  <KeyRound className="size-4" aria-hidden /> Mot de passe
+                </Button>
+                <Button size="sm" onClick={() => role.mutate({ id: u.id, role: u.role === 'admin' ? 'user' : 'admin' })}>
+                  <ShieldCheck className="size-4" aria-hidden /> {u.role === 'admin' ? 'Retirer admin' : 'Rendre admin'}
+                </Button>
+                <Button size="sm" variant="ghost" onClick={() => confirm(`Supprimer définitivement le compte ${u.email} ?`) && del.mutate(u.id)}>
+                  <Trash2 className="size-4" aria-hidden /> Supprimer
+                </Button>
+              </div>
+            </li>
+          ))}
+        </ul>
+        {users.data?.length === 0 && <p className="text-muted">Aucun compte.</p>}
+      </Card>
+    </div>
+  );
+}
+
 export default function AdminApp() {
   const session = useSession();
   let body: ReactNode;
@@ -665,6 +734,7 @@ export default function AdminApp() {
         <Route index element={<AdminList />} />
         <Route path="nouveau" element={<AdminEdit create />} />
         <Route path="golf/:id" element={<AdminEdit />} />
+        <Route path="utilisateurs" element={<AdminUsers />} />
       </Routes>
     );
   return <div className="min-h-0 flex-1 overflow-y-auto">{body}</div>;

@@ -7,6 +7,7 @@ import { FavoritesPage } from './pages/FavoritesPage';
 import { GolfPage } from './pages/GolfPage';
 import { HomePage } from './pages/HomePage';
 import { LegalPage, PrivacyPage } from './pages/LegalPages';
+import { LoginPage } from './pages/LoginPage';
 import { ProfilePage } from './pages/ProfilePage';
 
 const AdminApp = lazy(() => import('./pages/admin/AdminApp'));
@@ -32,6 +33,7 @@ export default function App() {
             <Route path="/golf/:id" element={<GolfPage />} />
             <Route path="/favoris" element={<FavoritesPage />} />
             <Route path="/profil" element={<ProfilePage />} />
+            <Route path="/connexion" element={<LoginPage />} />
             <Route path="/mentions-legales" element={<LegalPage />} />
             <Route path="/confidentialite" element={<PrivacyPage />} />
             <Route path="/admin/*" element={<AdminApp />} />

@@ -8,9 +8,8 @@ if (config.emailServer) transport = nodemailer.createTransport(config.emailServe
 export const emailConfigured = () => transport !== null;
 
 /**
- * Envoie un e-mail. Sans serveur SMTP configuré (EMAIL_SERVER), le message est déposé dans la
- * « boîte de développement » (table dev_outbox, consultable sur /dev/boite-mail hors production)
- * et le lien est affiché dans la console.
+ * Envoie un e-mail. Sans serveur SMTP (EMAIL_SERVER), le message est déposé dans la « boîte de développement »
+ * (table dev_outbox) et le lien est affiché dans la console — uniquement hors production.
  */
 export async function sendMail(to: string, subject: string, text: string, html: string, url?: string) {
   if (transport) {
@@ -18,6 +17,6 @@ export async function sendMail(to: string, subject: string, text: string, html: 
     return;
   }
   if (config.isProd) throw new Error('EMAIL_SERVER non configuré : impossible d’envoyer des e-mails en production');
-  db.prepare('INSERT INTO dev_outbox (to_email, subject, text, url) VALUES (?, ?, ?, ?)').run(to, subject, text, url ?? null);
+  await db.run('INSERT INTO dev_outbox (to_email, subject, text, url) VALUES (?, ?, ?, ?)', to, subject, text, url ?? null);
   console.log(`✉️  [dev] E-mail pour ${to} : ${subject}${url ? `\n    ${url}` : ''}`);
 }

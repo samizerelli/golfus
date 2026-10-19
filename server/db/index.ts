@@ -1,75 +1,131 @@
+/**
+ * Accès à la base Postgres.
+ * - En ligne (Netlify) : Netlify Database (Postgres managé), via la variable NETLIFY_DB_URL fournie par Netlify.
+ * - En local et dans les tests : PGlite (Postgres complet embarqué, sans installation), stocké dans data/pglite
+ *   ou en mémoire si DATABASE_PATH=":memory:".
+ * Les requêtes s'écrivent avec des « ? » (convertis en $1, $2…) pour rester lisibles.
+ */
+import { AsyncLocalStorage } from 'node:async_hooks';
 import fs from 'node:fs';
 import path from 'node:path';
-import { DatabaseSync } from 'node:sqlite';
-import { config } from '../config.ts';
 import { runMigrations } from './migrations.ts';
 
-const memory = config.databasePath.endsWith(':memory:');
-if (!memory) fs.mkdirSync(path.dirname(config.databasePath), { recursive: true });
+type Row = Record<string, unknown>;
+type Query = (sql: string, params: unknown[]) => Promise<{ rows: Row[]; rowCount: number }>;
+interface Driver {
+  query: Query;
+  exec(sql: string): Promise<void>;
+  /** Exécute fn sur une connexion dédiée (transaction) */
+  withClient<T>(fn: (q: Query) => Promise<T>): Promise<T>;
+}
 
-export const db = new DatabaseSync(memory ? ':memory:' : config.databasePath);
+/** Connexion de la transaction en cours (les requêtes faites dans db.tx l'utilisent automatiquement) */
+const txContext = new AsyncLocalStorage<Query>();
 
-db.exec(`
-PRAGMA journal_mode = WAL;
-PRAGMA foreign_keys = ON;
+/** Convertit les « ? » en $1, $2… (en ignorant ceux situés dans des chaînes entre apostrophes). */
+export function toPg(sql: string) {
+  let n = 0;
+  let inStr = false;
+  let out = '';
+  for (const c of sql) {
+    if (c === "'") inStr = !inStr;
+    out += c === '?' && !inStr ? `$${++n}` : c;
+  }
+  return out;
+}
 
--- Golfs complétés/corrigés localement. L'id reprend l'id OSM (osm-w123, osm-n123, osm-r123)
--- pour enrichir un golf OpenStreetMap, ou un id libre (demo-…, man-…) pour un golf saisi à la main.
-CREATE TABLE IF NOT EXISTS golfs (
-  id TEXT PRIMARY KEY,
-  name TEXT,
-  lat REAL,
-  lon REAL,
-  is_demo INTEGER NOT NULL DEFAULT 0,
-  holes INTEGER,
-  par INTEGER,
-  phone TEXT,
-  email TEXT,
-  website TEXT,
-  booking_url TEXT,
-  pricing_url TEXT,
-  address TEXT,
-  opening_hours TEXT,
-  description TEXT NOT NULL DEFAULT '{}',
-  photos TEXT NOT NULL DEFAULT '[]',
-  courses TEXT NOT NULL DEFAULT '[]',
-  services TEXT NOT NULL DEFAULT '{}',
-  price_reliability TEXT NOT NULL DEFAULT 'unknown',
-  price_updated_at TEXT,
-  high_season_months TEXT NOT NULL DEFAULT '[]',
-  updated_at TEXT NOT NULL DEFAULT (datetime('now'))
-);
+async function createDriver(): Promise<Driver> {
+  if (process.env.NETLIFY_DB_URL) {
+    const { getDatabase } = await import('@netlify/database');
+    type PgLike = { query: (s: string, p?: unknown[]) => Promise<{ rows: Row[]; rowCount: number | null }> };
+    const pool = getDatabase().pool as unknown as PgLike & { connect: () => Promise<PgLike & { release: () => void }> };
+    const wrap = (c: PgLike): Query => async (sql, params) => {
+      const r = await c.query(sql, params);
+      return { rows: r.rows, rowCount: r.rowCount ?? 0 };
+    };
+    return {
+      query: wrap(pool),
+      async exec(sql) {
+        await pool.query(sql);
+      },
+      async withClient(fn) {
+        const client = await pool.connect();
+        try {
+          return await fn(wrap(client));
+        } finally {
+          client.release();
+        }
+      },
+    };
+  }
+  const { PGlite } = await import('@electric-sql/pglite');
+  const target = process.env.DATABASE_PATH === ':memory:' ? undefined : path.resolve(process.env.DATABASE_DIR || './data/pglite');
+  if (target) fs.mkdirSync(target, { recursive: true });
+  const pg = new PGlite(target);
+  const query: Query = async (sql, params) => {
+    const r = await pg.query<Row>(sql, params);
+    return { rows: r.rows, rowCount: r.affectedRows ?? r.rows.length };
+  };
+  // PGlite n'a qu'une connexion : on sérialise les transactions
+  let chain: Promise<unknown> = Promise.resolve();
+  return {
+    query,
+    async exec(sql) {
+      await pg.exec(sql);
+    },
+    withClient(fn) {
+      const run = chain.then(() => fn(query));
+      chain = run.catch(() => undefined);
+      return run;
+    },
+  };
+}
 
-CREATE TABLE IF NOT EXISTS prices (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  golf_id TEXT NOT NULL REFERENCES golfs(id) ON DELETE CASCADE,
-  category TEXT NOT NULL,
-  season TEXT NOT NULL DEFAULT 'all',
-  day_type TEXT NOT NULL DEFAULT 'all',
-  amount REAL NOT NULL,
-  currency TEXT NOT NULL DEFAULT 'EUR',
-  note TEXT
-);
-CREATE INDEX IF NOT EXISTS prices_golf ON prices(golf_id);
+let ready: Promise<Driver> | null = null;
+function driver() {
+  ready ??= (async () => {
+    const d = await createDriver();
+    await runMigrations(d);
+    return d;
+  })();
+  return ready;
+}
 
--- Avis laissés par les visiteurs (aucune adresse IP ni identifiant n'est conservé)
-CREATE TABLE IF NOT EXISTS reviews (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  golf_id TEXT NOT NULL,
-  author TEXT NOT NULL,
-  rating INTEGER NOT NULL CHECK (rating BETWEEN 1 AND 5),
-  comment TEXT NOT NULL DEFAULT '',
-  is_demo INTEGER NOT NULL DEFAULT 0,
-  created_at TEXT NOT NULL DEFAULT (datetime('now'))
-);
-CREATE INDEX IF NOT EXISTS reviews_golf ON reviews(golf_id);
+async function q(sql: string, params: unknown[]) {
+  const inTx = txContext.getStore();
+  return inTx ? inTx(toPg(sql), params) : (await driver()).query(toPg(sql), params);
+}
 
--- Cache des réponses d'API externes
-CREATE TABLE IF NOT EXISTS api_cache (
-  key TEXT PRIMARY KEY,
-  value TEXT NOT NULL,
-  expires_at INTEGER NOT NULL
-);
-`);
-
-runMigrations(db);
+export const db = {
+  /** Toutes les lignes */
+  async all<T = Row>(sql: string, ...params: unknown[]): Promise<T[]> {
+    return (await q(sql, params)).rows as T[];
+  },
+  /** Première ligne ou undefined */
+  async get<T = Row>(sql: string, ...params: unknown[]): Promise<T | undefined> {
+    return (await q(sql, params)).rows[0] as T | undefined;
+  },
+  /** Écriture : renvoie le nombre de lignes modifiées */
+  async run(sql: string, ...params: unknown[]): Promise<{ changes: number }> {
+    return { changes: (await q(sql, params)).rowCount };
+  },
+  async exec(sql: string) {
+    await (await driver()).exec(sql);
+  },
+  /** Transaction sur une connexion dédiée : toutes les requêtes faites dans fn y participent. */
+  async tx<T>(fn: () => Promise<T>): Promise<T> {
+    const d = await driver();
+    return d.withClient(async (query) => {
+      await query('BEGIN', []);
+      try {
+        const r = await txContext.run(query, fn);
+        await query('COMMIT', []);
+        return r;
+      } catch (e) {
+        await query('ROLLBACK', []);
+        throw e;
+      }
+    });
+  },
+  ready: () => driver().then(() => undefined),
+};

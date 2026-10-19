@@ -53,7 +53,7 @@ export async function travelTimes(lat: number, lon: number, dests: Dest[]): Prom
   const out = new Map<string, TravelInfo>();
   const missing: Dest[] = [];
   for (const d of dests) {
-    const hit = cacheGet<TravelInfo>(`travel:${oLat}:${oLon}:${d.id}`);
+    const hit = await cacheGet<TravelInfo>(`travel:${oLat}:${oLon}:${d.id}`);
     if (hit?.fresh) out.set(d.id, hit.value);
     else missing.push(d);
   }
@@ -62,15 +62,15 @@ export async function travelTimes(lat: number, lon: number, dests: Dest[]): Prom
     const chunk = missing.slice(i, i + 40);
     try {
       const rows = config.orsKey ? await ors(oLat, oLon, chunk) : await osrm(oLat, oLon, chunk);
-      chunk.forEach((d, j) => {
+      for (const [j, d] of chunk.entries()) {
         const { dur, dist } = rows[j];
         const info: TravelInfo =
           dur == null || dist == null
             ? estimate(oLat, oLon, d)
             : { id: d.id, durationMin: Math.max(1, Math.round(dur / 60)), distanceKm: round(dist / 1000, 1), estimated: false };
-        if (!info.estimated) cacheSet(`travel:${oLat}:${oLon}:${d.id}`, info);
+        if (!info.estimated) await cacheSet(`travel:${oLat}:${oLon}:${d.id}`, info);
         out.set(d.id, info);
-      });
+      }
     } catch {
       chunk.forEach((d) => out.set(d.id, estimate(oLat, oLon, d)));
     }

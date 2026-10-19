@@ -54,27 +54,25 @@ const json = <T>(s: string | null | undefined, fallback: T): T => {
   }
 };
 
-function rowsByIds(ids: string[]): Map<string, GolfRow> {
+const inList = (ids: string[]) => ids.map(() => '?').join(',');
+
+async function rowsByIds(ids: string[]): Promise<Map<string, GolfRow>> {
   if (!ids.length) return new Map();
-  const ph = ids.map(() => '?').join(',');
-  const rows = db.prepare(`SELECT * FROM golfs WHERE id IN (${ph})`).all(...ids) as unknown as GolfRow[];
+  const rows = await db.all<GolfRow>(`SELECT * FROM golfs WHERE id IN (${inList(ids)})`, ...ids);
   return new Map(rows.map((r) => [r.id, r]));
 }
 
-function pricesByIds(ids: string[]): Map<string, PriceRow[]> {
+async function pricesByIds(ids: string[]): Promise<Map<string, PriceRow[]>> {
   const map = new Map<string, PriceRow[]>();
   if (!ids.length) return map;
-  const ph = ids.map(() => '?').join(',');
-  const rows = db
-    .prepare(`SELECT * FROM prices WHERE golf_id IN (${ph}) ORDER BY id`)
-    .all(...ids) as unknown as PriceDbRow[];
+  const rows = await db.all<PriceDbRow>(`SELECT * FROM prices WHERE golf_id IN (${inList(ids)}) ORDER BY id`, ...ids);
   for (const r of rows) {
     const list = map.get(r.golf_id) ?? [];
     list.push({
       category: r.category as PriceRow['category'],
       season: r.season as PriceRow['season'],
       dayType: r.day_type as PriceRow['dayType'],
-      amount: r.amount,
+      amount: Number(r.amount),
       currency: r.currency as PriceRow['currency'],
       note: r.note,
     });
@@ -83,17 +81,15 @@ function pricesByIds(ids: string[]): Map<string, PriceRow[]> {
   return map;
 }
 
-function ratingsByIds(ids: string[]): Map<string, Rating> {
+async function ratingsByIds(ids: string[]): Promise<Map<string, Rating>> {
   const map = new Map<string, Rating>();
   if (!ids.length) return map;
-  const ph = ids.map(() => '?').join(',');
-  const rows = db
-    .prepare(
-      `SELECT golf_id, AVG(rating) AS avg, COUNT(*) AS n FROM reviews WHERE golf_id IN (${ph}) ${
-        config.showDemo ? '' : 'AND is_demo = 0'
-      } GROUP BY golf_id`,
-    )
-    .all(...ids) as { golf_id: string; avg: number; n: number }[];
+  const rows = await db.all<{ golf_id: string; avg: number; n: number }>(
+    `SELECT golf_id, AVG(rating)::float AS avg, COUNT(*)::int AS n FROM reviews WHERE golf_id IN (${inList(ids)}) ${
+      config.showDemo ? '' : 'AND is_demo = 0'
+    } GROUP BY golf_id`,
+    ...ids,
+  );
   for (const r of rows) map.set(r.golf_id, { average: round(r.avg, 1), count: r.n });
   return map;
 }
@@ -149,20 +145,18 @@ export async function searchGolfs(lat: number, lon: number, radiusKm: number): P
   const dLat = radiusKm / 111;
   const dLon = radiusKm / (111 * Math.max(0.1, Math.cos((lat * Math.PI) / 180)));
   const manual = (
-    db
-      .prepare(
-        `SELECT * FROM golfs WHERE id NOT LIKE 'osm-%' AND lat BETWEEN ? AND ? AND lon BETWEEN ? AND ? ${
-          config.showDemo ? '' : 'AND is_demo = 0'
-        }`,
-      )
-      .all(lat - dLat, lat + dLat, lon - dLon, lon + dLon) as unknown as GolfRow[]
+    await db.all<GolfRow>(
+      `SELECT * FROM golfs WHERE id NOT LIKE 'osm-%' AND lat BETWEEN ? AND ? AND lon BETWEEN ? AND ? ${config.showDemo ? '' : 'AND is_demo = 0'}`,
+      lat - dLat,
+      lat + dLat,
+      lon - dLon,
+      lon + dLon,
+    )
   ).filter((r) => haversineKm(lat, lon, r.lat!, r.lon!) <= radiusKm);
 
   const ids = [...osm.map((g) => g.id), ...manual.map((r) => r.id)];
-  const rows = rowsByIds(osm.map((g) => g.id));
+  const [rows, prices, ratings] = await Promise.all([rowsByIds(osm.map((g) => g.id)), pricesByIds(ids), ratingsByIds(ids)]);
   for (const m of manual) rows.set(m.id, m);
-  const prices = pricesByIds(ids);
-  const ratings = ratingsByIds(ids);
 
   const golfs = [
     ...osm.map((g) => merge(g, rows.get(g.id), prices.get(g.id) ?? [], ratings.get(g.id) ?? null)),
@@ -174,18 +168,17 @@ export async function searchGolfs(lat: number, lon: number, radiusKm: number): P
   return { golfs, stale, osmUnavailable };
 }
 
-export function getReviews(id: string): Review[] {
-  return db
-    .prepare(
-      `SELECT id, author, rating, comment, created_at AS createdAt FROM reviews WHERE golf_id = ? ${
-        config.showDemo ? '' : 'AND is_demo = 0'
-      } ORDER BY created_at DESC LIMIT 100`,
-    )
-    .all(id) as unknown as Review[];
+export async function getReviews(id: string): Promise<Review[]> {
+  return db.all<Review>(
+    `SELECT id, author, rating, comment, created_at AS "createdAt" FROM reviews WHERE golf_id = ? ${
+      config.showDemo ? '' : 'AND is_demo = 0'
+    } ORDER BY created_at DESC LIMIT 100`,
+    id,
+  );
 }
 
 export async function getGolf(id: string): Promise<GolfDetail | null> {
-  const row = rowsByIds([id]).get(id);
+  const row = (await rowsByIds([id])).get(id);
   if (row?.is_demo && !config.showDemo) return null;
   let osm: OsmGolf | null = null;
   if (parseOsmId(id)) {
@@ -196,9 +189,8 @@ export async function getGolf(id: string): Promise<GolfDetail | null> {
     }
   }
   if (!osm && (!row || row.lat == null)) return null;
-  const prices = pricesByIds([id]).get(id) ?? [];
-  const rating = ratingsByIds([id]).get(id) ?? null;
-  const base = merge(osm, row, prices, rating);
+  const [prices, ratings, reviews] = await Promise.all([pricesByIds([id]), ratingsByIds([id]), getReviews(id)]);
+  const base = merge(osm, row, prices.get(id) ?? [], ratings.get(id) ?? null);
   const photos = json<string[]>(row?.photos, []);
   const description = json<GolfDetail['description']>(row?.description, {});
   if (!description.fr && !description.en && !description.es && osm?.description) description.fr = osm.description;
@@ -208,30 +200,53 @@ export async function getGolf(id: string): Promise<GolfDetail | null> {
     photos: photos.length ? photos : osm?.photo ? [osm.photo] : [],
     courses: json(row?.courses, []),
     email: row?.email ?? osm?.email ?? null,
-    reviews: getReviews(id),
+    reviews,
     osmUrl: osm?.osmUrl ?? null,
   };
 }
 
 // ───────── Administration ─────────
 
-export function listCurated() {
-  return db
-    .prepare(
-      `SELECT g.id, g.name, g.is_demo AS isDemo, g.price_reliability AS priceReliability, g.updated_at AS updatedAt,
-              (SELECT COUNT(*) FROM prices p WHERE p.golf_id = g.id) AS priceCount
-       FROM golfs g ORDER BY g.updated_at DESC`,
-    )
-    .all();
+export async function listCurated() {
+  return db.all(
+    `SELECT g.id, g.name, g.is_demo AS "isDemo", g.price_reliability AS "priceReliability", g.updated_at AS "updatedAt",
+            (SELECT COUNT(*)::int FROM prices p WHERE p.golf_id = g.id) AS "priceCount"
+     FROM golfs g ORDER BY g.updated_at DESC`,
+  );
 }
+
+const EMPTY_EDITABLE = (id: string): GolfEditable => ({
+  id,
+  name: null,
+  lat: null,
+  lon: null,
+  isDemo: false,
+  holes: null,
+  par: null,
+  phone: null,
+  email: null,
+  website: null,
+  bookingUrl: null,
+  pricingUrl: null,
+  address: null,
+  openingHours: null,
+  description: {},
+  photos: [],
+  courses: [],
+  services: {},
+  priceReliability: 'indicative',
+  priceUpdatedAt: null,
+  highSeasonMonths: [],
+  prices: [],
+});
 
 /** Données éditables : la ligne locale si elle existe, sinon un brouillon pré-rempli depuis OSM. */
 export async function getEditable(id: string): Promise<{ golf: GolfEditable; osm: OsmGolf | null } | null> {
-  const row = rowsByIds([id]).get(id);
+  const row = (await rowsByIds([id])).get(id);
   let osm: OsmGolf | null = null;
   if (parseOsmId(id)) osm = await golfById(id).catch(() => null);
   if (!row && !osm) return null;
-  const prices = pricesByIds([id]).get(id) ?? [];
+  const prices = (await pricesByIds([id])).get(id) ?? [];
   const golf: GolfEditable = row
     ? {
         id,
@@ -257,48 +272,23 @@ export async function getEditable(id: string): Promise<{ golf: GolfEditable; osm
         highSeasonMonths: json(row.high_season_months, []),
         prices,
       }
-    : {
-        id,
-        name: null,
-        lat: null,
-        lon: null,
-        isDemo: false,
-        holes: null,
-        par: null,
-        phone: null,
-        email: null,
-        website: null,
-        bookingUrl: null,
-        pricingUrl: null,
-        address: null,
-        openingHours: null,
-        description: {},
-        photos: [],
-        courses: [],
-        services: {},
-        priceReliability: 'indicative',
-        priceUpdatedAt: null,
-        highSeasonMonths: [],
-        prices: [],
-      };
+    : EMPTY_EDITABLE(id);
   return { golf, osm };
 }
 
-export function saveGolf(g: GolfEditable) {
+export async function saveGolf(g: GolfEditable) {
   const nul = <T>(v: T | '' | undefined) => (v === '' || v === undefined ? null : v);
-  db.exec('BEGIN');
-  try {
-    db.prepare(
+  await db.tx(async () => {
+    await db.run(
       `INSERT INTO golfs (id, name, lat, lon, is_demo, holes, par, phone, email, website, booking_url, pricing_url, address,
          opening_hours, description, photos, courses, services, price_reliability, price_updated_at, high_season_months, updated_at)
-       VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?, datetime('now'))
-       ON CONFLICT(id) DO UPDATE SET name=excluded.name, lat=excluded.lat, lon=excluded.lon, is_demo=excluded.is_demo,
+       VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?, now())
+       ON CONFLICT (id) DO UPDATE SET name=excluded.name, lat=excluded.lat, lon=excluded.lon, is_demo=excluded.is_demo,
          holes=excluded.holes, par=excluded.par, phone=excluded.phone, email=excluded.email, website=excluded.website,
          booking_url=excluded.booking_url, pricing_url=excluded.pricing_url, address=excluded.address,
          opening_hours=excluded.opening_hours, description=excluded.description, photos=excluded.photos,
          courses=excluded.courses, services=excluded.services, price_reliability=excluded.price_reliability,
-         price_updated_at=excluded.price_updated_at, high_season_months=excluded.high_season_months, updated_at=datetime('now')`,
-    ).run(
+         price_updated_at=excluded.price_updated_at, high_season_months=excluded.high_season_months, updated_at=now()`,
       g.id,
       nul(g.name),
       nul(g.lat),
@@ -321,29 +311,30 @@ export function saveGolf(g: GolfEditable) {
       nul(g.priceUpdatedAt),
       JSON.stringify(g.highSeasonMonths ?? []),
     );
-    db.prepare('DELETE FROM prices WHERE golf_id = ?').run(g.id);
-    const ins = db.prepare(
-      'INSERT INTO prices (golf_id, category, season, day_type, amount, currency, note) VALUES (?,?,?,?,?,?,?)',
-    );
-    for (const p of g.prices ?? []) ins.run(g.id, p.category, p.season, p.dayType, p.amount, p.currency, p.note ?? null);
-    db.exec('COMMIT');
-  } catch (e) {
-    db.exec('ROLLBACK');
-    throw e;
-  }
+    await db.run('DELETE FROM prices WHERE golf_id = ?', g.id);
+    for (const p of g.prices ?? [])
+      await db.run(
+        'INSERT INTO prices (golf_id, category, season, day_type, amount, currency, note) VALUES (?,?,?,?,?,?,?)',
+        g.id,
+        p.category,
+        p.season,
+        p.dayType,
+        p.amount,
+        p.currency,
+        p.note ?? null,
+      );
+  });
 }
 
-export function deleteGolf(id: string) {
-  db.prepare('DELETE FROM golfs WHERE id = ?').run(id);
+export async function deleteGolf(id: string) {
+  await db.run('DELETE FROM golfs WHERE id = ?', id);
 }
 
-export function addReview(golfId: string, author: string, rating: number, comment: string) {
-  const r = db
-    .prepare('INSERT INTO reviews (golf_id, author, rating, comment) VALUES (?,?,?,?)')
-    .run(golfId, author, rating, comment);
-  return Number(r.lastInsertRowid);
+export async function addReview(golfId: string, author: string, rating: number, comment: string) {
+  const r = await db.get<{ id: number }>('INSERT INTO reviews (golf_id, author, rating, comment) VALUES (?,?,?,?) RETURNING id', golfId, author, rating, comment);
+  return r!.id;
 }
 
-export function deleteReview(id: number) {
-  db.prepare('DELETE FROM reviews WHERE id = ?').run(id);
+export async function deleteReview(id: number) {
+  await db.run('DELETE FROM reviews WHERE id = ?', id);
 }

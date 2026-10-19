@@ -1,4 +1,5 @@
-import { ChevronRight, Lock, ShieldCheck } from 'lucide-react';
+import { ChevronRight, Lock, ShieldCheck, Wrench } from 'lucide-react';
+import { AccountPanel } from '../components/AccountPanel';
 import type { ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { CURRENCIES, type Currency } from '../../shared/types';
@@ -29,6 +30,8 @@ export function ProfilePage() {
             <p className="text-sm text-muted">{t('app.tagline')}</p>
           </div>
         </header>
+
+        <AccountPanel />
 
         <section aria-labelledby="prefs" className="glass glass-rounded divide-y divide-[var(--line)] px-5 py-2">
           <h2 id="prefs" className="sr-only">
@@ -61,6 +64,7 @@ export function ProfilePage() {
           {[
             { to: '/confidentialite', label: t('nav.privacy'), Icon: ShieldCheck },
             { to: '/mentions-legales', label: t('nav.legal'), Icon: Lock },
+            { to: '/admin', label: t('account.admin'), Icon: Wrench },
           ].map(({ to, label, Icon }) => (
             <Link key={to} to={to} className="flex min-h-14 items-center gap-3 px-5 py-3 hover:bg-white/30 dark:hover:bg-white/5">
               <Icon className="size-5 text-muted" aria-hidden />

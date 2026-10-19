@@ -1,4 +1,8 @@
+import { ExpressAuth } from '@auth/express';
 import express, { type NextFunction, type Request, type Response } from 'express';
+import { authConfig } from './auth/config.ts';
+import { attachUser, csrfGuard } from './auth/session.ts';
+import { accountRouter } from './routes/account.ts';
 import { adminRouter } from './routes/admin.ts';
 import { publicRouter } from './routes/public.ts';
 import { rateLimit } from './lib/rateLimit.ts';
@@ -23,7 +27,11 @@ export function createApp(extra?: (app: express.Express) => void) {
 
   // Aucun journal des requêtes : les coordonnées présentes dans les URL ne sont jamais écrites.
   app.use('/api', rateLimit(240, 60_000));
+  // Connexion (Auth.js) : /api/auth/signin, /callback, /session, /signout…
+  app.use('/api/auth', rateLimit(40, 60_000), ExpressAuth(authConfig));
+  app.use('/api', csrfGuard, attachUser);
   app.use('/api/admin', adminRouter);
+  app.use('/api', accountRouter);
   app.use('/api', publicRouter);
   app.use('/api', (_req, res) => res.status(404).json({ error: 'not_found' }));
 

@@ -240,24 +240,28 @@ const demoReviews: [string, number, string][] = [
 ];
 
 /** Insère (ou remet à jour) les golfs et avis de démonstration. */
-export function seedDemo() {
-  for (const g of demo) saveGolf(g);
-  db.prepare("DELETE FROM reviews WHERE is_demo = 1").run();
-  const ins = db.prepare(
-    "INSERT INTO reviews (golf_id, author, rating, comment, is_demo, created_at) VALUES (?, 'Visiteur (démo)', ?, ?, 1, datetime('now', ?))",
-  );
-  demoReviews.forEach(([id, rating, comment], i) => ins.run(id, rating, comment, `-${(i + 1) * 9} days`));
+export async function seedDemo() {
+  for (const g of demo) await saveGolf(g);
+  await db.run('DELETE FROM reviews WHERE is_demo = 1');
+  for (const [i, [id, rating, comment]] of demoReviews.entries())
+    await db.run(
+      "INSERT INTO reviews (golf_id, author, rating, comment, is_demo, created_at) VALUES (?, 'Visiteur (démo)', ?, ?, 1, now() - (? * interval '1 day'))",
+      id,
+      rating,
+      comment,
+      (i + 1) * 9,
+    );
   return { golfs: demo.length, reviews: demoReviews.length };
 }
 
 // Exécution en ligne de commande : npm run seed [-- --clear]
 if (process.argv[1]?.endsWith('seed.ts')) {
   if (process.argv.includes('--clear')) {
-    db.prepare("DELETE FROM reviews WHERE is_demo = 1").run();
-    db.prepare("DELETE FROM golfs WHERE is_demo = 1").run();
+    await db.run('DELETE FROM reviews WHERE is_demo = 1');
+    await db.run('DELETE FROM golfs WHERE is_demo = 1');
     console.log('Données de démonstration supprimées.');
   } else {
-    const r = seedDemo();
+    const r = await seedDemo();
     console.log(`✅ ${r.golfs} golfs de DÉMONSTRATION et ${r.reviews} avis fictifs insérés.`);
   }
 }

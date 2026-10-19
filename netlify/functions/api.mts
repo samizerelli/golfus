@@ -1,15 +1,12 @@
 /**
  * API GolfUs sur Netlify Functions.
  *
- * Limites de cet hébergement (sans serveur permanent) :
- * - la base SQLite vit dans /tmp : elle est recréée à chaque démarrage à froid de la fonction
- *   (cache des API et modifications /admin non conservés durablement) ;
- * - chaque requête dispose d'environ 10 s : les délais OpenStreetMap sont raccourcis.
- * Pour des données permanentes (comptes, scores…), il faudra une base hébergée (voir README).
+ * Base de données : Netlify Database (Postgres managé, variable NETLIFY_DB_URL fournie par Netlify) —
+ * comptes, golfs saisis dans /admin et cache sont conservés durablement.
+ * Chaque requête dispose d'environ 10 s : les délais OpenStreetMap sont raccourcis.
  */
 import serverless from 'serverless-http';
 
-process.env.DATABASE_PATH ??= '/tmp/golfus.db';
 process.env.NODE_ENV ??= 'production';
 process.env.OVERPASS_BUDGET_MS ??= '4500';
 process.env.OVERPASS_TIMEOUT_MS ??= '4000';
@@ -21,8 +18,9 @@ let ready: Promise<Handler> | null = null;
 async function init(): Promise<Handler> {
   const { createApp } = await import('../../server/app.ts');
   const { db } = await import('../../server/db/index.ts');
-  const n = (db.prepare('SELECT COUNT(*) AS n FROM golfs WHERE is_demo = 1').get() as { n: number }).n;
-  if (!n) (await import('../../server/db/seed.ts')).seedDemo();
+  // Première mise en route de la base : insertion des golfs de démonstration
+  const r = await db.get<{ n: number }>('SELECT COUNT(*)::int AS n FROM golfs WHERE is_demo = 1');
+  if (!r?.n) await (await import('../../server/db/seed.ts')).seedDemo();
   return serverless(createApp(), {
     // La redirection Netlify /api/* → /.netlify/functions/api/* : on rétablit le chemin /api attendu par Express
     request(req: { url: string }) {

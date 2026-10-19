@@ -239,7 +239,7 @@ function ReviewsSection({ golf }: { golf: GolfDetail }) {
               <Stars value={r.rating} />
               <span className="sr-only">{tp('reviews.star', r.rating)}</span>
               <span className="font-semibold">{r.author}</span>
-              <span className="text-muted">· {new Date(r.createdAt.replace(' ', 'T') + 'Z').toLocaleDateString(locale)}</span>
+              <span className="text-muted">· {new Date(r.createdAt).toLocaleDateString(locale)}</span>
             </p>
             {r.comment && <p className="mt-1 text-sm whitespace-pre-line">{r.comment}</p>}
           </li>

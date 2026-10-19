@@ -83,15 +83,15 @@ publicRouter.get('/rates', async (_req, res) => {
   }
 });
 
-publicRouter.get('/golfs/:id/reviews', (req, res) => res.json(getReviews(req.params.id)));
+publicRouter.get('/golfs/:id/reviews', async (req, res) => res.json(await getReviews(req.params.id)));
 
-publicRouter.post('/golfs/:id/reviews', rateLimit(5, 3600_000), (req, res) => {
+publicRouter.post('/golfs/:id/reviews', rateLimit(5, 3600_000), async (req, res) => {
   const author = String(req.body?.author ?? '').trim().slice(0, 60);
   const comment = String(req.body?.comment ?? '').trim().slice(0, 2000);
   const rating = Number(req.body?.rating);
   if (!author || !Number.isInteger(rating) || rating < 1 || rating > 5) return res.status(400).json({ error: 'invalid' });
   const golfId = String(req.params.id);
   if (!/^(osm-[nwr]\d+|demo-[\w-]+|man-[\w-]+)$/.test(golfId)) return res.status(400).json({ error: 'invalid_id' });
-  const id = addReview(golfId, author, rating, comment);
+  const id = await addReview(golfId, author, rating, comment);
   res.status(201).json({ id });
 });

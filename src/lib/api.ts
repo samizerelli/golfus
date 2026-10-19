@@ -11,6 +11,52 @@ import type {
 
 const BASE = (import.meta.env.VITE_API_BASE ?? '').replace(/\/$/, '') + '/api';
 
+export interface Me {
+  id: string;
+  email: string;
+  emailVerified: boolean;
+  name: string | null;
+  image: string | null;
+  handicapIndex: number | null;
+  lang: string;
+  role: 'user' | 'admin';
+  hasPassword: boolean;
+  providers: string[];
+  createdAt: string;
+}
+
+/**
+ * Appels Auth.js : jeton CSRF puis POST de formulaire. L'en-tête « X-Auth-Return-Redirect » fait renvoyer
+ * l'URL de redirection en JSON au lieu d'une redirection HTTP.
+ */
+async function authPost(path: string, fields: Record<string, string>) {
+  const { csrfToken } = (await fetch(`${BASE}/auth/csrf`, { credentials: 'include' }).then((r) => r.json())) as { csrfToken: string };
+  const res = await fetch(`${BASE}/auth/${path}`, {
+    method: 'POST',
+    credentials: 'include',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'X-Auth-Return-Redirect': '1' },
+    body: new URLSearchParams({ ...fields, csrfToken }),
+  });
+  const data = (await res.json().catch(() => ({}))) as { url?: string };
+  const error = data.url ? new URL(data.url, location.origin).searchParams.get('error') : 'network';
+  return { ok: res.ok && !error, error, url: data.url };
+}
+
+export const auth = {
+  signInPassword: (email: string, password: string) => authPost('callback/credentials', { email, password, callbackUrl: location.origin + '/profil' }),
+  sendMagicLink: (email: string, callbackUrl: string) => authPost('signin/email', { email, callbackUrl }),
+  signOut: () => authPost('signout', { callbackUrl: location.origin + '/' }),
+  /** Google / Apple : redirection complète du navigateur (formulaire POST avec jeton CSRF) */
+  async oauth(provider: 'google' | 'apple') {
+    const { csrfToken } = (await fetch(`${BASE}/auth/csrf`, { credentials: 'include' }).then((r) => r.json())) as { csrfToken: string };
+    const form = Object.assign(document.createElement('form'), { method: 'POST', action: `${BASE}/auth/signin/${provider}` });
+    for (const [name, value] of Object.entries({ csrfToken, callbackUrl: location.origin + '/profil' }))
+      form.appendChild(Object.assign(document.createElement('input'), { type: 'hidden', name, value }));
+    document.body.appendChild(form);
+    form.submit();
+  },
+};
+
 export class ApiError extends Error {
   constructor(
     public status: number,
@@ -26,7 +72,8 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
     res = await fetch(BASE + path, {
       credentials: 'include',
       ...init,
-      headers: { 'Content-Type': 'application/json', ...init?.headers },
+      // En-tête anti-CSRF exigé par le serveur pour toute modification
+      headers: { 'Content-Type': 'application/json', 'X-GF-CSRF': '1', ...init?.headers },
     });
   } catch (e) {
     if ((e as Error).name === 'AbortError') throw e;
@@ -56,6 +103,19 @@ export const api = {
   addReview: (id: string, body: { author: string; rating: number; comment: string }) =>
     request<{ id: number }>(`/golfs/${encodeURIComponent(id)}/reviews`, { method: 'POST', body: JSON.stringify(body) }),
 
+  me: () => request<{ user: Me | null }>('/me'),
+  authProviders: () => request<{ credentials: boolean; email: boolean; google: boolean; apple: boolean }>('/auth-providers'),
+  register: (body: { email: string; password: string; name: string; lang: string; terms: true }) =>
+    request<{ ok: true }>('/account/register', { method: 'POST', body: JSON.stringify(body) }),
+  updateMe: (body: Partial<{ name: string; handicapIndex: number | null; lang: string }>) =>
+    request<{ user: Me }>('/me', { method: 'PATCH', body: JSON.stringify(body) }),
+  setAvatar: (dataUrl: string | null) => request<{ user: Me }>('/me/avatar', { method: 'POST', body: JSON.stringify({ dataUrl }) }),
+  changePassword: (body: { current?: string; next: string }) =>
+    request<{ ok: true }>('/me/password', { method: 'POST', body: JSON.stringify(body) }),
+  logoutAll: () => request<{ ok: true }>('/me/logout-all', { method: 'POST' }),
+  deleteMe: (confirmEmail: string) => request<{ ok: true }>('/me', { method: 'DELETE', body: JSON.stringify({ confirmEmail }) }),
+  exportUrl: () => BASE + '/me/export',
+
   admin: {
     session: () => request<{ configured: boolean; admin: boolean }>('/admin/session'),
     login: (password: string) => request<{ ok: true }>('/admin/login', { method: 'POST', body: JSON.stringify({ password }) }),
@@ -73,6 +133,14 @@ export const api = {
     create: (golf: Partial<GolfEditable>) => request<{ id: string }>('/admin/golfs', { method: 'POST', body: JSON.stringify(golf) }),
     remove: (id: string) => request<{ ok: true }>(`/admin/golfs/${encodeURIComponent(id)}`, { method: 'DELETE' }),
     deleteReview: (id: number) => request<{ ok: true }>(`/admin/reviews/${id}`, { method: 'DELETE' }),
+    users: (q = '') =>
+      request<{ id: string; email: string; name: string | null; role: 'user' | 'admin'; createdAt: string; lastLoginAt: string | null; hasPassword: boolean }[]>(
+        `/admin/users?${new URLSearchParams({ q })}`,
+      ),
+    resetPassword: (id: string) => request<{ temporaryPassword: string }>(`/admin/users/${encodeURIComponent(id)}/reset-password`, { method: 'POST' }),
+    setRole: (id: string, role: 'user' | 'admin') =>
+      request<{ ok: true }>(`/admin/users/${encodeURIComponent(id)}/role`, { method: 'POST', body: JSON.stringify({ role }) }),
+    deleteUser: (id: string) => request<{ ok: true }>(`/admin/users/${encodeURIComponent(id)}`, { method: 'DELETE' }),
     validateHours: (value: string) =>
       request<{ valid: boolean }>('/admin/validate-hours', { method: 'POST', body: JSON.stringify({ value }) }),
   },
