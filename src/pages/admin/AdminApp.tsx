@@ -213,6 +213,7 @@ const EMPTY: GolfEditable = {
   priceReliability: 'indicative',
   priceUpdatedAt: null,
   highSeasonMonths: [],
+  offers: [],
   prices: [],
 };
 

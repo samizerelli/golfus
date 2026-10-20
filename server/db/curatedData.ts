@@ -21,6 +21,10 @@ export const CURATED_GOLFS: CuratedGolf[] = [
     openingHours: 'Mo-Su 08:00-19:30',
     services: { buggy: true, clubRental: true, restaurant: true, drivingRange: true, lessons: true },
     priceUpdatedAt: '2026-10-20',
+    offers: [
+      { platform: 'greenfee365', ref: 'marbella-golf-and-country-club', amount: 104.38, observedFor: '2026-10-22', note: 'Prix affiché pour tous les départs du jour ; conditions (buggy…) à vérifier sur la plateforme' },
+      { platform: 'club_online', amount: 130, observedFor: '2026-10-20', note: 'Remise en ligne de 6 % sur le tarif officiel (buggy partagé inclus)' },
+    ],
     prices: [
       // Haute saison 2026 : 01/03–24/05 et 07/09–15/11 (buggy partagé inclus)
       { category: 'green_fee_18', amount: 139, fromDate: '03-01', toDate: '05-24', note: 'Buggy partagé inclus' },
@@ -91,6 +95,9 @@ export const CURATED_GOLFS: CuratedGolf[] = [
     openingHours: 'Mo-Su 07:30-20:00',
     services: { buggy: true, clubRental: true, restaurant: true, proShop: true },
     priceUpdatedAt: '2026-10-20',
+    offers: [
+      { platform: 'greenfee365', ref: 'los-naranjos-golf-club', amount: 177, observedFor: '2026-10-22', note: '136 € dès 15:30 (twilight)' },
+    ],
     prices: [
       { category: 'green_fee_18', amount: 139, fromDate: '05-14', toDate: '05-24', note: 'Buggy inclus' },
       { category: 'green_fee_18', amount: 145, fromDate: '05-25', toDate: '08-24', note: 'Buggy inclus' },
@@ -127,6 +134,10 @@ export const CURATED_GOLFS: CuratedGolf[] = [
     pricingUrl: 'https://open.teeone.golf/es/santaclaramarbella/disponibilidad',
     services: { buggy: true },
     priceUpdatedAt: '2026-10-20',
+    offers: [
+      { platform: 'greenfee365', ref: 'santa-clara-golf-marbella', amount: 150, observedFor: '2026-10-22', note: 'Conditions (buggy…) à vérifier sur la plateforme' },
+      { platform: 'club_online', amount: 190, observedFor: '2026-10-20', note: 'Remise en ligne de 5 % (buggy inclus)' },
+    ],
     prices: [
       // Seul tarif public : celui affiché par la réservation en ligne (relevé le 20/10/2026)
       { category: 'green_fee_18', amount: 200, note: 'Buggy inclus — tarif affiché en réservation en ligne le 20/10/2026 (190 € avec la remise en ligne)' },
@@ -148,6 +159,11 @@ export const CURATED_GOLFS: CuratedGolf[] = [
       { name: 'New Course', holes: 18, par: null, lengthM: null, difficulty: null },
     ],
     priceUpdatedAt: '2026-10-20',
+    offers: [
+      { platform: 'greenfee365', ref: 'atalaya-golf-and-country-club-nueva', amount: 185, observedFor: '2026-10-22', note: 'New Course' },
+      { platform: 'greenfee365', ref: 'atalaya-golf-and-country-club', amount: null, observedFor: null, note: 'Old Course' },
+      { platform: 'club_online', amount: 131, observedFor: '2026-10-20', note: 'Old Course : remise en ligne de 25 % sur 175 €' },
+    ],
     prices: [
       // Tarifs officiels visiteurs (remises disponibles en réservation en ligne)
       { category: 'green_fee_18', amount: 175, fromDate: '02-01', toDate: '05-31' },
@@ -208,6 +224,10 @@ export const CURATED_GOLFS: CuratedGolf[] = [
       { name: 'Campo Europa', holes: 18, par: null, lengthM: null, difficulty: null },
     ],
     priceUpdatedAt: '2026-10-20',
+    offers: [
+      { platform: 'greenfee365', ref: 'la-cala-campo-asia', amount: 161, observedFor: '2026-10-22', note: 'Campo Asia : 161 à 170 € en journée, 91 € dès 16:00' },
+      { platform: 'greenfee365', ref: 'la-cala-campo-europa', amount: 168, observedFor: '2026-10-22', note: 'Campo Europa : 168 € en journée, 91 € dès 16:00' },
+    ],
     prices: [
       // Prix dynamiques (variables selon le jour, l'heure et le parcours) : relevés en réservation en ligne le 20/10/2026
       { category: 'green_fee_18', amount: 160, fromDate: '10-01', toDate: '10-31', toTime: '15:00', note: 'Buggy partagé inclus — 160 à 170 € selon le parcours (relevé le 20/10/2026)' },
@@ -261,6 +281,9 @@ export const CURATED_GOLFS: CuratedGolf[] = [
     openingHours: 'Mo-Su 07:50-20:45',
     services: { buggy: true, clubRental: true, restaurant: true, proShop: true, lessons: true, drivingRange: true },
     priceUpdatedAt: '2026-10-20',
+    offers: [
+      { platform: 'greenfee365', ref: 'chaparral-golf-club', amount: null, observedFor: null },
+    ],
     prices: [
       { category: 'green_fee_18', amount: 135, fromDate: '03-01', toDate: '05-31', note: 'Buggy inclus' },
       { category: 'twilight', amount: 105, fromDate: '03-01', toDate: '05-31', fromTime: '14:30', note: 'Buggy inclus' },
@@ -359,6 +382,10 @@ export const CURATED_GOLFS: CuratedGolf[] = [
     pricingUrl: 'https://open.teeone.golf/es/villapadierna/disponibilidad',
     services: { buggy: true },
     priceUpdatedAt: '2026-10-20',
+    offers: [
+      { platform: 'greenfee365', ref: 'villa-padierna-flamingos', amount: 192, observedFor: '2026-10-22' },
+      { platform: 'club_online', amount: 182, observedFor: '2026-10-20', note: 'Remise en ligne de 5 %' },
+    ],
     prices: [
       { category: 'green_fee_18', amount: 192, note: 'Tarif affiché en réservation en ligne le 20/10/2026 (182 € avec la remise en ligne ; 242 € avec un buggy)' },
     ],
@@ -371,6 +398,9 @@ export const CURATED_GOLFS: CuratedGolf[] = [
     phone: '+34 952 88 91 57',
     website: 'https://www.villapadierna.es/en/alferini/',
     bookingUrl: 'https://open.teeone.golf/es/villapadierna/disponibilidad',
+    offers: [
+      { platform: 'greenfee365', ref: 'villa-padierna-alferini', amount: 205, observedFor: '2026-10-22' },
+    ],
   },
   {
     id: 'osm-w244108926',
@@ -380,6 +410,9 @@ export const CURATED_GOLFS: CuratedGolf[] = [
     phone: '+34 952 88 91 57',
     website: 'https://www.villapadierna.es/en/tramores/',
     bookingUrl: 'https://open.teeone.golf/es/villapadierna/disponibilidad',
+    offers: [
+      { platform: 'greenfee365', ref: 'villa-padierna-tramores', amount: 78, observedFor: '2026-10-22', note: 'Parcours 18 trous, par 63' },
+    ],
   },
   {
     id: 'osm-r2297099',
@@ -467,6 +500,10 @@ export const CURATED_GOLFS: CuratedGolf[] = [
     bookingUrl: 'https://open.teeone.golf/es/paraiso/disponibilidad',
     pricingUrl: 'https://open.teeone.golf/es/paraiso/disponibilidad',
     priceUpdatedAt: '2026-10-20',
+    offers: [
+      { platform: 'greenfee365', ref: 'el-paraiso-golf-club', amount: null, observedFor: null },
+      { platform: 'club_online', amount: 152, observedFor: '2026-10-21', note: 'Remise en ligne de 5 % sur 160 €' },
+    ],
     prices: [
       { category: 'green_fee_18', amount: 160, note: 'Tarif affiché en réservation en ligne pour le 21/10/2026 (152 € avec la remise en ligne)' },
       { category: 'green_fee_9', amount: 85, note: 'Tarif affiché en réservation en ligne le 20/10/2026 (80 € avec la remise en ligne)' },
@@ -485,6 +522,9 @@ export const CURATED_GOLFS: CuratedGolf[] = [
     pricingUrl: 'https://alhauringolf.com/tarifas/',
     services: { buggy: true, restaurant: true, drivingRange: true },
     priceUpdatedAt: '2026-10-20',
+    offers: [
+      { platform: 'greenfee365', ref: 'alhaurin-golf', amount: 95, observedFor: '2026-10-22' },
+    ],
     prices: [
       { category: 'green_fee_18', amount: 100, fromDate: '03-01', toDate: '05-15', note: 'Buggy partagé inclus — tarif 2026 affiché en réservation en ligne (haute saison)' },
       { category: 'twilight', amount: 85, fromDate: '03-01', toDate: '05-15', note: 'Buggy partagé inclus — tarif 2026 affiché en réservation en ligne (haute saison)' },
@@ -502,5 +542,45 @@ export const CURATED_GOLFS: CuratedGolf[] = [
     phone: '+34 95 281 30 21',
     website: 'https://realclubdegolflasbrisas.com/',
     bookingUrl: 'https://open.teeone.golf/es/brisas/disponibilidad',
+  },
+  {
+    // Pas de tarif publié par le club (site indisponible) : seulement l'offre de la plateforme
+    id: 'osm-w172434912',
+    name: 'Cabopino Golf',
+    lat: 36.494656,
+    lon: -4.739034,
+    offers: [{ platform: 'greenfee365', ref: 'cabopino-golf', amount: 116, observedFor: '2026-10-22' }],
+  },
+  {
+    // Pas de tarif publié par le club (site indisponible) : seulement l'offre de la plateforme
+    id: 'osm-r3301126',
+    name: 'La Quinta Golf & Country Club',
+    lat: 36.517091,
+    lon: -5.001428,
+    offers: [{ platform: 'greenfee365', ref: 'la-quinta-golf-club', amount: 152, observedFor: '2026-10-22' }],
+  },
+  {
+    // Pas de tarif publié par le club (site indisponible) : seulement l'offre de la plateforme
+    id: 'osm-w97681590',
+    name: 'Magna Marbella Golf',
+    lat: 36.505824,
+    lon: -4.97874,
+    offers: [{ platform: 'greenfee365', ref: 'magna-marbella', amount: 32.5, observedFor: '2026-10-22', note: 'Parcours 9 trous' }],
+  },
+  {
+    // Pas de tarif publié par le club (site indisponible) : seulement l'offre de la plateforme
+    id: 'osm-w172444896',
+    name: 'Greenlife Golf Marbella',
+    lat: 36.505391,
+    lon: -4.779539,
+    offers: [{ platform: 'greenfee365', ref: 'greenlife-golf', amount: null, observedFor: null, note: 'Parcours 9 trous' }],
+  },
+  {
+    // Pas de tarif publié par le club (site indisponible) : seulement l'offre de la plateforme
+    id: 'osm-w139728266',
+    name: 'Marbella Club Golf Resort',
+    lat: 36.498919,
+    lon: -5.060034,
+    offers: [{ platform: 'greenfee365', ref: 'marbella-club-golf-resort', amount: null, observedFor: null }],
   },
 ];

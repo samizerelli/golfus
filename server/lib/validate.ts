@@ -1,5 +1,6 @@
 import OpeningHours from 'opening_hours';
 import {
+  BOOKING_PLATFORMS,
   CURRENCIES,
   PRICE_CATEGORIES,
   SERVICE_KEYS,
@@ -103,6 +104,17 @@ export function sanitizeGolf(id: string, b: Record<string, unknown>): { golf?: G
         ? (b.priceReliability as 'verified' | 'indicative')
         : 'indicative',
       priceUpdatedAt: /^\d{4}-\d{2}-\d{2}$/.test(String(b.priceUpdatedAt ?? '')) ? String(b.priceUpdatedAt) : null,
+      offers: (Array.isArray(b.offers) ? b.offers : [])
+        .filter((o) => BOOKING_PLATFORMS.includes(o?.platform))
+        .slice(0, 10)
+        .map((o) => ({
+          platform: o.platform,
+          ref: str(o.ref, 120),
+          amount: num(o.amount, 0, 100000),
+          currency: CURRENCIES.includes(o.currency) ? o.currency : 'EUR',
+          observedFor: /^\d{4}-\d{2}-\d{2}$/.test(String(o.observedFor ?? '')) ? String(o.observedFor) : null,
+          note: str(o.note, 200),
+        })),
       highSeasonMonths: (Array.isArray(b.highSeasonMonths) ? b.highSeasonMonths : [])
         .map((m) => num(m, 1, 12))
         .filter((m): m is number => m !== null),

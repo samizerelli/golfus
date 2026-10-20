@@ -34,6 +34,7 @@ interface GolfRow {
   price_reliability: string;
   price_updated_at: string | null;
   high_season_months: string;
+  offers?: string;
 }
 
 interface PriceDbRow {
@@ -125,6 +126,7 @@ function merge(osm: OsmGolf | null, row: GolfRow | undefined, prices: PriceRow[]
     priceReliability: prices.length ? ((row?.price_reliability as GolfSummary['priceReliability']) ?? 'indicative') : 'unknown',
     priceUpdatedAt: row?.price_updated_at ?? null,
     highSeasonMonths: json<number[]>(row?.high_season_months, []),
+    offers: json(row?.offers, []),
     services: json(row?.services, {}),
     isDemo: !!row?.is_demo,
     curated: !!row,
@@ -269,6 +271,7 @@ const EMPTY_EDITABLE = (id: string): GolfEditable => ({
   priceReliability: 'indicative',
   priceUpdatedAt: null,
   highSeasonMonths: [],
+  offers: [],
   prices: [],
 });
 
@@ -299,6 +302,7 @@ export async function getStoredEditable(id: string): Promise<GolfEditable | null
     priceReliability: row.price_reliability as GolfEditable['priceReliability'],
     priceUpdatedAt: row.price_updated_at,
     highSeasonMonths: json(row.high_season_months, []),
+    offers: json(row.offers, []),
     prices,
   };
 }
@@ -333,6 +337,7 @@ export async function getEditable(id: string): Promise<{ golf: GolfEditable; osm
         priceReliability: row.price_reliability as GolfEditable['priceReliability'],
         priceUpdatedAt: row.price_updated_at,
         highSeasonMonths: json(row.high_season_months, []),
+        offers: json(row.offers, []),
         prices,
       }
     : EMPTY_EDITABLE(id);
@@ -344,14 +349,14 @@ export async function saveGolf(g: GolfEditable) {
   await db.tx(async () => {
     await db.run(
       `INSERT INTO golfs (id, name, lat, lon, is_demo, holes, par, phone, email, website, booking_url, pricing_url, address,
-         opening_hours, description, photos, courses, services, price_reliability, price_updated_at, high_season_months, updated_at)
-       VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?, now())
+         opening_hours, description, photos, courses, services, price_reliability, price_updated_at, high_season_months, offers, updated_at)
+       VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?, now())
        ON CONFLICT (id) DO UPDATE SET name=excluded.name, lat=excluded.lat, lon=excluded.lon, is_demo=excluded.is_demo,
          holes=excluded.holes, par=excluded.par, phone=excluded.phone, email=excluded.email, website=excluded.website,
          booking_url=excluded.booking_url, pricing_url=excluded.pricing_url, address=excluded.address,
          opening_hours=excluded.opening_hours, description=excluded.description, photos=excluded.photos,
          courses=excluded.courses, services=excluded.services, price_reliability=excluded.price_reliability,
-         price_updated_at=excluded.price_updated_at, high_season_months=excluded.high_season_months, updated_at=now()`,
+         price_updated_at=excluded.price_updated_at, high_season_months=excluded.high_season_months, offers=excluded.offers, updated_at=now()`,
       g.id,
       nul(g.name),
       nul(g.lat),
@@ -373,6 +378,7 @@ export async function saveGolf(g: GolfEditable) {
       g.priceReliability,
       nul(g.priceUpdatedAt),
       JSON.stringify(g.highSeasonMonths ?? []),
+      JSON.stringify(g.offers ?? []),
     );
     await db.run('DELETE FROM prices WHERE golf_id = ?', g.id);
     for (const p of g.prices ?? [])

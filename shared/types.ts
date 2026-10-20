@@ -39,6 +39,24 @@ export interface PriceRow {
   toDate?: string | null;
 }
 
+/** Canaux de réservation comparés : site du club (tarif officiel / remisé en ligne) et plateformes */
+export const BOOKING_PLATFORMS = ['club_online', 'greenfee365'] as const;
+export type BookingPlatform = (typeof BOOKING_PLATFORMS)[number];
+
+/**
+ * Prix relevé sur un canal de réservation pour une date donnée (observedFor), « à partir de », par joueur.
+ * Pas de prix (amount null) = canal disponible, prix à consulter sur la plateforme.
+ */
+export interface BookingOffer {
+  platform: BookingPlatform;
+  /** greenfee365 : identifiant de la fiche (greenfee365.com/golf-course/<ref>) ; club_online : non utilisé */
+  ref?: string | null;
+  amount: number | null;
+  currency: Currency;
+  observedFor: string | null;
+  note?: string | null;
+}
+
 export const SERVICE_KEYS = ['clubRental', 'drivingRange', 'restaurant', 'buggy', 'proShop', 'lessons'] as const;
 export type ServiceKey = (typeof SERVICE_KEYS)[number];
 /** true = disponible, false = absent, null/undefined = inconnu */
@@ -88,6 +106,7 @@ export interface GolfSummary {
   priceUpdatedAt: string | null;
   /** Mois de haute saison, 1 = janvier */
   highSeasonMonths: number[];
+  offers: BookingOffer[];
   services: Services;
   isDemo: boolean;
   /** Le golf a été complété/corrigé dans la base locale */
@@ -164,5 +183,6 @@ export interface GolfEditable {
   priceReliability: PriceReliability;
   priceUpdatedAt: string | null;
   highSeasonMonths: number[];
+  offers: BookingOffer[];
   prices: PriceRow[];
 }

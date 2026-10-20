@@ -7,11 +7,12 @@
  * - Import automatique au démarrage (local et en ligne) quand CURATED_VERSION change. Une fiche modifiée
  *   ensuite dans /admin est conservée jusqu'à la prochaine version de ce fichier.
  */
-import type { GolfEditable, PriceRow } from '../../shared/types.ts';
+import type { BookingOffer, GolfEditable, PriceRow } from '../../shared/types.ts';
 import { db } from './index.ts';
 import { CURATED_GOLFS } from './curatedData.ts';
 
-export type CuratedGolf = Partial<Omit<GolfEditable, 'prices'>> & {
+export type CuratedGolf = Partial<Omit<GolfEditable, 'prices' | 'offers'>> & {
+  offers?: (Omit<BookingOffer, 'currency' | 'amount' | 'observedFor'> & Partial<Pick<BookingOffer, 'currency' | 'amount' | 'observedFor'>>)[];
   id: string;
   name: string;
   lat: number;
@@ -62,6 +63,7 @@ export function importCurated() {
         ...prev,
         ...c,
         prices: (c.prices ?? []).map((p) => ({ currency: 'EUR', season: 'all', dayType: 'all', ...p })),
+        offers: (c.offers ?? prev?.offers ?? []).map((o) => ({ currency: 'EUR', amount: null, observedFor: null, ...o })),
       } as GolfEditable);
     }
     await db.run(

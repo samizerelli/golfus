@@ -201,6 +201,13 @@ ALTER TABLE prices ADD COLUMN IF NOT EXISTS from_date TEXT;
 ALTER TABLE prices ADD COLUMN IF NOT EXISTS to_date TEXT;
 `,
   },
+  {
+    id: 7,
+    name: 'offres des plateformes de réservation (comparatif des green fees)',
+    sql: `
+ALTER TABLE golfs ADD COLUMN IF NOT EXISTS offers TEXT NOT NULL DEFAULT '[]';
+`,
+  },
 ];
 
 interface MigDriver {

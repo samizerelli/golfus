@@ -41,3 +41,24 @@ test('lien de réservation pré-rempli selon le moteur du golf', async () => {
   assert.equal(prefilledBookingUrl('https://reservas-golf.rioreal.com/reserva', p).url, 'https://reservas-golf.rioreal.com/reserva/fecha:2026-10-22');
   assert.equal(prefilledBookingUrl('https://reservas72.miraflores-golf.com/', p).filled.date, false);
 });
+
+test('comparatif : du moins cher au plus cher, liens datés, aucun prix inventé', async () => {
+  const { bookingChoices, cheaperElsewhere } = await import('../../src/lib/booking.ts');
+  const golf = {
+    id: 'g', name: 'Golf', lat: 0, lon: 0, holes: 18, par: 72, photo: null, phone: null, website: null,
+    bookingUrl: 'https://open.teeone.golf/es/test/disponibilidad', pricingUrl: null, address: null, openingHours: null, rating: null,
+    prices: [row({ amount: 139 })], priceReliability: 'indicative' as const, priceUpdatedAt: null, highSeasonMonths: [], services: {}, isDemo: false, curated: true,
+    offers: [
+      { platform: 'greenfee365' as const, ref: 'test-golf', amount: 104.38, currency: 'EUR' as const, observedFor: '2026-10-22' },
+      { platform: 'greenfee365' as const, ref: 'autre', amount: null, currency: 'EUR' as const, observedFor: null },
+      { platform: 'club_online' as const, amount: 130, currency: 'EUR' as const, observedFor: '2026-10-20' },
+    ],
+  };
+  const c = { date: '2026-10-24', timeFrom: '08:00', timeTo: '12:00', holes: 'any' as const, minRating: 0, players: 2, hideUnknown: false };
+  const list = bookingChoices(golf, c);
+  assert.deepEqual(list.map((x) => [x.kind, x.amount]), [['platform', 104.38], ['club_online', 130], ['club', 139], ['platform', null]]);
+  assert.equal(list[0].cheapest, true);
+  assert.equal(list[0].url, 'https://greenfee365.com/golf-course/test-golf?date=2026-10-24');
+  assert.equal(list.find((x) => x.kind === 'club')?.basis, 'date');
+  assert.equal(cheaperElsewhere(golf, c)?.amount, 104.38);
+});

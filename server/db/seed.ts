@@ -41,6 +41,7 @@ const base = {
   pricingUrl: 'https://example.com/tarifs',
   photos: [],
   priceUpdatedAt: '2026-10-01',
+  offers: [],
 } satisfies Partial<GolfEditable>;
 
 const demo: GolfEditable[] = [

@@ -4,10 +4,11 @@ import { useState, type MouseEvent, type ReactNode } from 'react';
 import type { GolfSummary } from '../../shared/types';
 import { useI18n } from '../i18n';
 import { api } from '../lib/api';
-import { prefilledBookingUrl } from '../lib/booking';
+import { bookingChoices, prefilledBookingUrl, type BookingChoice } from '../lib/booking';
 import { telHref } from '../lib/links';
 import { useSearch } from '../state/search';
-import { buttonClass, Dialog, haptic, Notice } from './ui';
+import { useSettings } from '../lib/settings';
+import { Badge, buttonClass, cx, Dialog, haptic, Notice } from './ui';
 
 const pad = (n: number) => String(n).padStart(2, '0');
 const toDate = (d: Date) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
@@ -56,6 +57,7 @@ export function BookingButton({ golf, size = 'sm' }: { golf: GolfSummary; size?:
   const [date, setDate] = useState(() => toDate(playAt));
   const [time, setTime] = useState(() => toTime(playAt));
   const [players, setPlayers] = useState(criteria.players);
+  const [compareOpen, setCompareOpen] = useState(false);
   // L'e-mail n'est pas dans la liste de résultats : on charge la fiche à l'ouverture (mise en cache)
   const detail = useQuery({ queryKey: ['golf', golf.id], queryFn: () => api.golf(golf.id), enabled: open, staleTime: 10 * 60_000 });
   const email = detail.data?.email ?? null;
@@ -66,6 +68,31 @@ export function BookingButton({ golf, size = 'sm' }: { golf: GolfSummary; size?:
   const subject = t('book.subject', { date: niceDate, time });
   const body = t('book.body', { players, date: niceDate, time, golf: golf.name });
   const nothing = !golf.bookingUrl && !golf.website && !email && !phone;
+
+  // Plusieurs façons de réserver (club, plateformes) : comparatif, chaque ligne ouvre la page déjà réglée
+  const choices = bookingChoices(golf, criteria);
+  if (choices.length > 1) {
+    return (
+      <>
+        <button
+          type="button"
+          onClick={(e: MouseEvent) => {
+            e.stopPropagation();
+            haptic();
+            setCompareOpen(true);
+          }}
+          className={buttonClass('gold', size)}
+          aria-haspopup="dialog"
+        >
+          <Ticket className="size-4" aria-hidden />
+          {t('action.book')}
+        </button>
+        <Dialog open={compareOpen} onClose={() => setCompareOpen(false)} title={`${t('cmp.title')} · ${golf.name || t('card.unnamed')}`}>
+          <CompareList choices={choices} phone={golf.phone} />
+        </Dialog>
+      </>
+    );
+  }
 
   // Réservation en ligne connue : un clic ouvre la page du golf déjà réglée (date, joueurs, matin/après-midi)
   if (golf.bookingUrl) {
@@ -177,5 +204,63 @@ export function BookingButton({ golf, size = 'sm' }: { golf: GolfSummary; size?:
         </div>
       </Dialog>
     </>
+  );
+}
+
+/** Comparatif : du moins cher au plus cher, avec la base de chaque prix (tarif du jour ou relevé daté). */
+function CompareList({ choices, phone }: { choices: BookingChoice[]; phone: string | null }) {
+  const { t, locale } = useI18n();
+  const { money } = useSettings();
+  const { criteria } = useSearch();
+  const day = (d: string) => new Date(`${d}T12:00:00`).toLocaleDateString(locale, { day: 'numeric', month: 'short' });
+  const official = choices.find((c) => c.kind === 'club')?.amount ?? null;
+  return (
+    <div className="space-y-3 pb-2">
+      <p className="text-sm text-muted">{t('cmp.intro', { date: day(criteria.date), n: criteria.players })}</p>
+      <ul className="space-y-2">
+        {choices.map((c) => {
+          const v = c.amount != null ? money(c.amount, c.currency) : null;
+          const saving = official != null && c.amount != null && c.kind !== 'club' && official - c.amount >= 1 ? Math.round(official - c.amount) : null;
+          return (
+            <li key={c.key}>
+              <a
+                href={c.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={() => haptic()}
+                className={cx(
+                  'flex min-h-16 items-center gap-3 rounded-[20px] px-4 py-3 transition-transform active:scale-[0.98]',
+                  c.cheapest ? 'bg-fairway-700 text-white shadow-[0_6px_20px_rgba(31,93,74,0.28)] dark:bg-fairway-300 dark:text-fairway-950' : 'frost glass-interactive',
+                )}
+              >
+                <span className="min-w-0 flex-1">
+                  <span className="flex flex-wrap items-center gap-1.5 font-semibold">
+                    {c.kind === 'platform' ? c.name : c.kind === 'club_online' ? t('cmp.clubOnline') : t('cmp.club')}
+                    {c.cheapest && <Badge tone="gold">{t('cmp.cheapest')}</Badge>}
+                  </span>
+                  <span className="block text-xs opacity-80">
+                    {c.basis === 'date' ? t('cmp.basisDate', { date: day(criteria.date) }) : c.basis === 'observed' && c.observedFor ? t('cmp.basisObserved', { date: day(c.observedFor) }) : t('cmp.basisNone')}
+                    {saving ? ` · ${t('cmp.saving', { n: saving })}` : ''}
+                  </span>
+                  {c.note && <span className="block text-xs opacity-70">{c.note}</span>}
+                </span>
+                <span className="shrink-0 text-right">
+                  {v ? <span className="block text-lg font-semibold tabular-nums">{v.text}</span> : <span className="block text-sm font-medium">{t('cmp.seePrice')}</span>}
+                  <span className="inline-flex items-center gap-1 text-xs opacity-80">
+                    {t('action.book')} <ExternalLink className="size-3" aria-hidden />
+                  </span>
+                </span>
+              </a>
+            </li>
+          );
+        })}
+      </ul>
+      {phone && (
+        <a href={telHref(phone)} className="flex h-11 items-center justify-center gap-1.5 text-sm font-medium text-link">
+          <Phone className="size-4" aria-hidden /> {t('book.call')} · {phone}
+        </a>
+      )}
+      <p className="text-xs text-muted">{t('cmp.notice')}</p>
+    </div>
   );
 }

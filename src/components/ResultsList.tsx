@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { RADII_KM, type GolfSummary, type RadiusKm, type TravelInfo } from '../../shared/types';
 import { useI18n } from '../i18n';
 import type { ApiError } from '../lib/api';
+import { cheaperElsewhere } from '../lib/booking';
 import { pricePerPerson, type GolfMatch } from '../lib/criteria';
 import { formatIntervals, intervalsOn, parseHours, useHoursLib } from '../lib/hours';
 import { telHref } from '../lib/links';
@@ -34,6 +35,22 @@ export function PricePerPerson({ golf, criteria, large = false, inCard = false }
   const { t } = useI18n();
   const { money } = useSettings();
   const p = pricePerPerson(golf, criteria);
+  // Moins cher ailleurs (plateforme ou réservation en ligne du club), ou seul prix connu
+  const alt = cheaperElsewhere(golf, criteria);
+  const altLine = alt && alt.amount != null && (
+    <span className="block text-[11px] font-semibold text-fairway-700 tabular-nums dark:text-fairway-300">
+      {t(p ? 's2.orElsewhere' : 's2.elsewhere', { p: money(alt.amount, alt.currency).text, where: alt.kind === 'platform' ? alt.name : t('s2.onlineClub') })}
+    </span>
+  );
+  if (!p && alt && alt.amount != null)
+    return (
+      <span className={cx('text-right', inCard && 'shrink-0')}>
+        <span className="text-xs text-muted">{t('s2.from')} </span>
+        <span className={cx('font-semibold tracking-tight tabular-nums', large ? 'text-3xl' : 'text-xl')}>{money(alt.amount, alt.currency).text}</span>
+        <span className="block text-[11px] text-muted">{alt.kind === 'platform' ? alt.name : t('s2.onlineClub')}</span>
+        <span className="block text-[11px] font-medium text-gold-ink">{t('s2.indicative')}</span>
+      </span>
+    );
   if (!p && inCard) return <span className="shrink-0 pt-0.5 text-xs font-medium whitespace-nowrap text-muted">{t('s2.priceToConfirm')}</span>;
   if (!p)
     return (
@@ -57,6 +74,7 @@ export function PricePerPerson({ golf, criteria, large = false, inCard = false }
       </span>
       <span className="text-xs text-muted"> {t('s2.perPerson')}</span>
       {window && <span className="block text-[11px] text-muted tabular-nums">{window}</span>}
+      {altLine}
       <span className="block text-[11px] font-medium text-gold-ink">{t('s2.indicative')}</span>
     </span>
   );
