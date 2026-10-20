@@ -127,9 +127,12 @@ function GolfMarkers({
   unnamedLabel,
   insets,
   highlightId,
+  follow,
 }: {
   golfs: GolfSummary[];
   highlightId: string | null;
+  /** Amener le golf sélectionné à l'écran (désactivé quand un autre composant cadre la carte) */
+  follow: boolean;
   selectedId: string | null;
   onSelect: (id: string) => void;
   labelFor: (g: GolfSummary) => string | null;
@@ -149,6 +152,8 @@ function GolfMarkers({
   useEffect(() => {
     const g = L.markerClusterGroup({
       showCoverageOnHover: false,
+      // Sans animation de regroupement : remplacer les marqueurs pendant un zoom faisait planter la librairie
+      animate: false,
       zoomToBoundsOnClick: false,
       maxClusterRadius: 52,
       spiderfyDistanceMultiplier: 1.6,
@@ -177,6 +182,9 @@ function GolfMarkers({
 
   useEffect(() => {
     const g = group.current!;
+    let cancelled = false;
+    const apply = () => {
+    if (cancelled) return;
     g.clearLayers();
     markers.current.clear();
     const list = golfs.map((golf) => {
@@ -194,7 +202,15 @@ function GolfMarkers({
       return m;
     });
     g.addLayers(list);
-  }, [golfs, labelFor, unnamedLabel]);
+    };
+    // Zoom en cours : on attend sa fin avant de remplacer les marqueurs
+    if ((map as unknown as { _animatingZoom?: boolean })._animatingZoom) map.once('zoomend', apply);
+    else apply();
+    return () => {
+      cancelled = true;
+      map.off('zoomend', apply);
+    };
+  }, [golfs, labelFor, unnamedLabel, map]);
 
   useEffect(() => {
     const prev = selectedRef.current;
@@ -204,14 +220,15 @@ function GolfMarkers({
       if (e) e.m.setIcon(pillIcon(e.label, id === selectedId, e.g.isDemo));
     }
     const sel = selectedId ? markers.current.get(selectedId) : null;
-    if (sel) {
+    // Sur l'écran d'invitation, c'est FocusGolf qui cadre : pas de second zoom concurrent
+    if (sel && follow && hasSize(map) && group.current?.hasLayer(sel.m)) {
       sel.m.setZIndexOffset(1000);
-      group.current?.zoomToShowLayer(sel.m, () => {
+      group.current.zoomToShowLayer(sel.m, () => {
         if (!map.getBounds().pad(-0.2).contains(sel.m.getLatLng())) map.panTo(sel.m.getLatLng(), { animate: true, duration: 0.5 });
       });
     }
     if (prev && prev !== selectedId) markers.current.get(prev)?.m.setZIndexOffset(0);
-  }, [selectedId, map]);
+  }, [selectedId, map, follow]);
 
   // Surbrillance au survol de la liste : on change seulement l'apparence du marqueur
   useEffect(() => {
@@ -282,7 +299,7 @@ export function MapView({
             <Marker position={[origin.lat, origin.lon]} icon={userIcon} title={t('map.you')} alt={t('map.you')} keyboard={false} />
           </>
         )}
-        <GolfMarkers golfs={golfs} selectedId={selectedId} highlightId={highlightId} onSelect={onSelect} labelFor={labelFor} unnamedLabel={unnamedLabel} insets={insets} />
+        <GolfMarkers golfs={golfs} selectedId={selectedId} highlightId={highlightId} onSelect={onSelect} labelFor={labelFor} unnamedLabel={unnamedLabel} insets={insets} follow={!focus} />
       </MapContainer>
     </section>
   );
