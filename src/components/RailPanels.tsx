@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Check, ChevronRight, Lock, Search, Share2, ShieldCheck, UserPlus, Wrench, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { CURRENCIES, type Currency } from '../../shared/types';
 import { LANGS, useI18n } from '../i18n';
 import { api, type Notification, type Outing } from '../lib/api';
@@ -10,6 +10,8 @@ import { useSettings, type Theme } from '../lib/settings';
 import { AccountPanel, Avatar } from './AccountPanel';
 import { GolfPhoto } from './GolfBits';
 import { Badge, Button, cx, Notice, Segmented } from './ui';
+import { useRail } from './ActionRail';
+import { todayStr, useSearch } from '../state/search';
 
 const row = 'frost flex items-center gap-3 rounded-[20px] p-2.5 pr-3';
 
@@ -59,8 +61,9 @@ function OutingCard({ o }: { o: Outing }) {
   const cancel = useMutation({ mutationFn: () => api.cancelOuting(o.id), onSuccess: () => qc.invalidateQueries({ queryKey: ['outings'] }) });
   const date = new Date(`${o.date}T12:00:00`).toLocaleDateString(locale, { weekday: 'short', day: 'numeric', month: 'short' });
   const label = (r: string) => t(`out.${r}` as 'out.yes');
+  const active = o.status === 'active' && o.date >= todayStr();
   return (
-    <li className="frost space-y-2 rounded-[22px] p-4">
+    <li className={cx('frost space-y-2 rounded-[22px] p-4', !active && 'opacity-75')}>
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
           <p className="truncate font-semibold">{o.golf.name}</p>
@@ -70,7 +73,7 @@ function OutingCard({ o }: { o: Outing }) {
           </p>
           <p className="text-xs text-muted">{o.isOrganizer ? t('out.mine') : t('out.by', { name: o.organizer.name ?? '—' })}</p>
         </div>
-        {o.status === 'cancelled' && <Badge tone="red">{t('out.cancelled')}</Badge>}
+        {o.status === 'cancelled' ? <Badge tone="red">{t('out.cancelled')}</Badge> : !active && <Badge>{t('out.past')}</Badge>}
       </div>
       {o.message && <p className="text-sm whitespace-pre-line">{o.message}</p>}
       <ul className="flex flex-wrap gap-1.5">
@@ -82,7 +85,7 @@ function OutingCard({ o }: { o: Outing }) {
           </li>
         ))}
       </ul>
-      {!o.isOrganizer && o.status === 'active' && (
+      {!o.isOrganizer && active && (
         <div role="group" aria-label={t('out.answer')} className="flex flex-wrap gap-2">
           {(['yes', 'maybe', 'no'] as const).map((r) => (
             <button
@@ -100,7 +103,7 @@ function OutingCard({ o }: { o: Outing }) {
           ))}
         </div>
       )}
-      {o.isOrganizer && o.status === 'active' && (
+      {o.isOrganizer && active && (
         <div className="flex flex-wrap gap-2">
           {o.shareToken && (
             <Button
@@ -128,12 +131,30 @@ export function OutingsBody() {
   const q = useQuery({ queryKey: ['outings'], queryFn: api.outings });
   if (q.isLoading) return <div className="skeleton h-28 w-full rounded-[22px]" aria-hidden />;
   if (!q.data?.length) return <p className="text-sm text-muted">{t('out.empty')}</p>;
+  const today = todayStr();
+  const key = (o: Outing) => o.date + o.timeFrom;
+  const upcoming = q.data.filter((o) => o.date >= today).sort((a, b) => key(a).localeCompare(key(b)));
+  const past = q.data.filter((o) => o.date < today).sort((a, b) => key(b).localeCompare(key(a)));
   return (
-    <ul className="space-y-3">
-      {q.data.map((o) => (
-        <OutingCard key={o.id} o={o} />
-      ))}
-    </ul>
+    <>
+      {upcoming.length > 0 && (
+        <ul className="space-y-3">
+          {upcoming.map((o) => (
+            <OutingCard key={o.id} o={o} />
+          ))}
+        </ul>
+      )}
+      {past.length > 0 && (
+        <section className="space-y-3">
+          <h3 className="text-[13px] font-semibold tracking-wide text-muted uppercase">{t('out.pastTitle')}</h3>
+          <ul className="space-y-3">
+            {past.map((o) => (
+              <OutingCard key={o.id} o={o} />
+            ))}
+          </ul>
+        </section>
+      )}
+    </>
   );
 }
 
@@ -247,6 +268,9 @@ function notifText(n: Notification, t: ReturnType<typeof useI18n>['t'], locale: 
 
 export function NotificationsBody() {
   const { t, locale } = useI18n();
+  const { setOpen } = useRail();
+  const { setView } = useSearch();
+  const navigate = useNavigate();
   const qc = useQueryClient();
   const q = useQuery({ queryKey: ['notifications'], queryFn: api.notifications });
   const read = useMutation({ mutationFn: api.readNotifications, onSuccess: () => qc.invalidateQueries({ queryKey: ['notifications'] }) });
@@ -262,9 +286,24 @@ export function NotificationsBody() {
   return (
     <ul className="space-y-2" aria-live="polite">
       {q.data.items.map((n) => (
-        <li key={n.id} className={cx('frost rounded-[20px] p-3 text-sm', !n.readAt && 'ring-2 ring-glacier-400/70')}>
-          <p className={cx(!n.readAt && 'font-semibold')}>{notifText(n, t, locale)}</p>
-          <p className="text-xs text-muted">{new Date(n.createdAt).toLocaleString(locale, { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}</p>
+        <li key={n.id}>
+          <button
+            type="button"
+            onClick={() => {
+              // Demande d'ami → panneau Amis ; partie → accueil, où sont les parties en cours
+              if (n.type.startsWith('friend_')) return setOpen('friends');
+              setOpen(null);
+              setView('home');
+              navigate('/');
+            }}
+            className={cx('frost glass-interactive flex w-full items-center gap-2 rounded-[20px] p-3 text-left text-sm', !n.readAt && 'ring-2 ring-glacier-400/70')}
+          >
+            <span className="min-w-0 flex-1">
+              <span className={cx('block', !n.readAt && 'font-semibold')}>{notifText(n, t, locale)}</span>
+              <span className="block text-xs text-muted">{new Date(n.createdAt).toLocaleString(locale, { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}</span>
+            </span>
+            <ChevronRight className="size-4 shrink-0 text-muted" aria-hidden />
+          </button>
         </li>
       ))}
     </ul>

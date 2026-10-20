@@ -136,13 +136,15 @@ h3 {
   stroke-width: 1.5;
 }
 
-:focus-visible {
-  outline: 2.5px solid var(--color-glacier-700);
-  outline-offset: 2px;
-  border-radius: 12px;
-}
-.dark :focus-visible {
-  outline-color: var(--color-glacier-300);
+/* Dans la couche « base » pour que les utilitaires (focus:outline-none sur un champ déjà entouré) l'emportent */
+@layer base {
+  :focus-visible {
+    outline: 2.5px solid var(--color-glacier-700);
+    outline-offset: 2px;
+  }
+  .dark :focus-visible {
+    outline-color: var(--color-glacier-300);
+  }
 }
 
 @layer components {
@@ -605,4 +607,14 @@ h3 {
   .intro-shadow {
     animation: none !important;
   }
+}
+
+/* Mobile : la barre d'icônes s'efface pendant la saisie (clavier ouvert, suggestions visibles) */
+.rail-mobile {
+  transition: opacity 0.25s, translate 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+}
+body:has(:is(input:not([type='checkbox'], [type='radio'], [type='range']), textarea):focus) .rail-mobile {
+  opacity: 0;
+  --tw-translate-y: 140%;
+  pointer-events: none;
 }

@@ -21,7 +21,7 @@ export function GameCard({ o }: { o: Outing }) {
       qc.invalidateQueries({ queryKey: ['outings'] });
     },
   });
-  const date = new Date(`${o.date}T12:00:00`).toLocaleDateString(locale, { weekday: 'long', day: 'numeric', month: 'long' });
+  const date = new Date(`${o.date}T12:00:00`).toLocaleDateString(locale, { weekday: 'short', day: 'numeric', month: 'short' });
   const going = o.guests.filter((g) => g.response === 'yes').length + 1;
 
   return (
@@ -31,7 +31,7 @@ export function GameCard({ o }: { o: Outing }) {
           <p className="truncate text-[17px] font-semibold tracking-tight">{o.golf.name}</p>
           <p className="flex items-center gap-1.5 text-sm text-muted tabular-nums">
             <CalendarDays className="size-4 shrink-0" aria-hidden />
-            <span className="min-w-0 first-letter:uppercase">
+            <span className="min-w-0 whitespace-nowrap first-letter:uppercase">
               {date} · {o.timeFrom}–{o.timeTo}
             </span>
           </p>

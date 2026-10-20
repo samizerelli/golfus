@@ -117,7 +117,7 @@ export function ActionRail() {
         aria-label={t('rail.menu')}
         className={cx(
           'glass glass-refract fixed z-[1250] flex gap-1 rounded-full p-1.5',
-          desktop ? 'top-1/2 right-4 -translate-y-1/2 flex-col' : 'bottom-[max(0.75rem,env(safe-area-inset-bottom))] left-1/2 -translate-x-1/2 flex-row',
+          desktop ? 'top-1/2 right-4 -translate-y-1/2 flex-col' : 'rail-mobile bottom-[max(0.75rem,env(safe-area-inset-bottom))] left-1/2 -translate-x-1/2 flex-row',
         )}
       >
         {ITEMS.map(({ key, Icon, label }) => {

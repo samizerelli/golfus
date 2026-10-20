@@ -9,6 +9,7 @@ import { api, type ApiError } from '../lib/api';
 import { useAuth } from '../lib/auth';
 import { directionsUrl } from '../lib/links';
 import { readStore, writeStore } from '../lib/storage';
+import { todayStr } from '../state/search';
 
 type Resp = 'yes' | 'maybe' | 'no';
 const TONE = { yes: 'green', maybe: 'gold', no: 'red', pending: 'neutral' } as const;
@@ -107,9 +108,9 @@ export function InvitationPage() {
               )}
             </div>
 
-            {o.status === 'cancelled' ? (
+            {o.status === 'cancelled' || o.date < todayStr() ? (
               <p className="rounded-[24px] bg-white/10 p-5 text-center font-medium" role="status">
-                {t('inv.cancelled')}
+                {t(o.status === 'cancelled' ? 'inv.cancelled' : 'inv.past')}
               </p>
             ) : o.isOrganizer ? (
               <p className="rounded-[24px] bg-white/10 p-5 text-center" role="status">

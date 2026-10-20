@@ -1,12 +1,12 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { ArrowLeft, Check, CircleHelp, ExternalLink, Mail, MapPin, Pencil, Phone, X } from 'lucide-react';
+import { ArrowLeft, Check, CircleHelp, ExternalLink, Flag, Mail, MapPin, Pencil, Phone, X } from 'lucide-react';
 import { useState, type FormEvent, type ReactNode } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { SERVICE_KEYS, type GolfDetail, type PriceCategory } from '../../shared/types';
 import { FavoriteButton, GolfActions, GolfPhoto, OpenStatus, ReliabilityNote, ShareButton } from '../components/GolfBits';
 import { golfName, vtName } from '../components/GolfCard';
 import { GlassButton, GlassCard } from '../components/glass';
-import { Badge, Button, buttonClass, Notice, Stars } from '../components/ui';
+import { Badge, Button, buttonClass, cx, Notice, Stars } from '../components/ui';
 import { useI18n } from '../i18n';
 import { api, ApiError } from '../lib/api';
 import { haversineKm } from '../lib/geo';
@@ -385,6 +385,9 @@ export function GolfPage() {
           </ul>
         )}
 
+        <Link to={`/inviter/${encodeURIComponent(g.id)}`} viewTransition className={cx(buttonClass('primary'), 'h-14 w-full text-base')}>
+          <Flag className="size-5" aria-hidden /> {t('detail.organize')}
+        </Link>
         <GolfActions golf={g} size="md" />
         <p className="px-1 text-sm text-muted">
           {t('action.directions')}
@@ -398,9 +401,11 @@ export function GolfPage() {
           </a>
         </p>
 
-        <Section title={t('detail.description')} id="s-desc">
-          <p className="leading-relaxed whitespace-pre-line">{desc || <span className="text-muted">{t('detail.noDescription')}</span>}</p>
-        </Section>
+        {desc && (
+          <Section title={t('detail.description')} id="s-desc">
+            <p className="leading-relaxed whitespace-pre-line">{desc}</p>
+          </Section>
+        )}
 
         <Section title={t('detail.prices')} id="s-prices">
           <PricesSection golf={g} />
@@ -442,6 +447,9 @@ export function GolfPage() {
         </Section>
 
         <Section title={t('detail.services')} id="s-services">
+          {SERVICE_KEYS.every((k) => g.services[k] == null) ? (
+            <p className="text-muted">{t('detail.noServices')}</p>
+          ) : (
           <ul className="grid grid-cols-1 gap-2 sm:grid-cols-2">
             {SERVICE_KEYS.map((k) => {
               const v = g.services[k];
@@ -461,6 +469,7 @@ export function GolfPage() {
               );
             })}
           </ul>
+          )}
         </Section>
 
         <Section title={t('detail.contact')} id="s-contact">

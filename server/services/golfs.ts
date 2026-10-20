@@ -138,18 +138,29 @@ export async function searchGolfs(lat: number, lon: number, radiusKm: number): P
   osm = osm.filter((g) => haversineKm(lat, lon, g.lat, g.lon) <= radiusKm);
   // Les polygones OSM sans nom situés à moins de 2 km d'un golf nommé sont généralement des
   // morceaux de ce même golf (trous, practice) : on les écarte pour éviter les doublons.
+  // Un golf sans nom, sans site ni téléphone n'est pas exploitable (on ne peut ni l'identifier ni réserver)
   const named = osm.filter((g) => g.name);
-  osm = osm.filter((g) => g.name || !named.some((n) => haversineKm(n.lat, n.lon, g.lat, g.lon) < 2));
+  osm = osm.filter((g) => g.name || ((g.website || g.phone) && !named.some((n) => haversineKm(n.lat, n.lon, g.lat, g.lon) < 2)));
   // Un même golf peut être décrit par plusieurs objets OSM (contour + point) : même nom à moins de 1,5 km
   // → on garde l'objet le plus renseigné
   const richness = (g: OsmGolf) => [g.website, g.phone, g.openingHours, g.holes, g.par, g.address, g.photo].filter((v) => v != null).length;
   const norm = (n: string | null) => (n ?? '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, ' ').trim();
+  // Practices seuls et écoles (on ne peut pas y jouer un parcours)
+  osm = osm.filter((g) => !/driving range|range golf|golf lessons|golf academy|practice\b/i.test(g.name ?? ''));
+  // Même nom, ou un nom qui prolonge l'autre (« … Golf Club » / « … Golf Clubhouse »), à moins de 1,5 km
+  // → on garde l'objet le plus renseigné
+  const sameGolf = (a: string, b: string) => a === b || (Math.min(a.length, b.length) >= 8 && (a.startsWith(b) || b.startsWith(a)));
   const kept: OsmGolf[] = [];
   for (const g of [...osm].sort((a, b) => richness(b) - richness(a))) {
-    if (g.name && kept.some((k) => norm(k.name) === norm(g.name) && haversineKm(k.lat, k.lon, g.lat, g.lon) < 1.5)) continue;
+    if (g.name && kept.some((k) => k.name && sameGolf(norm(k.name), norm(g.name)) && haversineKm(k.lat, k.lon, g.lat, g.lon) < 1.5)) continue;
     kept.push(g);
   }
-  osm = kept;
+  // Parcours internes d'un complexe (« Course A », « Campo Europa », « Par 3 Course »…) sans site ni téléphone :
+  // ils sont présentés par le golf principal voisin
+  const generic = (n: string) => /^(course|campo|par 3|parcours|recorrido|pitch)\b/i.test(n) || !/golf|club|country|resort|links/i.test(n);
+  osm = kept.filter(
+    (g) => !(g.name && !g.website && !g.phone && generic(g.name) && kept.some((k) => k !== g && k.website && haversineKm(k.lat, k.lon, g.lat, g.lon) < 3)),
+  );
 
   // Golfs saisis manuellement (démo ou ajouts) dans la zone : recherche par boîte englobante
   const dLat = radiusKm / 111;

@@ -48,9 +48,8 @@ export function HomeScreen() {
 export function InviteRoute() {
   const { desktop, inviteGolf } = useLayout();
   return (
-    <div className="animate-rise flex min-h-full flex-col gap-4">
-      {!desktop && inviteGolf && <GolfSideCards golf={inviteGolf} compact />}
-      <InviteForm golf={inviteGolf} />
+    <div className="animate-rise flex min-h-full flex-col">
+      <InviteForm golf={inviteGolf} top={!desktop && inviteGolf ? <GolfSideCards golf={inviteGolf} compact /> : null} />
     </div>
   );
 }
@@ -74,9 +73,10 @@ export function MapLayout() {
   const detail = useQuery({ queryKey: ['golf', inviteId], queryFn: () => api.golf(inviteId!), enabled: !!inviteId && !fromList, staleTime: 10 * 60_000 });
   const inviteGolf = fromList ?? detail.data ?? null;
 
-  // Sur mobile, chaque changement d'écran remet le tiroir à mi-hauteur
+  // Chaque changement d'écran repart du haut du panneau ; sur mobile, le tiroir reprend sa hauteur par défaut
   useEffect(() => {
-    if (!desktop) setSnap(inviteId ? 'full' : 'half');
+    document.querySelectorAll<HTMLElement>('[data-scroll]').forEach((el) => el.scrollTo({ top: 0 }));
+    if (!desktop) setSnap(inviteId || view === 'search' ? 'full' : 'half');
   }, [view, inviteId, desktop]);
 
   const golfsOnMap = useMemo(() => (inviteId ? (inviteGolf ? [inviteGolf] : []) : view === 'results' ? visible : []), [inviteId, inviteGolf, view, visible]);

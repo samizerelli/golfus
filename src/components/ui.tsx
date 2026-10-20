@@ -19,6 +19,8 @@ const VARIANTS: Record<Variant, string> = {
 /** Retour haptique léger (Android ; ignoré ailleurs) */
 export function haptic(ms = 8) {
   try {
+    // Uniquement après une action de l'utilisateur (sinon le navigateur bloque et signale une erreur)
+    if (navigator.userActivation?.hasBeenActive === false) return;
     navigator.vibrate?.(ms);
   } catch {
     /* non supporté */

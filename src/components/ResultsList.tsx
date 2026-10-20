@@ -29,10 +29,12 @@ export function RatingLine({ golf, size = 'sm' }: { golf: GolfSummary; size?: 's
 }
 
 /** Prix par personne pour la date et le créneau choisis, ou « Tarif à confirmer » + Appeler. */
-export function PricePerPerson({ golf, criteria, large = false }: { golf: GolfSummary; criteria: Criteria; large?: boolean }) {
+/** inCard : version courte pour les cartes de la liste (le bouton Appeler est alors en bas de la carte). */
+export function PricePerPerson({ golf, criteria, large = false, inCard = false }: { golf: GolfSummary; criteria: Criteria; large?: boolean; inCard?: boolean }) {
   const { t } = useI18n();
   const { money } = useSettings();
   const p = pricePerPerson(golf, criteria);
+  if (!p && inCard) return <span className="shrink-0 pt-0.5 text-xs font-medium whitespace-nowrap text-muted">{t('s2.priceToConfirm')}</span>;
   if (!p)
     return (
       <span className="flex flex-col items-end gap-1 text-right">
@@ -105,7 +107,7 @@ const ResultCard = forwardRef<
         <div className="min-w-0 flex-1 space-y-1">
           <div className="flex items-start justify-between gap-2">
             <h3 className="text-[16px] leading-snug [overflow-wrap:anywhere]">{name}</h3>
-            <PricePerPerson golf={golf} criteria={criteria} />
+            <PricePerPerson golf={golf} criteria={criteria} inCard />
           </div>
           <p className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-muted tabular-nums">
             {golf.distanceKm !== undefined && (
@@ -126,7 +128,19 @@ const ResultCard = forwardRef<
           <RatingLine golf={golf} />
           <div className="flex items-center justify-between gap-2">
             <SlotStatus golf={golf} match={match} date={criteria.date} />
-            <ChevronRight className="size-4 shrink-0 text-muted" aria-hidden />
+            <span className="flex shrink-0 items-center gap-1">
+              {golf.phone && !pricePerPerson(golf, criteria) && (
+                <a
+                  href={telHref(golf.phone)}
+                  onClick={(e) => e.stopPropagation()}
+                  className="inline-flex h-8 items-center gap-1 rounded-full bg-card-2 px-2.5 text-xs font-semibold text-link"
+                  aria-label={`${t('action.call')} ${name}`}
+                >
+                  <Phone className="size-3.5" aria-hidden /> {t('action.call')}
+                </a>
+              )}
+              <ChevronRight className="size-4 text-muted" aria-hidden />
+            </span>
           </div>
         </div>
       </div>

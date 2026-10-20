@@ -35,9 +35,19 @@ function FitToResults({ origin, golfs, radiusKm, insets }: { origin: Origin | nu
   useEffect(() => {
     if (key === last.current || !origin) return;
     last.current = key;
-    const pts = golfs.slice(0, 15).map((g) => L.latLng(g.lat, g.lon));
+    // Cadrage centré sur le point de départ : boîte symétrique englobant les 15 golfs les plus proches
+    const near = golfs.slice(0, 15);
+    const dLat = Math.max(0.01, ...near.map((g) => Math.abs(g.lat - origin.lat)));
+    const dLon = Math.max(0.01, ...near.map((g) => Math.abs(g.lon - origin.lon)));
     const opts = { paddingTopLeft: [insets.left + 30, insets.top + 30] as L.PointTuple, paddingBottomRight: [(insets.right ?? 0) + 30, insets.bottom + 30] as L.PointTuple, maxZoom: 13 };
-    if (pts.length) map.flyToBounds(L.latLngBounds([L.latLng(origin.lat, origin.lon), ...pts]), { ...opts, duration: 0.9 });
+    if (near.length)
+      map.flyToBounds(
+        [
+          [origin.lat - dLat, origin.lon - dLon],
+          [origin.lat + dLat, origin.lon + dLon],
+        ],
+        { ...opts, duration: 0.9 },
+      );
     else map.flyTo([origin.lat, origin.lon], radiusKm > 50 ? 8 : radiusKm > 25 ? 9 : 10, { duration: 0.9 });
   }, [key, origin, golfs, radiusKm, map, insets]);
   return null;
@@ -68,8 +78,9 @@ function FocusGolf({ golf, insets }: { golf: GolfSummary | null; insets: Insets 
       ],
       { paddingTopLeft: [insets.left + 40, insets.top + 40], paddingBottomRight: [(insets.right ?? 0) + 40, insets.bottom + 40], maxZoom: 14, duration: 0.8 },
     );
+    // Recadrage aussi quand les panneaux changent (passage mobile ↔ ordinateur)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [golf?.id, map]);
+  }, [golf?.id, map, insets.left, insets.right, insets.bottom]);
   return null;
 }
 

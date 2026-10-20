@@ -272,7 +272,7 @@ export function GolfActions({ golf, size = 'sm' }: { golf: GolfSummary; size?: '
   return (
     <div className={cx('flex gap-2', size === 'sm' ? 'no-scrollbar -mx-4 overflow-x-auto px-4' : 'flex-wrap')}>
       <BookingButton golf={golf} size={size} />
-      <a href={directionsUrl(golf.lat, golf.lon, golf.name)} {...ext} onClick={stop} className={buttonClass('primary', size)}>
+      <a href={directionsUrl(golf.lat, golf.lon, golf.name)} {...ext} onClick={stop} className={buttonClass('secondary', size)}>
         <Navigation className="size-4" aria-hidden />
         {t('action.directions')}
         <span className="sr-only">{t('action.opensNewTab')}</span>

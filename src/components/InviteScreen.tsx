@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { ArrowLeft, Check, Copy, ExternalLink, Link2, MessageCircle, Navigation, Search, Send, Smartphone } from 'lucide-react';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { MapContainer, Marker, TileLayer } from 'react-leaflet';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import type { GolfSummary } from '../../shared/types';
@@ -64,8 +64,9 @@ export function GolfSideCards({ golf, compact = false }: { golf: GolfSummary; co
   const total = pp && criteria.players > 1 ? money(pp.amount * criteria.players, pp.currency).text : null;
   return (
     <div className="space-y-3">
+      {!compact && (
       <div className="glass glass-rounded space-y-3 p-3">
-        {!compact && <MiniMap golf={golf} />}
+        <MiniMap golf={golf} />
         <div className="flex items-center justify-between gap-2 px-1">
           <p className="min-w-0 font-semibold [overflow-wrap:anywhere]">{golf.name || t('card.unnamed')}</p>
           <a href={directionsUrl(golf.lat, golf.lon, golf.name)} target="_blank" rel="noopener noreferrer" className={buttonClass('secondary', 'sm')}>
@@ -73,6 +74,7 @@ export function GolfSideCards({ golf, compact = false }: { golf: GolfSummary; co
           </a>
         </div>
       </div>
+      )}
       <div className="glass glass-rounded p-4">
         <div className="flex items-center justify-between gap-3">
           <span className="shrink-0 text-sm font-medium text-muted">{t('s3.pricePerPerson')}</span>
@@ -86,6 +88,11 @@ export function GolfSideCards({ golf, compact = false }: { golf: GolfSummary; co
       </div>
       <div className="flex flex-wrap gap-2">
         <BookingButton golf={golf} size="md" />
+        {compact && (
+          <a href={directionsUrl(golf.lat, golf.lon, golf.name)} target="_blank" rel="noopener noreferrer" className={buttonClass('secondary', 'md')}>
+            <Navigation className="size-4" aria-hidden /> {t('action.directions')}
+          </a>
+        )}
         <Link to={`/golf/${encodeURIComponent(golf.id)}`} viewTransition className={buttonClass('secondary', 'md')}>
           <ExternalLink className="size-4" aria-hidden /> {t('s3.details')}
         </Link>
@@ -140,12 +147,13 @@ function Sent({ outing, external, onHome }: { outing: Outing; external: boolean;
 }
 
 /** Écran 3 : inviter des amis (panneau de gauche / tiroir). */
-export function InviteForm({ golf }: { golf: GolfSummary | null }) {
+/** `top` : contenu affiché sous l'en-tête (fiches du golf sur mobile). */
+export function InviteForm({ golf, top }: { golf: GolfSummary | null; top?: ReactNode }) {
   const { t, locale } = useI18n();
   const navigate = useNavigate();
   const qc = useQueryClient();
   const { user } = useAuth();
-  const { criteria: c, setView } = useSearch();
+  const { criteria: c, setView, origin } = useSearch();
   const friends = useQuery({ queryKey: ['friends'], queryFn: api.friends, enabled: !!user });
   const [filter, setFilter] = useState('');
   const [selected, setSelected] = useState<Set<string>>(new Set());
@@ -193,7 +201,8 @@ export function InviteForm({ golf }: { golf: GolfSummary | null }) {
     <button
       type="button"
       onClick={() => {
-        setView('results');
+        // Sans recherche en cours (arrivée depuis une fiche ou un lien), on revient à l'accueil
+        setView(origin ? 'results' : 'home');
         navigate('/', { viewTransition: true });
       }}
       className="glass glass-interactive grid size-11 shrink-0 place-items-center rounded-full"
@@ -236,6 +245,7 @@ export function InviteForm({ golf }: { golf: GolfSummary | null }) {
             {golf && <p className="truncate text-sm text-muted">{golf.name}</p>}
           </div>
         </div>
+        {top}
 
         {!user ? (
           <div className="frost space-y-3 rounded-[22px] p-4">

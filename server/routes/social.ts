@@ -223,12 +223,16 @@ socialRouter.get('/outings/:id', requireUser, async (req, res) => {
 
 const zResp = z.object({ response: z.enum(['yes', 'maybe', 'no']) });
 
+/** Partie passée (marge d'un jour pour les fuseaux horaires) : on ne peut plus y répondre */
+const isPast = (date: string) => date < new Date(Date.now() - 86_400_000).toISOString().slice(0, 10);
+
 socialRouter.post('/outings/:id/respond', requireUser, async (req, res) => {
   const b = parse(zResp, req.body, res);
   if (!b) return;
   const o = await outingForMember(req, res);
   if (!o) return;
   if (o.organizer_id === req.user!.id) return res.status(400).json({ error: 'organizer' });
+  if (o.status !== 'active' || isPast(o.date)) return res.status(409).json({ error: 'closed' });
   await db.run('UPDATE outing_guests SET response = ?, updated_at = now() WHERE outing_id = ? AND user_id = ?', b.response, o.id, req.user!.id);
   await notify(o.organizer_id, 'outing_response', { outingId: o.id, golf: o.golf_name, date: o.date, from: req.user!.name, response: b.response as Resp });
   res.json(await outingView(o, req.user!.id));
@@ -263,6 +267,7 @@ socialRouter.post('/invitations/:token/respond', userRateLimit('guest-respond', 
   if (!b) return;
   const o = await db.get<OutingRow>(`${OUTING_SELECT} WHERE o.share_token = ?`, String(req.params.token));
   if (!o || o.status !== 'active') return res.status(404).json({ error: 'not_found' });
+  if (isPast(o.date)) return res.status(409).json({ error: 'closed' });
   // Utilisateur connecté : il rejoint (ou décline) sous son compte, en un geste
   if (req.user) {
     if (req.user.id === o.organizer_id) return res.status(400).json({ error: 'organizer' });
