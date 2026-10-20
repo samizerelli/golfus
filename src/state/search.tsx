@@ -48,8 +48,8 @@ export const todayStr = () => {
 };
 export const DEFAULT_CRITERIA = (): Criteria => ({ date: todayStr(), timeFrom: '08:00', timeTo: '18:00', holes: 'any', minRating: 0, players: 2, hideUnknown: false });
 
-/** home = accueil (New game + parties en cours) ; search = personnalisation ; results = liste des golfs */
-export type View = 'home' | 'search' | 'results';
+/** home = accueil (New game + parties en cours) ; search = filtres + golfs disponibles mis à jour en direct */
+export type View = 'home' | 'search';
 
 interface Ctx {
   criteria: Criteria;

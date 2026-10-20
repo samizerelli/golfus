@@ -102,6 +102,8 @@ export const fr = {
   's1.needPlace': 'Choisissez d’abord un lieu, ou touchez « Me localiser ».',
   's2.back': 'Modifier la recherche',
   's2.hideUnknown': 'Masquer les golfs sans info',
+  's2.pickPlace': 'Choisis un lieu',
+  's2.pickPlaceBody': "Les golfs disponibles s'afficheront ici dès que tu auras indiqué où jouer.",
   's2.count_one': '{n} parcours disponible',
   's2.count_other': '{n} parcours disponibles',
   's2.emptyTitle': 'Aucun parcours disponible',

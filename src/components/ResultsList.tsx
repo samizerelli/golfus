@@ -1,5 +1,5 @@
-import { ArrowLeft, Car, ChevronRight, CircleHelp, Compass, MapPin, Phone } from 'lucide-react';
-import { forwardRef, useEffect, useRef, type CSSProperties, type MutableRefObject } from 'react';
+import { Car, ChevronRight, CircleHelp, Compass, MapPin, Phone } from 'lucide-react';
+import { forwardRef, useRef, type CSSProperties, type MutableRefObject } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { RADII_KM, type GolfSummary, type RadiusKm, type TravelInfo } from '../../shared/types';
 import { useI18n } from '../i18n';
@@ -148,51 +148,22 @@ const ResultCard = forwardRef<
   );
 });
 
-/** Écran 2 : golfs correspondant aux critères. */
+/** Golfs disponibles selon les filtres, recalculés à chaque changement. */
 export function ResultsList({ cardRefs }: { cardRefs: MutableRefObject<Map<string, HTMLElement>> }) {
-  const { t, tp, locale } = useI18n();
+  const { t, tp } = useI18n();
   const navigate = useNavigate();
-  const { criteria: c, setCriteria, setView, origin, radius, setRadius, selectedId, setSelectedId, hoverId, setHoverId } = useSearch();
+  const { criteria: c, setCriteria, origin, radius, setRadius, selectedId, setSelectedId, hoverId, setHoverId } = useSearch();
   const { golfsQ, all, visible, matches, travel } = useResults();
   const topRef = useRef<HTMLDivElement>(null);
   const err = golfsQ.error as ApiError | null;
   const next = RADII_KM.find((r) => r > radius) as RadiusKm | undefined;
 
-  useEffect(() => {
-    topRef.current?.closest('[data-scroll]')?.scrollTo({ top: 0 });
-  }, [origin, radius]);
-
-  const date = new Date(`${c.date}T12:00:00`).toLocaleDateString(locale, { weekday: 'short', day: 'numeric', month: 'short' });
-  const chips = [
-    origin?.label ?? t('search.myPosition'),
-    `${radius} km`,
-    date,
-    `${c.timeFrom}–${c.timeTo}`,
-    c.holes === 'any' ? t('s1.holesAny') : t(c.holes === '9' ? 'filters.holes9' : 'filters.holes18'),
-    c.minRating ? t('s1.ratingMin', { n: c.minRating }) : null,
-    `${c.players >= 8 ? '8+' : c.players} ${t('s1.players').toLowerCase()}`,
-  ].filter(Boolean) as string[];
-
   return (
     <div className="space-y-3" ref={topRef}>
-      <div className="flex items-center gap-2">
-        <button type="button" onClick={() => setView('search')} className="glass glass-interactive grid size-11 shrink-0 place-items-center rounded-full" aria-label={t('s2.back')}>
-          <ArrowLeft className="size-5" aria-hidden />
-        </button>
-        <p className="min-w-0 text-[15px] font-semibold" aria-live="polite">
-          {golfsQ.data ? tp('s2.count', visible.length) : t('results.loading')}
-        </p>
-      </div>
-      {/* Rappel des critères : une pastille ramène au formulaire pour la modifier */}
-      <ul className="no-scrollbar -mx-1 flex gap-1.5 overflow-x-auto px-1 pb-1" aria-label={t('s2.back')}>
-        {chips.map((chip) => (
-          <li key={chip} className="shrink-0">
-            <button type="button" onClick={() => setView('search')} className="glass glass-interactive h-9 max-w-[14rem] truncate rounded-full px-3 text-[13px] font-semibold">
-              {chip}
-            </button>
-          </li>
-        ))}
-      </ul>
+      <h2 className="text-[17px] font-semibold" aria-live="polite">
+        {!origin ? t('s2.pickPlace') : golfsQ.data ? tp('s2.count', visible.length) : t('results.loading')}
+      </h2>
+      {!origin && <p className="text-sm text-muted">{t('s2.pickPlaceBody')}</p>}
 
       {golfsQ.isFetching && !golfsQ.data && (
         <ul className="space-y-2" aria-busy="true">

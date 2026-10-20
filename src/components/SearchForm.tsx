@@ -1,10 +1,10 @@
-import { ArrowLeft, Minus, Plus, Search } from 'lucide-react';
+import { ArrowLeft, Minus, Plus } from 'lucide-react';
 import { useState, type ReactNode } from 'react';
 import { RADII_KM, type RadiusKm } from '../../shared/types';
 import { useI18n } from '../i18n';
 import { todayStr, useSearch, type HolesFilter } from '../state/search';
 import { LocateError, LocateInline, LocationSearch, useLocate } from './SearchControls';
-import { Button, cx, haptic, Notice, Segmented } from './ui';
+import { cx, haptic, Segmented } from './ui';
 
 const toMin = (t: string) => {
   const [h, m] = t.split(':').map(Number);
@@ -133,26 +133,16 @@ export function Stepper({ value, onChange, min = 1, max = 8, label }: { value: n
   );
 }
 
-/** Écran 1 : critères de recherche empilés. */
+/** Filtres de la partie : chaque changement met à jour la liste des golfs disponibles (pas de bouton à valider). */
 export function SearchForm() {
   const { t } = useI18n();
-  const { criteria: c, setCriteria, origin, radius, setRadius, setView } = useSearch();
+  const { criteria: c, setCriteria, radius, setRadius, setView } = useSearch();
   const loc = useLocate();
-  const [needPlace, setNeedPlace] = useState(false);
-
-  const submit = () => {
-    if (!origin) return setNeedPlace(true);
-    haptic(12);
-    setView('results');
-  };
 
   return (
     <form
-      className="flex min-h-full flex-col gap-5"
-      onSubmit={(e) => {
-        e.preventDefault();
-        submit();
-      }}
+      className="flex flex-col gap-5"
+      onSubmit={(e) => e.preventDefault()}
     >
       <div className="flex items-center gap-2">
         <button type="button" onClick={() => setView('home')} className="glass glass-interactive grid size-11 shrink-0 place-items-center rounded-full" aria-label={t('s1.backHome')}>
@@ -176,9 +166,8 @@ export function SearchForm() {
           </label>
         }
       >
-        <LocationSearch trailing={<LocateInline loc={loc} />} onFocus={() => setNeedPlace(false)} />
+        <LocationSearch trailing={<LocateInline loc={loc} />} />
         <LocateError loc={loc} />
-        {needPlace && !origin && <Notice tone="warn">{t('s1.needPlace')}</Notice>}
       </Field>
 
       <Field label={t('s1.date')} htmlFor="play-date">
@@ -217,12 +206,6 @@ export function SearchForm() {
         <Stepper label={t('s1.players')} value={c.players} onChange={(players) => setCriteria({ players })} />
       </Field>
 
-      {/* Bouton de validation toujours visible en bas du panneau (au-dessus de la barre d'icônes sur mobile) */}
-      <div className="sticky bottom-[calc(-5.5rem-env(safe-area-inset-bottom))] -mx-3 mt-auto -mb-[calc(5.5rem+env(safe-area-inset-bottom))] bg-gradient-to-t from-[var(--surface)] from-70% to-transparent px-3 pt-4 pb-[calc(5rem+env(safe-area-inset-bottom))] lg:bottom-0 lg:-mx-1 lg:mb-0 lg:px-1 lg:pb-1">
-        <Button type="submit" variant="primary" className="h-14 w-full text-base">
-          <Search className="size-5" aria-hidden /> {t('s1.submit')}
-        </Button>
-      </div>
     </form>
   );
 }

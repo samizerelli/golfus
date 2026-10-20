@@ -104,6 +104,8 @@ export const es: Dict = {
   's1.needPlace': 'Elige primero un lugar o toca «Localizarme».',
   's2.back': 'Modificar la búsqueda',
   's2.hideUnknown': 'Ocultar campos sin información',
+  's2.pickPlace': 'Elige un lugar',
+  's2.pickPlaceBody': 'Los campos disponibles aparecerán aquí en cuanto indiques dónde jugar.',
   's2.count_one': '{n} campo disponible',
   's2.count_other': '{n} campos disponibles',
   's2.emptyTitle': 'Ningún campo disponible',

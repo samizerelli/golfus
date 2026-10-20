@@ -104,6 +104,8 @@ export const en: Dict = {
   's1.needPlace': 'Choose a place first, or tap “Locate me”.',
   's2.back': 'Edit search',
   's2.hideUnknown': 'Hide courses without info',
+  's2.pickPlace': 'Pick a place',
+  's2.pickPlaceBody': 'Available courses will show up here as soon as you say where to play.',
   's2.count_one': '{n} course available',
   's2.count_other': '{n} courses available',
   's2.emptyTitle': 'No course available',

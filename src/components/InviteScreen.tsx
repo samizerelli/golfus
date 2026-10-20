@@ -202,7 +202,7 @@ export function InviteForm({ golf, top }: { golf: GolfSummary | null; top?: Reac
       type="button"
       onClick={() => {
         // Sans recherche en cours (arrivée depuis une fiche ou un lien), on revient à l'accueil
-        setView(origin ? 'results' : 'home');
+        setView(origin ? 'search' : 'home');
         navigate('/', { viewTransition: true });
       }}
       className="glass glass-interactive grid size-11 shrink-0 place-items-center rounded-full"

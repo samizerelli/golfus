@@ -33,13 +33,24 @@ function scrollListTo(el: HTMLElement | undefined) {
   sc.scrollTo({ top: sc.scrollTop + el.getBoundingClientRect().top - sc.getBoundingClientRect().top - 8, behavior: 'smooth' });
 }
 
-/** Écrans 1 et 2 (route « / ») */
+/** Accueil, ou filtres + golfs disponibles (route « / »). Sur ordinateur, la liste est dans un panneau à droite. */
 export function HomeScreen() {
   const { view } = useSearch();
-  const { cardRefs } = useLayout();
+  const { cardRefs, desktop } = useLayout();
   return (
     <div key={view} className="animate-rise flex min-h-full flex-col">
-      {view === 'home' ? <HomeLanding /> : view === 'search' ? <SearchForm /> : <ResultsList cardRefs={cardRefs} />}
+      {view === 'home' ? (
+        <HomeLanding />
+      ) : (
+        <>
+          <SearchForm />
+          {!desktop && (
+            <div className="mt-6 border-t border-line pt-5">
+              <ResultsList cardRefs={cardRefs} />
+            </div>
+          )}
+        </>
+      )}
     </div>
   );
 }
@@ -79,10 +90,13 @@ export function MapLayout() {
     if (!desktop) setSnap(inviteId || view === 'search' ? 'full' : 'half');
   }, [view, inviteId, desktop]);
 
-  const golfsOnMap = useMemo(() => (inviteId ? (inviteGolf ? [inviteGolf] : []) : view === 'results' ? visible : []), [inviteId, inviteGolf, view, visible]);
+  const golfsOnMap = useMemo(() => (inviteId ? (inviteGolf ? [inviteGolf] : []) : view === 'search' ? visible : []), [inviteId, inviteGolf, view, visible]);
   const insets = useMemo(
-    () => (desktop ? { top: 0, bottom: 0, left: 460, right: inviteId ? 440 : 90 } : { top: 0, bottom: Math.round(window.innerHeight * 0.5), left: 0, right: 0 }),
-    [desktop, inviteId],
+    () =>
+      desktop
+        ? { top: 0, bottom: 0, left: !inviteId && view === 'search' ? 872 : 460, right: inviteId ? 440 : 90 }
+        : { top: 0, bottom: Math.round(window.innerHeight * 0.5), left: 0, right: 0 },
+    [desktop, inviteId, view],
   );
 
   const labelFor = useCallback(
@@ -119,7 +133,7 @@ export function MapLayout() {
         unnamedLabel={t('card.unnamed')}
         labelFor={labelFor}
         insets={insets}
-        showRadius={view === 'results' && !inviteId}
+        showRadius={view === 'search' && !inviteId}
         focus={inviteId ? inviteGolf : null}
         highlightId={inviteId ? null : hoverId}
       />
@@ -140,6 +154,15 @@ export function MapLayout() {
         <BottomSheet snap={snap} onSnap={setSnap} header={null}>
           {content}
         </BottomSheet>
+      )}
+
+      {/* Golfs disponibles selon les filtres, mis à jour en direct (ordinateur) */}
+      {desktop && !inviteId && view === 'search' && (
+        <aside aria-label={t('results.list')} className="glass glass-rounded animate-rise absolute top-4 bottom-4 left-[452px] z-[1000] flex w-[404px] flex-col">
+          <div data-scroll className="min-h-0 flex-1 overflow-y-auto px-4 pt-4 pb-5">
+            <ResultsList cardRefs={cardRefs} />
+          </div>
+        </aside>
       )}
 
       {desktop && inviteId && inviteGolf && (

@@ -167,13 +167,16 @@ export async function searchGolfs(lat: number, lon: number, radiusKm: number): P
   const dLon = radiusKm / (111 * Math.max(0.1, Math.cos((lat * Math.PI) / 180)));
   const manual = (
     await db.all<GolfRow>(
-      `SELECT * FROM golfs WHERE id NOT LIKE 'osm-%' AND lat BETWEEN ? AND ? AND lon BETWEEN ? AND ? ${config.showDemo ? '' : 'AND is_demo = 0'}`,
+      `SELECT * FROM golfs WHERE lat BETWEEN ? AND ? AND lon BETWEEN ? AND ? ${config.showDemo ? '' : 'AND is_demo = 0'}`,
       lat - dLat,
       lat + dLat,
       lon - dLon,
       lon + dLon,
     )
-  ).filter((r) => haversineKm(lat, lon, r.lat!, r.lon!) <= radiusKm);
+  )
+    // Golfs OSM relevés (fiches vérifiées) : déjà présents si OpenStreetMap a répondu, sinon ajoutés depuis la base
+    .filter((r) => !osm.some((g) => g.id === r.id))
+    .filter((r) => haversineKm(lat, lon, r.lat!, r.lon!) <= radiusKm);
 
   const ids = [...osm.map((g) => g.id), ...manual.map((r) => r.id)];
   const [rows, prices, ratings] = await Promise.all([rowsByIds(osm.map((g) => g.id)), pricesByIds(ids), ratingsByIds(ids)]);
@@ -260,6 +263,37 @@ const EMPTY_EDITABLE = (id: string): GolfEditable => ({
   highSeasonMonths: [],
   prices: [],
 });
+
+/** Fiche enregistrée en base uniquement (sans appel à OpenStreetMap), ou null. */
+export async function getStoredEditable(id: string): Promise<GolfEditable | null> {
+  const row = (await rowsByIds([id])).get(id);
+  if (!row) return null;
+  const prices = (await pricesByIds([id])).get(id) ?? [];
+  return {
+    id,
+    name: row.name,
+    lat: row.lat,
+    lon: row.lon,
+    isDemo: !!row.is_demo,
+    holes: row.holes,
+    par: row.par,
+    phone: row.phone,
+    email: row.email,
+    website: row.website,
+    bookingUrl: row.booking_url,
+    pricingUrl: row.pricing_url,
+    address: row.address,
+    openingHours: row.opening_hours,
+    description: json(row.description, {}),
+    photos: json(row.photos, []),
+    courses: json(row.courses, []),
+    services: json(row.services, {}),
+    priceReliability: row.price_reliability as GolfEditable['priceReliability'],
+    priceUpdatedAt: row.price_updated_at,
+    highSeasonMonths: json(row.high_season_months, []),
+    prices,
+  };
+}
 
 /** Données éditables : la ligne locale si elle existe, sinon un brouillon pré-rempli depuis OSM. */
 export async function getEditable(id: string): Promise<{ golf: GolfEditable; osm: OsmGolf | null } | null> {
