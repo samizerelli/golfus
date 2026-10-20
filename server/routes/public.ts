@@ -7,6 +7,7 @@ import { geoip } from '../services/geoip.ts';
 import { addReview, getGolf, getReviews, searchGolfs } from '../services/golfs.ts';
 import { getRates } from '../services/rates.ts';
 import { travelTimes } from '../services/travel.ts';
+import { availability } from '../services/availability.ts';
 
 export const publicRouter = Router();
 
@@ -34,6 +35,23 @@ publicRouter.get('/golfs/:id', async (req, res) => {
   } catch {
     res.status(503).json({ error: 'osm_unavailable' });
   }
+});
+
+// Départs libres selon les critères (jour, créneau, joueurs) pour les golfs dont le moteur le publie
+publicRouter.get('/availability', rateLimit(60, 60_000), async (req, res) => {
+  const ids = String(req.query.ids ?? '')
+    .split(',')
+    .filter((id) => /^(osm-[nwr]\d+|demo-[\w-]+|man-[\w-]+)$/.test(id))
+    .slice(0, 60);
+  const date = String(req.query.date ?? '');
+  const from = String(req.query.from ?? '');
+  const to = String(req.query.to ?? '');
+  const players = Number(req.query.players ?? 2);
+  const hhmm = /^([01]\d|2[0-3]):[0-5]\d$/;
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || !hhmm.test(from) || !hhmm.test(to) || !(players >= 1 && players <= 16)) {
+    return res.status(400).json({ error: 'invalid_query' });
+  }
+  res.set('Cache-Control', 'no-store').json(await availability({ ids, date, from, to, players: Math.round(players) }));
 });
 
 publicRouter.post('/travel', rateLimit(60, 60_000), async (req, res) => {

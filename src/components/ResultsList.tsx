@@ -1,7 +1,7 @@
-import { Car, ChevronRight, CircleHelp, Compass, MapPin, Phone } from 'lucide-react';
+import { CalendarCheck, CalendarClock, Car, ChevronRight, CircleHelp, Compass, MapPin, Phone } from 'lucide-react';
 import { forwardRef, useRef, type CSSProperties, type MutableRefObject } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { RADII_KM, type GolfSummary, type RadiusKm, type TravelInfo } from '../../shared/types';
+import { RADII_KM, type Availability, type GolfSummary, type RadiusKm, type TravelInfo } from '../../shared/types';
 import { useI18n } from '../i18n';
 import type { ApiError } from '../lib/api';
 import { cheaperElsewhere } from '../lib/booking';
@@ -80,6 +80,23 @@ export function PricePerPerson({ golf, criteria, large = false, inCard = false }
   );
 }
 
+/** Départs libres sur le créneau (moteur de réservation consulté) ou « à vérifier » quand il ne le publie pas. */
+function AvailabilityLine({ avail }: { avail?: Availability }) {
+  const { t, tp } = useI18n();
+  if (!avail) return null;
+  if (avail.status === 'available')
+    return (
+      <span className="inline-flex items-center gap-1 text-xs font-semibold text-fairway-700 dark:text-fairway-300">
+        <CalendarCheck className="size-3.5" aria-hidden /> {tp('s2.teeTimesFree', avail.count, { t: avail.first })}
+      </span>
+    );
+  return (
+    <span className="inline-flex items-center gap-1 text-xs text-muted">
+      <CalendarClock className="size-3.5" aria-hidden /> {t('s2.availUnknown')}
+    </span>
+  );
+}
+
 /** Horaires du jour choisi + statut sur le créneau. */
 export function SlotStatus({ golf, match, date }: { golf: GolfSummary; match?: GolfMatch; date: string }) {
   const { t, locale } = useI18n();
@@ -104,8 +121,8 @@ export function SlotStatus({ golf, match, date }: { golf: GolfSummary; match?: G
 
 const ResultCard = forwardRef<
   HTMLLIElement,
-  { golf: GolfSummary; match?: GolfMatch; travel?: TravelInfo; selected: boolean; onHover: (on: boolean) => void; onOpen: () => void; style?: CSSProperties }
->(function ResultCard({ golf, match, travel, selected, onHover, onOpen, style }, ref) {
+  { golf: GolfSummary; match?: GolfMatch; travel?: TravelInfo; avail?: Availability; selected: boolean; onHover: (on: boolean) => void; onOpen: () => void; style?: CSSProperties }
+>(function ResultCard({ golf, match, travel, avail, selected, onHover, onOpen, style }, ref) {
   const { t, locale } = useI18n();
   const { criteria } = useSearch();
   const name = golf.name || t('card.unnamed');
@@ -148,6 +165,7 @@ const ResultCard = forwardRef<
             {golf.isDemo && <Badge tone="demo">{t('demo.badge')}</Badge>}
           </p>
           <RatingLine golf={golf} />
+          <AvailabilityLine avail={avail} />
           <div className="flex items-center justify-between gap-2">
             <SlotStatus golf={golf} match={match} date={criteria.date} />
             <span className="flex shrink-0 items-center gap-1">
@@ -172,10 +190,10 @@ const ResultCard = forwardRef<
 
 /** Golfs disponibles selon les filtres, recalculés à chaque changement. */
 export function ResultsList({ cardRefs }: { cardRefs: MutableRefObject<Map<string, HTMLElement>> }) {
-  const { t, tp } = useI18n();
+  const { t, tp, locale } = useI18n();
   const navigate = useNavigate();
   const { criteria: c, setCriteria, origin, radius, setRadius, selectedId, setSelectedId, hoverId, setHoverId } = useSearch();
-  const { golfsQ, all, visible, matches, travel } = useResults();
+  const { golfsQ, all, visible, matches, travel, avail, availLoading, hiddenFull } = useResults();
   const topRef = useRef<HTMLDivElement>(null);
   const err = golfsQ.error as ApiError | null;
   const next = RADII_KM.find((r) => r > radius) as RadiusKm | undefined;
@@ -186,6 +204,15 @@ export function ResultsList({ cardRefs }: { cardRefs: MutableRefObject<Map<strin
         {!origin ? t('s2.pickPlace') : golfsQ.data ? tp('s2.count', visible.length) : t('results.loading')}
       </h2>
       {!origin && <p className="text-sm text-muted">{t('s2.pickPlaceBody')}</p>}
+      {origin && golfsQ.data && (
+        <p className="text-xs text-muted" aria-live="polite">
+          {availLoading
+            ? t('s2.availChecking')
+            : hiddenFull.length > 0
+              ? tp('s2.hiddenFull', hiddenFull.length, { names: new Intl.ListFormat(locale, { type: 'conjunction' }).format(hiddenFull) })
+              : t('s2.availRule')}
+        </p>
+      )}
 
       {golfsQ.isFetching && !golfsQ.data && (
         <ul className="space-y-2" aria-busy="true">
@@ -241,6 +268,7 @@ export function ResultsList({ cardRefs }: { cardRefs: MutableRefObject<Map<strin
             golf={g}
             match={matches.get(g.id)}
             travel={travel.get(g.id)}
+            avail={avail ? (avail[g.id] ?? { status: 'unknown', source: null }) : undefined}
             selected={g.id === selectedId || g.id === hoverId}
             onHover={(on) => setHoverId(on ? g.id : null)}
             onOpen={() => {

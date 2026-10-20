@@ -32,6 +32,17 @@ export function useResults() {
   }, [travelQ.data]);
   const travelLoading = travelQ.isLoading;
 
+  // Départs libres (jour, créneau, joueurs) pour les golfs dont le moteur de réservation le publie
+  const ids = useMemo(() => all.filter((g) => g.curated).map((g) => g.id).slice(0, 60), [all]);
+  const availQ = useQuery({
+    queryKey: ['availability', ids.join(','), criteria.date, criteria.timeFrom, criteria.timeTo, criteria.players],
+    queryFn: ({ signal }) => api.availability(ids, criteria.date, criteria.timeFrom, criteria.timeTo, criteria.players, signal),
+    enabled: ids.length > 0,
+    staleTime: 5 * 60_000,
+    placeholderData: (prev) => prev,
+  });
+  const avail = availQ.data;
+
   // Critères de l'écran 1 appliqués réellement ; tri par distance
   const { visible, matches } = useMemo(() => {
     const matches = new Map<string, GolfMatch>();
@@ -39,15 +50,21 @@ export function useResults() {
     // Parcours disponibles : rien de connu ne les exclut (fermé sur le créneau, mauvais nombre de trous, note trop basse)
     // et on peut les joindre pour réserver (téléphone, site ou lien de réservation).
     // Ceux dont l'ouverture sur le créneau est confirmée passent en premier, puis tri par distance.
-    const reachable = (g: (typeof all)[number]) => !!(g.phone || g.website || g.bookingUrl);
-    const confirmed = (id: string) => (matches.get(id)!.openInSlot === true ? 0 : 1);
+    // Seuls les golfs dont l'indisponibilité est connue sont écartés : complet sur le créneau pour ce nombre de joueurs.
+    // Ceux dont le moteur ne publie pas les départs restent proposés (« disponibilité à vérifier »).
+    const reachable = (g: (typeof all)[number]) => !!(g.phone || g.website || g.bookingUrl || g.offers?.length);
+    const full = (id: string) => avail?.[id]?.status === 'full';
+    // Ordre : départs libres confirmés, puis ouverture confirmée sur le créneau, puis le reste ; ensuite la distance
+    const rank = (id: string) => (avail?.[id]?.status === 'available' ? 0 : matches.get(id)!.openInSlot === true ? 1 : 2);
     const visible = all
-      .filter((g) => reachable(g) && passes(matches.get(g.id)!, criteria))
-      .sort((a, b) => confirmed(a.id) - confirmed(b.id) || (a.distanceKm ?? 0) - (b.distanceKm ?? 0));
+      .filter((g) => reachable(g) && !full(g.id) && passes(matches.get(g.id)!, criteria))
+      .sort((a, b) => rank(a.id) - rank(b.id) || (a.distanceKm ?? 0) - (b.distanceKm ?? 0));
     return { visible, matches };
     // hoursReady : on recalcule quand la bibliothèque d'horaires est chargée
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [all, criteria, hoursReady]);
+  }, [all, criteria, hoursReady, avail]);
 
-  return { golfsQ, all, visible, matches, travel, travelLoading };
+  // Clubs retirés car complets : nommés sous le compteur (rien n'est masqué sans le dire)
+  const hiddenFull = avail ? all.filter((g) => avail[g.id]?.status === 'full').map((g) => g.name) : [];
+  return { golfsQ, all, visible, matches, travel, travelLoading, avail, availLoading: availQ.isFetching, hiddenFull };
 }

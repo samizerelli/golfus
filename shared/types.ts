@@ -57,6 +57,15 @@ export interface BookingOffer {
   note?: string | null;
 }
 
+/**
+ * Disponibilité des départs pour le jour, le créneau et le nombre de joueurs choisis.
+ * unknown = le moteur de réservation du golf ne la publie pas (le golf reste proposé).
+ */
+export type Availability =
+  | { status: 'available'; source: 'golfmanager'; count: number; first: string; minPrice: number | null }
+  | { status: 'full'; source: 'golfmanager'; count: number }
+  | { status: 'unknown'; source: null };
+
 export const SERVICE_KEYS = ['clubRental', 'drivingRange', 'restaurant', 'buggy', 'proShop', 'lessons'] as const;
 export type ServiceKey = (typeof SERVICE_KEYS)[number];
 /** true = disponible, false = absent, null/undefined = inconnu */

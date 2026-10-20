@@ -1,4 +1,5 @@
 import type {
+  Availability,
   GolfDetail,
   GolfEditable,
   GolfsResponse,
@@ -162,6 +163,9 @@ export const api = {
   golfs: (lat: number, lon: number, radius: RadiusKm, signal?: AbortSignal) =>
     request<GolfsResponse>(`/golfs?${q({ lat, lon, radius })}`, { signal }),
   golf: (id: string) => request<GolfDetail>(`/golfs/${encodeURIComponent(id)}`),
+  /** Départs libres selon les critères, pour les golfs dont le moteur de réservation le publie */
+  availability: (ids: string[], date: string, from: string, to: string, players: number, signal?: AbortSignal) =>
+    request<Record<string, Availability>>(`/availability?${new URLSearchParams({ ids: ids.join(','), date, from, to, players: String(players) })}`, { signal }),
   travel: (lat: number, lon: number, destinations: { id: string; lat: number; lon: number }[]) =>
     request<TravelInfo[]>('/travel', { method: 'POST', body: JSON.stringify({ lat, lon, destinations }) }),
   autocomplete: (text: string, lang: string, signal?: AbortSignal) =>
