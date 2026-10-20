@@ -11,11 +11,13 @@
     "dev": "concurrently -n api,web -c green,yellow \"npm:dev:api\" \"npm:dev:web\"",
     "dev:api": "tsx watch --env-file-if-exists=.env server/index.ts",
     "dev:web": "vite",
-    "build": "tsc -b && vite build",
+    "build": "tsc -b && npm run check:data && vite build",
     "start": "NODE_ENV=production tsx --env-file-if-exists=.env server/index.ts",
     "seed": "tsx --env-file-if-exists=.env server/db/seed.ts",
     "test": "DATABASE_PATH=:memory: tsx --test server/tests/*.test.ts",
-    "typecheck": "tsc -b"
+    "typecheck": "tsc -b",
+    "check:data": "tsx scripts/check-i18n.mts && tsx scripts/check-curated.mts",
+    "check": "tsc -b && npm test && npm run check:data"
   },
   "dependencies": {
     "@auth/express": "^0.12.3",

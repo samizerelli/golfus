@@ -26,15 +26,3 @@ export function userRateLimit(key: string, max: number, windowMs: number): Reque
     next();
   };
 }
-
-export const zText = (max: number) => z.string().trim().max(max);
-export const zOptText = (max: number) =>
-  z
-    .string()
-    .trim()
-    .max(max)
-    .transform((v) => (v === '' ? null : v))
-    .nullable()
-    .optional();
-export const zDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
-export const zGolfId = z.string().regex(/^(osm-[nwr]\d+|demo-[\w-]+|man-[\w-]+)$/);

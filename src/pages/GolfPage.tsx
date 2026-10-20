@@ -4,7 +4,7 @@ import { useState, type FormEvent, type ReactNode } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { SERVICE_KEYS, type GolfDetail, type PriceCategory, type PriceRow } from '../../shared/types';
 import { FavoriteButton, GolfActions, GolfPhoto, OpenStatus, ReliabilityNote, ShareButton } from '../components/GolfBits';
-import { golfName, vtName } from '../components/GolfCard';
+import { golfName, vtName } from '../lib/golf';
 import { GlassButton, GlassCard } from '../components/glass';
 import { Badge, Button, buttonClass, cx, Notice, Stars } from '../components/ui';
 import { useI18n } from '../i18n';

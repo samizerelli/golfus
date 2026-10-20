@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
-import type { RadiusKm, ServiceKey } from '../../shared/types';
+import type { RadiusKm } from '../../shared/types';
 
 export interface Origin {
   lat: number;
@@ -11,20 +11,6 @@ export interface Origin {
 
 export type SortKey = 'distance' | 'price' | 'rating';
 export type HolesFilter = 'any' | '9' | '18';
-
-export interface Filters {
-  /** Green fee max, exprimé en EUR (la conversion est faite à l'affichage) */
-  maxPriceEur: number | null;
-  holes: HolesFilter;
-  openAtTime: boolean;
-  services: ServiceKey[];
-}
-
-export const DEFAULT_FILTERS: Filters = { maxPriceEur: null, holes: 'any', openAtTime: false, services: [] };
-
-export function activeFilterCount(f: Filters) {
-  return (f.maxPriceEur !== null ? 1 : 0) + (f.holes !== 'any' ? 1 : 0) + (f.openAtTime ? 1 : 0) + f.services.length;
-}
 
 /** Critères de l'écran 1 (filtrent réellement les résultats de l'écran 2) */
 export interface Criteria {
@@ -60,14 +46,6 @@ interface Ctx {
   setOrigin: (o: Origin | null) => void;
   radius: RadiusKm;
   setRadius: (r: RadiusKm) => void;
-  sort: SortKey;
-  setSort: (s: SortKey) => void;
-  filters: Filters;
-  setFilters: (f: Filters) => void;
-  /** Date (AAAA-MM-JJ) et heure (HH:MM) de jeu ; null = maintenant */
-  playDate: string | null;
-  playTime: string | null;
-  setPlay: (date: string | null, time: string | null) => void;
   playAt: Date;
   isNow: boolean;
   selectedId: string | null;
@@ -86,10 +64,6 @@ const SearchContext = createContext<Ctx | null>(null);
 export function SearchProvider({ children }: { children: ReactNode }) {
   const [origin, setOrigin] = useState<Origin | null>(null);
   const [radius, setRadius] = useState<RadiusKm>(25);
-  const [sort, setSort] = useState<SortKey>('distance');
-  const [filters, setFilters] = useState<Filters>(DEFAULT_FILTERS);
-  const [playDate, setPlayDate] = useState<string | null>(null);
-  const [playTime, setPlayTime] = useState<string | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [hoverId, setHoverId] = useState<string | null>(null);
   const [criteria, setCriteriaState] = useState<Criteria>(DEFAULT_CRITERIA);
@@ -104,8 +78,8 @@ export function SearchProvider({ children }: { children: ReactNode }) {
   const value = useMemo<Ctx>(() => {
     // Instant de référence (statut ouvert/fermé, saison, semaine/week-end) : début de la plage choisie,
     // ou maintenant si l'on est aujourd'hui en pleine plage horaire
-    const [h, m] = (playTime ?? criteria.timeFrom).split(':').map(Number);
-    const start = new Date(`${playDate ?? criteria.date}T00:00:00`);
+    const [h, m] = criteria.timeFrom.split(':').map(Number);
+    const start = new Date(`${criteria.date}T00:00:00`);
     start.setHours(h, m, 0, 0);
     const [eh, em] = criteria.timeTo.split(':').map(Number);
     const end = new Date(start);
@@ -124,16 +98,6 @@ export function SearchProvider({ children }: { children: ReactNode }) {
       },
       radius,
       setRadius,
-      sort,
-      setSort,
-      filters,
-      setFilters,
-      playDate,
-      playTime,
-      setPlay: (d, t) => {
-        setPlayDate(d);
-        setPlayTime(t);
-      },
       playAt,
       isNow,
       selectedId,
@@ -141,7 +105,7 @@ export function SearchProvider({ children }: { children: ReactNode }) {
       hoverId,
       setHoverId,
     };
-  }, [hoverId, origin, radius, sort, filters, playDate, playTime, selectedId, now, criteria, view]);
+  }, [hoverId, origin, radius, selectedId, now, criteria, view]);
 
   return <SearchContext.Provider value={value}>{children}</SearchContext.Provider>;
 }

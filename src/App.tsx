@@ -1,18 +1,24 @@
-import { lazy, Suspense, useState } from 'react';
+import { lazy, Suspense, useState, type ComponentType } from 'react';
 import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import { GlassFx } from './components/glass';
 import { RailProvider } from './components/ActionRail';
 import { Intro, introSeen } from './components/Intro';
 import { useAuth } from './lib/auth';
 import { useI18n } from './i18n';
-import { FavoritesPage } from './pages/FavoritesPage';
-import { GolfPage } from './pages/GolfPage';
-import { InvitationPage } from './pages/InvitationPage';
-import { HomeScreen, InviteRoute, MapLayout } from './pages/MapLayout';
-import { LegalPage, PrivacyPage } from './pages/LegalPages';
-import { LoginPage } from './pages/LoginPage';
-import { ProfilePage } from './pages/ProfilePage';
+import { PageSkeleton } from './components/PageSkeleton';
 
+// Pages secondaires chargées à la demande : l'accueil (carte + recherche) s'affiche plus vite
+const named = <K extends string>(load: () => Promise<Record<K, ComponentType>>, name: K) => lazy(() => load().then((m) => ({ default: m[name] })));
+const MapLayout = named(() => import('./pages/MapLayout'), 'MapLayout');
+const HomeScreen = named(() => import('./pages/MapLayout'), 'HomeScreen');
+const InviteRoute = named(() => import('./pages/MapLayout'), 'InviteRoute');
+const GolfPage = named(() => import('./pages/GolfPage'), 'GolfPage');
+const InvitationPage = named(() => import('./pages/InvitationPage'), 'InvitationPage');
+const FavoritesPage = named(() => import('./pages/FavoritesPage'), 'FavoritesPage');
+const ProfilePage = named(() => import('./pages/ProfilePage'), 'ProfilePage');
+const LoginPage = named(() => import('./pages/LoginPage'), 'LoginPage');
+const LegalPage = named(() => import('./pages/LegalPages'), 'LegalPage');
+const PrivacyPage = named(() => import('./pages/LegalPages'), 'PrivacyPage');
 const AdminApp = lazy(() => import('./pages/admin/AdminApp'));
 
 export default function App() {
@@ -34,7 +40,7 @@ export default function App() {
         {t('nav.skip')}
       </a>
       <main id="main" className="relative flex min-h-0 flex-1 flex-col">
-        <Suspense fallback={<p className="p-6 text-muted">{t('common.loading')}</p>}>
+        <Suspense fallback={<PageSkeleton label={t('common.loading')} />}>
           <Routes>
             {/* Les 3 écrans partagent la carte en fond */}
             <Route element={<MapLayout />}>

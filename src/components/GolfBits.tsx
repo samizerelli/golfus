@@ -128,7 +128,6 @@ export function ReliabilityNote({ golf }: { golf: GolfSummary }) {
   );
 }
 
-/** Bloc tarifaire compact pour les cartes de résultats */
 export function PriceSummary({ golf }: { golf: GolfSummary }) {
   const { t } = useI18n();
   const { money } = useSettings();

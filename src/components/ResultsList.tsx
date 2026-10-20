@@ -11,7 +11,7 @@ import { useSettings } from '../lib/settings';
 import { useResults } from '../lib/useResults';
 import { DEFAULT_CRITERIA, useSearch, type Criteria } from '../state/search';
 import { GolfPhoto } from './GolfBits';
-import { vtName } from './GolfCard';
+import { vtName } from '../lib/golf';
 import { Badge, Button, cx, Notice, Stars } from './ui';
 
 /** Note sur 5 avec sa source et le nombre d'avis, ou « Pas encore noté ». */

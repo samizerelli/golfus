@@ -24,5 +24,3 @@ export async function fetchJson<T>(url: string, init: RequestInit & { timeoutMs?
     throw new UpstreamError(`${new URL(url).host} a renvoyé une réponse invalide`);
   }
 }
-
-export const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));

@@ -74,17 +74,6 @@ export function priceMatrix(prices: PriceRow[], category: PriceCategory) {
   };
 }
 
-/** Green fee minimal (toutes saisons) exprimé en EUR, pour le tri et le filtre de prix */
-export function minGreenFee(g: GolfSummary, convert: (a: number, from: Currency, to?: Currency) => number | null) {
-  const cat = mainCategory(g.prices);
-  if (!cat) return null;
-  const values = g.prices
-    .filter((p) => p.category === cat)
-    .map((p) => convert(p.amount, p.currency, 'EUR') ?? (p.currency === 'EUR' ? p.amount : null))
-    .filter((v): v is number => v !== null);
-  return values.length ? Math.min(...values) : null;
-}
-
 /** Ligne de green fee la moins chère (pour « à partir de »), comparée en EUR */
 export function cheapestGreenFee(g: GolfSummary, convert: (a: number, from: Currency, to?: Currency) => number | null) {
   const cat = mainCategory(g.prices);

@@ -5,8 +5,6 @@ import { db } from '../db/index.ts';
 let transport: Transporter | null = null;
 if (config.emailServer) transport = nodemailer.createTransport(config.emailServer);
 
-export const emailConfigured = () => transport !== null;
-
 /**
  * Envoie un e-mail. Sans serveur SMTP (EMAIL_SERVER), le message est déposé dans la « boîte de développement »
  * (table dev_outbox) et le lien est affiché dans la console — uniquement hors production.

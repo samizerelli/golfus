@@ -2,7 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { ArrowLeft, Check, Copy, ExternalLink, Link2, MessageCircle, Navigation, Search, Send, Smartphone } from 'lucide-react';
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { MapContainer, Marker, TileLayer } from 'react-leaflet';
-import { Link, useNavigate, useParams } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import type { GolfSummary } from '../../shared/types';
 import { useI18n } from '../i18n';
 import { api, type Outing } from '../lib/api';
@@ -10,7 +10,6 @@ import { useAuth } from '../lib/auth';
 import { directionsUrl } from '../lib/links';
 import L from '../lib/leafletGlobal';
 import { pricePerPerson } from '../lib/criteria';
-import { useResults } from '../lib/useResults';
 import { useSettings } from '../lib/settings';
 import { useSearch } from '../state/search';
 import { Avatar } from './AccountPanel';
@@ -21,14 +20,6 @@ import { PricePerPerson, RatingLine } from './ResultsList';
 import { buttonClass, Button, cx, haptic, Notice } from './ui';
 
 /** Golf de l'écran 3 : depuis les résultats déjà chargés, sinon depuis sa fiche. */
-export function useInviteGolf(): { golf: GolfSummary | null; loading: boolean } {
-  const { id = '' } = useParams();
-  const { all } = useResults();
-  const fromList = all.find((g) => g.id === id) ?? null;
-  const q = useQuery({ queryKey: ['golf', id], queryFn: () => api.golf(id), enabled: !!id && !fromList, staleTime: 10 * 60_000 });
-  return { golf: fromList ?? q.data ?? null, loading: !fromList && q.isLoading };
-}
-
 const pin = (label: string) =>
   L.divIcon({ className: 'price-marker', iconSize: [0, 0], iconAnchor: [0, 0], html: `<div class="price-pill is-selected">${label.replace(/[&<>"]/g, '')}</div>` });
 

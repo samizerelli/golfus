@@ -15,5 +15,5 @@
   },
   "include": ["server", "shared", "scripts", "vite.config.ts"],
   // Test des calculs de prix du client (exécuté par tsx, typé par le projet client)
-  "exclude": ["server/tests/prices.test.ts"]
+  "exclude": ["server/tests/prices.test.ts", "scripts/check-i18n.mts"]
 }
