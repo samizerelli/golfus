@@ -5,6 +5,7 @@ import type { GolfSummary } from '../../shared/types';
 import { ActionRail } from '../components/ActionRail';
 import { BottomSheet, type Snap } from '../components/BottomSheet';
 import { GolfSideCards, InviteForm } from '../components/InviteScreen';
+import { HomeLanding } from '../components/HomeLanding';
 import { Logo } from '../components/Logo';
 import { MapView } from '../components/MapView';
 import { ResultsList } from '../components/ResultsList';
@@ -38,7 +39,7 @@ export function HomeScreen() {
   const { cardRefs } = useLayout();
   return (
     <div key={view} className="animate-rise flex min-h-full flex-col">
-      {view === 'search' ? <SearchForm /> : <ResultsList cardRefs={cardRefs} />}
+      {view === 'home' ? <HomeLanding /> : view === 'search' ? <SearchForm /> : <ResultsList cardRefs={cardRefs} />}
     </div>
   );
 }

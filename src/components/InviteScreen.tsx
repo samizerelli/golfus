@@ -209,7 +209,7 @@ export function InviteForm({ golf }: { golf: GolfSummary | null }) {
         outing={send.data}
         external={external}
         onHome={() => {
-          setView('search');
+          setView('home');
           navigate('/');
         }}
       />

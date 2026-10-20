@@ -121,7 +121,11 @@ export function ReliabilityNote({ golf }: { golf: GolfSummary }) {
       </p>
     );
   }
-  return <p className="text-xs font-medium text-gold-ink">⚠ {t('price.indicative')}</p>;
+  return (
+    <p className="text-xs font-medium text-gold-ink">
+      ⚠ {golf.priceUpdatedAt ? t('price.indicativeOn', { date: new Date(golf.priceUpdatedAt).toLocaleDateString(locale) }) : t('price.indicative')}
+    </p>
+  );
 }
 
 /** Bloc tarifaire compact pour les cartes de résultats */

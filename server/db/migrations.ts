@@ -166,6 +166,25 @@ CREATE TABLE notifications (
 CREATE INDEX notifications_user ON notifications(user_id, id);
 `,
   },
+  {
+    id: 4,
+    name: 'propositions extraites des sites officiels des golfs',
+    sql: `
+CREATE TABLE site_extractions (
+  id SERIAL PRIMARY KEY,
+  golf_id TEXT NOT NULL,
+  golf_name TEXT,
+  site TEXT NOT NULL,
+  data TEXT NOT NULL,
+  price_count INTEGER NOT NULL DEFAULT 0,
+  suggested_count INTEGER NOT NULL DEFAULT 0,
+  status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending','applied','dismissed')),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE INDEX site_extractions_golf ON site_extractions(golf_id, created_at);
+CREATE INDEX site_extractions_status ON site_extractions(status);
+`,
+  },
 ];
 
 interface MigDriver {

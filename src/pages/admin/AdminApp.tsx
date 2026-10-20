@@ -1,6 +1,6 @@
 // Espace d'administration (en français uniquement : il est destiné à l'exploitant du site).
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { KeyRound, LogOut, Plus, ShieldCheck, Trash2, Users } from 'lucide-react';
+import { Globe, KeyRound, LogOut, Plus, ShieldCheck, Trash2, Users } from 'lucide-react';
 import { useEffect, useMemo, useState, type FormEvent, type ReactNode } from 'react';
 import { Link, Route, Routes, useNavigate, useParams } from 'react-router-dom';
 import {
@@ -15,6 +15,8 @@ import {
 import { Button, buttonClass, Notice } from '../../components/ui';
 import { api, ApiError } from '../../lib/api';
 import { formatIntervals, intervalsOn, parseHours, useHoursLib, weekStart } from '../../lib/hours';
+import { AdminCollect } from './AdminCollect';
+import { ExtractPanel } from './ExtractPanel';
 
 const CAT_LABEL: Record<string, string> = {
   green_fee_18: 'Green fee 18 trous',
@@ -113,7 +115,10 @@ function AdminList() {
     <div className="mx-auto w-full max-w-4xl space-y-4 p-4">
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-semibold">Administration</h1>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
+        <Link to="/admin/collecte" className={buttonClass('secondary', 'sm')}>
+          <Globe className="size-4" aria-hidden /> Collecte sites officiels
+        </Link>
         <Link to="/admin/utilisateurs" className={buttonClass('secondary', 'sm')}>
           <Users className="size-4" aria-hidden /> Utilisateurs
         </Link>
@@ -252,13 +257,18 @@ function AdminEdit({ create = false }: { create?: boolean }) {
   const str = (v: string) => (v.trim() === '' ? null : v);
   const num = (v: string) => (v.trim() === '' ? null : Number(v));
 
+  const [appliedExtraction, setAppliedExtraction] = useState<number | null>(null);
+  const [applyNote, setApplyNote] = useState(false);
   const save = useMutation({
     mutationFn: async () => {
       if (create) return api.admin.create(g);
       await api.admin.save({ ...g, id });
+      if (appliedExtraction) await api.admin.setExtractionStatus(appliedExtraction, 'applied');
       return { id };
     },
     onSuccess: (r) => {
+      setApplyNote(false);
+      setAppliedExtraction(null);
       setSaved(true);
       setTimeout(() => setSaved(false), 3000);
       qc.invalidateQueries();
@@ -331,6 +341,20 @@ function AdminEdit({ create = false }: { create?: boolean }) {
           est prioritaire.
         </Notice>
       )}
+
+      {!create && (
+        <ExtractPanel
+          golfId={id}
+          website={g.website ?? (osm?.website as string | undefined) ?? null}
+          golf={g}
+          onApply={(patch, extractionId) => {
+            setG((x) => ({ ...x, ...patch }));
+            setAppliedExtraction(extractionId);
+            setApplyNote(true);
+          }}
+        />
+      )}
+      {applyNote && <Notice tone="warn">Propositions ajoutées au formulaire ci-dessous. Vérifiez-les, puis cliquez sur « Enregistrer » pour les publier.</Notice>}
 
       <Card title="Identité">
         <div className="grid gap-4 sm:grid-cols-2">
@@ -735,6 +759,7 @@ export default function AdminApp() {
         <Route path="nouveau" element={<AdminEdit create />} />
         <Route path="golf/:id" element={<AdminEdit />} />
         <Route path="utilisateurs" element={<AdminUsers />} />
+        <Route path="collecte" element={<AdminCollect />} />
       </Routes>
     );
   return <div className="min-h-0 flex-1 overflow-y-auto">{body}</div>;

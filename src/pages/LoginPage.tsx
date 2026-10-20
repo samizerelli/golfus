@@ -37,9 +37,12 @@ export function LoginPage() {
   const [error, setError] = useState<string | null>(params.get('error'));
   const [sent, setSent] = useState(params.get('envoye') === '1');
 
+  // Après connexion : retour à la page d'origine (ex. lien d'invitation), sinon à l'accueil
+  const retour = params.get('retour');
+  const after = retour && retour.startsWith('/') && !retour.startsWith('//') ? retour : '/';
   useEffect(() => {
-    if (user) navigate('/profil', { replace: true });
-  }, [user, navigate]);
+    if (user) navigate(after, { replace: true });
+  }, [user, navigate, after]);
 
   const errText = (code: string) => t(ERRORS[code] ?? 'auth.err.generic');
 
@@ -58,7 +61,7 @@ export function LoginPage() {
       const r = await auth.signInPassword(email, password);
       if (!r.ok) return setError(r.error ?? 'generic');
       await refresh();
-      navigate('/profil', { replace: true });
+      navigate(after, { replace: true });
     } catch (err) {
       setError(err instanceof ApiError ? err.code : 'generic');
     } finally {

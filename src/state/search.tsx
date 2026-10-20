@@ -48,7 +48,8 @@ export const todayStr = () => {
 };
 export const DEFAULT_CRITERIA = (): Criteria => ({ date: todayStr(), timeFrom: '08:00', timeTo: '18:00', holes: 'any', minRating: 0, players: 2, hideUnknown: false });
 
-export type View = 'search' | 'results';
+/** home = accueil (New game + parties en cours) ; search = personnalisation ; results = liste des golfs */
+export type View = 'home' | 'search' | 'results';
 
 interface Ctx {
   criteria: Criteria;
@@ -92,7 +93,7 @@ export function SearchProvider({ children }: { children: ReactNode }) {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [hoverId, setHoverId] = useState<string | null>(null);
   const [criteria, setCriteriaState] = useState<Criteria>(DEFAULT_CRITERIA);
-  const [view, setView] = useState<View>('search');
+  const [view, setView] = useState<View>('home');
   const [now, setNow] = useState(() => new Date());
 
   useEffect(() => {

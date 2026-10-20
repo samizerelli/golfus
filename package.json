@@ -14,7 +14,7 @@
     "build": "tsc -b && vite build",
     "start": "NODE_ENV=production tsx --env-file-if-exists=.env server/index.ts",
     "seed": "tsx --env-file-if-exists=.env server/db/seed.ts",
-    "test": "DATABASE_PATH=:memory: tsx --test server/**/*.test.ts",
+    "test": "DATABASE_PATH=:memory: tsx --test server/tests/*.test.ts",
     "typecheck": "tsc -b"
   },
   "dependencies": {

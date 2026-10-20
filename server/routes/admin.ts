@@ -5,7 +5,8 @@ import { db } from '../db/index.ts';
 import { assertAdminConfigured } from '../config.ts';
 import { isAdmin, login, logout, requireAdmin } from '../auth.ts';
 import { isValidOpeningHours, sanitizeGolf } from '../lib/validate.ts';
-import { deleteGolf, deleteReview, getEditable, getReviews, listCurated, saveGolf } from '../services/golfs.ts';
+import { deleteGolf, deleteReview, getEditable, getGolf, getReviews, listCurated, saveGolf } from '../services/golfs.ts';
+import { extractFromSite } from '../services/siteExtract.ts';
 
 export const adminRouter = Router();
 
@@ -77,6 +78,60 @@ adminRouter.post('/users/:id/role', async (req, res) => {
 
 adminRouter.delete('/users/:id', async (req, res) => {
   await db.run('DELETE FROM users WHERE id = ?', req.params.id);
+  res.json({ ok: true });
+});
+
+// ───── Données des sites officiels (proposées, jamais publiées sans validation) ─────
+
+/** Analyse le site officiel d'un golf et enregistre les propositions. */
+adminRouter.post('/extract', async (req, res) => {
+  const golfId = String(req.body?.golfId ?? '');
+  const golf = await getGolf(golfId).catch(() => null);
+  if (!golf) return res.status(404).json({ error: 'not_found' });
+  let site = typeof req.body?.url === 'string' && req.body.url ? String(req.body.url) : golf.website;
+  if (!site) return res.status(400).json({ error: 'no_website' });
+  try {
+    site = new URL(site).href;
+  } catch {
+    return res.status(400).json({ error: 'bad_url' });
+  }
+  const data = await extractFromSite(site, Number(process.env.EXTRACT_BUDGET_MS ?? 9000));
+  const row = await db.get<{ id: number }>(
+    'INSERT INTO site_extractions (golf_id, golf_name, site, data, price_count, suggested_count) VALUES (?, ?, ?, ?, ?, ?) RETURNING id',
+    golfId,
+    golf.name,
+    site,
+    JSON.stringify(data),
+    data.prices.length,
+    data.prices.filter((p) => p.suggested).length,
+  );
+  res.json({ id: row!.id, golfId, golfName: golf.name, ...data });
+});
+
+/** Dernière proposition pour un golf */
+adminRouter.get('/extractions/latest/:golfId', async (req, res) => {
+  const r = await db.get<{ id: number; data: string; status: string; created_at: string }>(
+    'SELECT id, data, status, created_at FROM site_extractions WHERE golf_id = ? ORDER BY created_at DESC LIMIT 1',
+    String(req.params.golfId),
+  );
+  res.json(r ? { id: r.id, status: r.status, createdAt: r.created_at, ...JSON.parse(r.data) } : null);
+});
+
+/** File de vérification */
+adminRouter.get('/extractions', async (req, res) => {
+  const status = ['pending', 'applied', 'dismissed'].includes(String(req.query.status)) ? String(req.query.status) : 'pending';
+  res.json(
+    await db.all(
+      `SELECT id, golf_id AS "golfId", golf_name AS "golfName", site, price_count AS "priceCount", suggested_count AS "suggestedCount", status, created_at AS "createdAt"
+       FROM site_extractions WHERE status = ? ORDER BY created_at DESC LIMIT 200`,
+      status,
+    ),
+  );
+});
+
+adminRouter.post('/extractions/:id/status', async (req, res) => {
+  const status = req.body?.status === 'applied' ? 'applied' : 'dismissed';
+  await db.run('UPDATE site_extractions SET status = ? WHERE id = ?', status, Number(req.params.id));
   res.json({ ok: true });
 });
 

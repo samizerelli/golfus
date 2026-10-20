@@ -7,3 +7,6 @@ data/*.db-*
 
 # Netlify
 .netlify
+
+# Base locale (PGlite)
+data/pglite/

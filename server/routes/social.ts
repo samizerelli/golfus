@@ -249,16 +249,35 @@ socialRouter.post('/outings/:id/cancel', requireUser, async (req, res) => {
 socialRouter.get('/invitations/:token', async (req, res) => {
   const o = await db.get<OutingRow>(`${OUTING_SELECT} WHERE o.share_token = ?`, String(req.params.token));
   if (!o) return res.status(404).json({ error: 'not_found' });
-  const v = await outingView(o, null);
-  // Vue publique : prénoms et réponses seulement
-  res.json({ ...v, guests: v.guests.map((g) => ({ name: g.name, response: g.response, external: g.external })) });
+  const v = await outingView(o, req.user?.id ?? null);
+  // Vue publique : prénoms et réponses seulement (+ ma réponse si je suis connecté)
+  res.json({ ...v, shareToken: undefined, guests: v.guests.map((g) => ({ name: g.name, response: g.response, external: g.external })) });
 });
 
 socialRouter.post('/invitations/:token/respond', userRateLimit('guest-respond', 20, 3600_000), async (req, res) => {
-  const b = parse(z.object({ name: z.string().trim().min(1).max(60), response: z.enum(['yes', 'maybe', 'no']), guestToken: z.string().max(40).optional() }), req.body, res);
+  const b = parse(
+    z.object({ name: z.string().trim().max(60).optional(), response: z.enum(['yes', 'maybe', 'no']), guestToken: z.string().max(40).optional() }),
+    req.body,
+    res,
+  );
   if (!b) return;
   const o = await db.get<OutingRow>(`${OUTING_SELECT} WHERE o.share_token = ?`, String(req.params.token));
   if (!o || o.status !== 'active') return res.status(404).json({ error: 'not_found' });
+  // Utilisateur connecté : il rejoint (ou décline) sous son compte, en un geste
+  if (req.user) {
+    if (req.user.id === o.organizer_id) return res.status(400).json({ error: 'organizer' });
+    await db.run(
+      `INSERT INTO outing_guests (id, outing_id, user_id, response) VALUES (?, ?, ?, ?)
+       ON CONFLICT (outing_id, user_id) DO UPDATE SET response = excluded.response, updated_at = now()`,
+      crypto.randomUUID(),
+      o.id,
+      req.user.id,
+      b.response,
+    );
+    await notify(o.organizer_id, 'outing_response', { outingId: o.id, golf: o.golf_name, date: o.date, from: req.user.name, response: b.response });
+    return res.json({ ok: true });
+  }
+  if (!b.name) return res.status(400).json({ error: 'name_required' });
   let gt = b.guestToken;
   const existing = gt ? await db.get<{ id: string }>('SELECT id FROM outing_guests WHERE outing_id = ? AND guest_token = ?', o.id, gt) : undefined;
   if (existing) await db.run('UPDATE outing_guests SET guest_name = ?, response = ?, updated_at = now() WHERE id = ?', b.name, b.response, existing.id);

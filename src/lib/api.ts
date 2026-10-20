@@ -55,6 +55,32 @@ export interface Notification {
   createdAt: string;
 }
 
+export interface PriceFinding {
+  amount: number;
+  currency: 'EUR' | 'CHF' | 'USD' | 'GBP';
+  label: string;
+  context: string;
+  category: string;
+  season: 'low' | 'high' | 'all';
+  dayType: 'weekday' | 'weekend' | 'all';
+  suggested: boolean;
+  sourceUrl: string;
+}
+export interface SiteExtraction {
+  id: number;
+  golfId?: string;
+  status?: string;
+  createdAt?: string;
+  site: string;
+  scannedAt: string;
+  pages: { url: string; status: 'ok' | 'blocked' | 'error'; note?: string }[];
+  prices: PriceFinding[];
+  phones: string[];
+  emails: string[];
+  openingHours: string | null;
+  pricingUrl: string | null;
+}
+
 export interface Me {
   id: string;
   email: string;
@@ -172,7 +198,7 @@ export const api = {
     request<Outing>(`/outings/${id}/respond`, { method: 'POST', body: JSON.stringify({ response }) }),
   cancelOuting: (id: string) => request<{ ok: true }>(`/outings/${id}/cancel`, { method: 'POST' }),
   invitation: (token: string) => request<Outing>(`/invitations/${encodeURIComponent(token)}`),
-  respondInvitation: (token: string, body: { name: string; response: 'yes' | 'maybe' | 'no'; guestToken?: string }) =>
+  respondInvitation: (token: string, body: { name?: string; response: 'yes' | 'maybe' | 'no'; guestToken?: string }) =>
     request<{ ok: true; guestToken: string }>(`/invitations/${encodeURIComponent(token)}/respond`, { method: 'POST', body: JSON.stringify(body) }),
   notifications: () => request<{ unread: number; items: Notification[] }>('/notifications'),
   readNotifications: () => request<{ ok: true }>('/notifications/read', { method: 'POST' }),
@@ -202,6 +228,14 @@ export const api = {
     setRole: (id: string, role: 'user' | 'admin') =>
       request<{ ok: true }>(`/admin/users/${encodeURIComponent(id)}/role`, { method: 'POST', body: JSON.stringify({ role }) }),
     deleteUser: (id: string) => request<{ ok: true }>(`/admin/users/${encodeURIComponent(id)}`, { method: 'DELETE' }),
+    extract: (golfId: string, url?: string) => request<SiteExtraction>('/admin/extract', { method: 'POST', body: JSON.stringify({ golfId, url }) }),
+    latestExtraction: (golfId: string) => request<SiteExtraction | null>(`/admin/extractions/latest/${encodeURIComponent(golfId)}`),
+    extractions: (status: 'pending' | 'applied' | 'dismissed' = 'pending') =>
+      request<{ id: number; golfId: string; golfName: string | null; site: string; priceCount: number; suggestedCount: number; status: string; createdAt: string }[]>(
+        `/admin/extractions?status=${status}`,
+      ),
+    setExtractionStatus: (id: number, status: 'applied' | 'dismissed') =>
+      request<{ ok: true }>(`/admin/extractions/${id}/status`, { method: 'POST', body: JSON.stringify({ status }) }),
     validateHours: (value: string) =>
       request<{ valid: boolean }>('/admin/validate-hours', { method: 'POST', body: JSON.stringify({ value }) }),
   },

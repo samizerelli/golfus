@@ -14,6 +14,7 @@ process.env.TRUST_FORWARDED_HOST = '1';
 process.env.OVERPASS_BUDGET_MS ??= '4500';
 process.env.OVERPASS_TIMEOUT_MS ??= '4000';
 process.env.NOMINATIM_MAX_PAGES ??= '1';
+process.env.EXTRACT_BUDGET_MS ??= '7000';
 
 let base: Promise<string> | null = null;
 

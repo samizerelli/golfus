@@ -1,4 +1,4 @@
-import { Minus, Plus, Search } from 'lucide-react';
+import { ArrowLeft, Minus, Plus, Search } from 'lucide-react';
 import { useState, type ReactNode } from 'react';
 import { RADII_KM, type RadiusKm } from '../../shared/types';
 import { useI18n } from '../i18n';
@@ -154,7 +154,12 @@ export function SearchForm() {
         submit();
       }}
     >
-      <h1 className="text-[24px] leading-tight">{t('s1.title')}</h1>
+      <div className="flex items-center gap-2">
+        <button type="button" onClick={() => setView('home')} className="glass glass-interactive grid size-11 shrink-0 place-items-center rounded-full" aria-label={t('s1.backHome')}>
+          <ArrowLeft className="size-5" aria-hidden />
+        </button>
+        <h1 className="text-[24px] leading-tight">{t('s1.title')}</h1>
+      </div>
 
       <Field
         label={t('s1.location')}
