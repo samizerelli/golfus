@@ -185,6 +185,22 @@ CREATE INDEX site_extractions_golf ON site_extractions(golf_id, created_at);
 CREATE INDEX site_extractions_status ON site_extractions(status);
 `,
   },
+  {
+    id: 5,
+    name: 'tarifs par tranche horaire (twilight, early bird) : heure de début et de fin',
+    sql: `
+ALTER TABLE prices ADD COLUMN from_time TEXT;
+ALTER TABLE prices ADD COLUMN to_time TEXT;
+`,
+  },
+  {
+    id: 6,
+    name: 'tarifs par période de dates (saisons datées : JJ/MM au JJ/MM)',
+    sql: `
+ALTER TABLE prices ADD COLUMN IF NOT EXISTS from_date TEXT;
+ALTER TABLE prices ADD COLUMN IF NOT EXISTS to_date TEXT;
+`,
+  },
 ];
 
 interface MigDriver {

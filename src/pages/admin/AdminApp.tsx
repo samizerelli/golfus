@@ -433,6 +433,8 @@ function AdminEdit({ create = false }: { create?: boolean }) {
                 <th className="py-1 font-normal">Jours</th>
                 <th className="py-1 font-normal">Montant</th>
                 <th className="py-1 font-normal">Devise</th>
+                <th className="py-1 font-normal">Période (MM-JJ)</th>
+                <th className="py-1 font-normal">Départs</th>
                 <th className="py-1 font-normal">Remarque</th>
                 <th />
               </tr>
@@ -470,6 +472,20 @@ function AdminEdit({ create = false }: { create?: boolean }) {
                         <option key={c}>{c}</option>
                       ))}
                     </select>
+                  </td>
+                  <td className="py-1 pr-1">
+                    <span className="flex items-center gap-1">
+                      <input className={`${input} w-[4.5rem]`} placeholder="09-28" pattern="\d{2}-\d{2}" value={p.fromDate ?? ''} onChange={(e) => setPrice(i, { fromDate: e.target.value || null })} aria-label="Valable du (MM-JJ)" />
+                      –
+                      <input className={`${input} w-[4.5rem]`} placeholder="11-15" pattern="\d{2}-\d{2}" value={p.toDate ?? ''} onChange={(e) => setPrice(i, { toDate: e.target.value || null })} aria-label="Valable jusqu'au (MM-JJ)" />
+                    </span>
+                  </td>
+                  <td className="py-1 pr-1">
+                    <span className="flex items-center gap-1">
+                      <input className={`${input} w-[5.5rem]`} type="time" value={p.fromTime ?? ''} onChange={(e) => setPrice(i, { fromTime: e.target.value || null })} aria-label="Départs à partir de" />
+                      –
+                      <input className={`${input} w-[5.5rem]`} type="time" value={p.toTime ?? ''} onChange={(e) => setPrice(i, { toTime: e.target.value || null })} aria-label="Départs jusqu'à" />
+                    </span>
                   </td>
                   <td className="py-1 pr-1">
                     <input className={input} value={p.note ?? ''} onChange={(e) => setPrice(i, { note: str(e.target.value) })} aria-label="Remarque" />

@@ -54,6 +54,10 @@ export function sanitizeGolf(id: string, b: Record<string, unknown>): { golf?: G
       amount,
       currency: CURRENCIES.includes(p.currency) ? p.currency : 'EUR',
       note: str(p.note, 200),
+      fromTime: /^\d{2}:\d{2}$/.test(String(p.fromTime ?? '')) ? String(p.fromTime) : null,
+      toTime: /^\d{2}:\d{2}$/.test(String(p.toTime ?? '')) ? String(p.toTime) : null,
+      fromDate: /^\d{2}-\d{2}$/.test(String(p.fromDate ?? '')) ? String(p.fromDate) : null,
+      toDate: /^\d{2}-\d{2}$/.test(String(p.toDate ?? '')) ? String(p.toDate) : null,
     });
   }
 

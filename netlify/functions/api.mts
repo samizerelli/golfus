@@ -24,6 +24,8 @@ async function start() {
   // Première mise en route de la base : insertion des golfs de démonstration
   const r = await db.get<{ n: number }>('SELECT COUNT(*)::int AS n FROM golfs WHERE is_demo = 1');
   if (!r?.n) await (await import('../../server/db/seed.ts')).seedDemo();
+  // Fiches de golf vérifiées : importées une fois par version du fichier de données
+  await (await import('../../server/db/curated.ts')).importCurated();
   const server = createApp().listen(0, '127.0.0.1');
   await once(server, 'listening');
   return `http://127.0.0.1:${(server.address() as AddressInfo).port}`;

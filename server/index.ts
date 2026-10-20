@@ -21,6 +21,8 @@ if (config.showDemo && !(await db.get<{ n: number }>('SELECT COUNT(*)::int AS n 
   const { seedDemo } = await import('./db/seed.ts');
   await seedDemo();
 }
+// Fiches de golf vérifiées (tarifs et horaires relevés sur les sites officiels)
+await (await import('./db/curated.ts')).importCurated();
 app.listen(config.port, () => {
   console.log(`⛳ GolfUs API sur http://localhost:${config.port}`);
   if (!assertAdminConfigured()) console.warn('⚠️  ADMIN_PASSWORD / ADMIN_SESSION_SECRET non configurés : /admin désactivé.');

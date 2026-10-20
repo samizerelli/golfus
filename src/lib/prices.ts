@@ -17,21 +17,41 @@ export function mainCategory(prices: PriceRow[]): PriceCategory | null {
   return null;
 }
 
-/** Tarif applicable à une date : on privilégie la ligne la plus spécifique (saison + type de jour). */
-export function priceFor(prices: PriceRow[], category: PriceCategory, highSeasonMonths: number[], date: Date) {
+/** La date tombe-t-elle dans la période MM-JJ → MM-JJ de la ligne (période pouvant chevaucher le 1er janvier) ? */
+export function inDateRange(p: Pick<PriceRow, 'fromDate' | 'toDate'>, date: Date) {
+  if (!p.fromDate && !p.toDate) return true;
+  const pad = (n: number) => String(n).padStart(2, '0');
+  const d = `${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+  const a = p.fromDate ?? '01-01';
+  const b = p.toDate ?? '12-31';
+  return a <= b ? d >= a && d <= b : d >= a || d <= b;
+}
+
+/**
+ * Toutes les lignes applicables à une date avec la meilleure spécificité (période datée, saison, type de jour).
+ * Plusieurs lignes = plusieurs parcours ou formules au même moment (ex. Campo Norte / Campo Sur).
+ */
+export function applicablePrices(prices: PriceRow[], category: PriceCategory, highSeasonMonths: number[], date: Date): PriceRow[] {
   const season = seasonFor(highSeasonMonths, date);
   const day = dayTypeFor(date);
+  const dated = prices.some((p) => p.category === category && (p.fromDate || p.toDate));
   const candidates = prices
     .filter((p) => p.category === category)
-    .filter((p) => p.season === 'all' || season === null || p.season === season)
+    .filter((p) => inDateRange(p, date))
+    // Avec des périodes datées, la saison est déjà portée par la date
+    .filter((p) => dated || p.season === 'all' || season === null || p.season === season)
     .filter((p) => p.dayType === 'all' || p.dayType === day)
-    .map((p) => ({ p, score: (p.season !== 'all' && p.season === season ? 2 : 0) + (p.dayType === day ? 1 : 0) }))
+    .map((p) => ({ p, score: (p.fromDate || p.toDate ? 4 : 0) + (p.season !== 'all' && p.season === season ? 2 : 0) + (p.dayType === day ? 1 : 0) }))
     .sort((a, b) => b.score - a.score);
-  // Sans saison définie et avec des lignes saisonnières, on ne peut pas trancher : on prend le min
-  if (season === null && candidates.some((c) => c.p.season !== 'all')) {
-    return candidates.map((c) => c.p).sort((a, b) => a.amount - b.amount)[0] ?? null;
-  }
-  return candidates[0]?.p ?? null;
+  // Sans saison définie et avec des lignes saisonnières, on ne peut pas trancher : toutes sont possibles
+  if (!dated && season === null && candidates.some((c) => c.p.season !== 'all')) return candidates.map((c) => c.p);
+  const best = candidates[0]?.score;
+  return candidates.filter((c) => c.score === best).map((c) => c.p);
+}
+
+/** Tarif applicable à une date : le moins cher parmi les lignes les plus spécifiques. */
+export function priceFor(prices: PriceRow[], category: PriceCategory, highSeasonMonths: number[], date: Date) {
+  return applicablePrices(prices, category, highSeasonMonths, date).sort((a, b) => a.amount - b.amount)[0] ?? null;
 }
 
 export function priceMatrix(prices: PriceRow[], category: PriceCategory) {

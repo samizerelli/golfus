@@ -12,6 +12,8 @@ export default defineConfig(({ mode }) => {
       // Tunnels https pour tester sur téléphone (voir README)
       allowedHosts: ['.trycloudflare.com', '.lhr.life', '.localhost.run', '.ngrok-free.app', '.ngrok.app'],
       proxy: { '/api': `http://localhost:${apiPort}` },
+      // La base locale (PGlite) et le code serveur ne doivent pas recharger la page à chaque écriture
+      watch: { ignored: ['**/data/**', '**/server/**', '**/netlify/**', '**/scripts/**'] },
     },
     build: {
       outDir: 'dist',

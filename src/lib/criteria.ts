@@ -1,6 +1,6 @@
-import type { GolfSummary } from '../../shared/types';
+import type { GolfSummary, PriceRow } from '../../shared/types';
 import { intervalsOn, parseHours } from './hours';
-import { mainCategory, priceFor } from './prices';
+import { applicablePrices, mainCategory } from './prices';
 import type { Criteria } from '../state/search';
 
 export type Tri = boolean | null; // null = information inconnue
@@ -44,9 +44,38 @@ export function passes(m: GolfMatch, c: Criteria) {
   return [m.openInSlot, m.holesOk, m.ratingOk].every((v) => v === true || (v === null && !c.hideUnknown));
 }
 
-/** Tarif par personne pour la date et le début de plage choisis (green fee principal, saison, semaine/week-end). */
-export function pricePerPerson(g: GolfSummary, c: Pick<Criteria, 'date' | 'timeFrom'>) {
+const toMin = (hhmm: string) => {
+  const [h, m] = hhmm.split(':').map(Number);
+  return h * 60 + m;
+};
+
+/**
+ * Tarif par personne pour la date et la plage de départ choisies (saison, semaine/week-end, tranche horaire).
+ * Les tarifs à tranche horaire (early bird, twilight…) ne comptent que si la tranche croise la plage choisie.
+ * Renvoie le moins cher applicable ; `varies` = plusieurs tarifs possibles dans la plage (affiché « dès »).
+ */
+export function pricePerPerson(g: GolfSummary, c: Pick<Criteria, 'date' | 'timeFrom'> & Partial<Pick<Criteria, 'timeTo'>>) {
   const cat = mainCategory(g.prices);
   if (!cat) return null;
-  return priceFor(g.prices, cat, g.highSeasonMonths, at(c.date, c.timeFrom));
+  const date = at(c.date, c.timeFrom);
+  const s = toMin(c.timeFrom);
+  const e = toMin(c.timeTo ?? c.timeFrom) || s;
+  const inSlot = (p: PriceRow) => {
+    if (!p.fromTime && !p.toTime) return true;
+    const a = p.fromTime ? toMin(p.fromTime) : 0;
+    const b = p.toTime ? toMin(p.toTime) : 24 * 60;
+    return a <= Math.max(s, e) && b > s;
+  };
+  // Lignes de la catégorie principale + twilight (seulement si son heure de début est connue)
+  const rows = g.prices.filter((p) => (p.category === cat || (p.category === 'twilight' && p.fromTime)) && inSlot(p));
+  const options = [cat, 'twilight' as const]
+    .flatMap((k) => {
+      // Par tranche horaire distincte : le tarif le plus spécifique pour la saison et le jour
+      const windows = new Map<string, PriceRow[]>();
+      for (const p of rows.filter((r) => r.category === k)) windows.set(`${p.fromTime}-${p.toTime}`, [...(windows.get(`${p.fromTime}-${p.toTime}`) ?? []), p]);
+      return [...windows.values()].flatMap((list) => applicablePrices(list, k, g.highSeasonMonths, date));
+    });
+  if (!options.length) return null;
+  const sorted = options.sort((a, b) => a.amount - b.amount);
+  return Object.assign({}, sorted[0], { varies: new Set(sorted.map((p) => p.amount)).size > 1 });
 }

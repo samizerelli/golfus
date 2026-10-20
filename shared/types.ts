@@ -31,6 +31,12 @@ export interface PriceRow {
   amount: number;
   currency: Currency;
   note?: string | null;
+  /** Tranche horaire de départ à laquelle s'applique ce tarif (HH:MM), ex. twilight dès 14:00 */
+  fromTime?: string | null;
+  toTime?: string | null;
+  /** Période de validité dans l'année (MM-JJ, bornes incluses ; peut chevaucher le 1er janvier), ex. 09-28 → 11-15 */
+  fromDate?: string | null;
+  toDate?: string | null;
 }
 
 export const SERVICE_KEYS = ['clubRental', 'drivingRange', 'restaurant', 'buggy', 'proShop', 'lessons'] as const;

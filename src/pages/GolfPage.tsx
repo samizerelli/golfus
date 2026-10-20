@@ -2,7 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { ArrowLeft, Check, CircleHelp, ExternalLink, Flag, Mail, MapPin, Pencil, Phone, X } from 'lucide-react';
 import { useState, type FormEvent, type ReactNode } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { SERVICE_KEYS, type GolfDetail, type PriceCategory } from '../../shared/types';
+import { SERVICE_KEYS, type GolfDetail, type PriceCategory, type PriceRow } from '../../shared/types';
 import { FavoriteButton, GolfActions, GolfPhoto, OpenStatus, ReliabilityNote, ShareButton } from '../components/GolfBits';
 import { golfName, vtName } from '../components/GolfCard';
 import { GlassButton, GlassCard } from '../components/glass';
@@ -12,7 +12,7 @@ import { api, ApiError } from '../lib/api';
 import { haversineKm } from '../lib/geo';
 import { formatIntervals, intervalsOn, parseHours, useHoursLib, weekStart } from '../lib/hours';
 import { appleDirections, displayHost, googleDirections, telHref } from '../lib/links';
-import { priceMatrix } from '../lib/prices';
+import { inDateRange, priceMatrix } from '../lib/prices';
 import { useSettings } from '../lib/settings';
 import { useSearch } from '../state/search';
 
@@ -30,7 +30,9 @@ function Section({ title, children, id }: { title: string; children: ReactNode; 
 function PricesSection({ golf }: { golf: GolfDetail }) {
   const { t, locale } = useI18n();
   const { money, currency, rates } = useSettings();
-  const grid: PriceCategory[] = ['green_fee_18', 'green_fee_9'];
+  // Tarifs par tranche horaire (early bird, twilight…) : présentés en liste par saison au lieu d'un tableau
+  const timed = golf.prices.some((p) => p.fromTime || p.toTime || p.fromDate || p.toDate);
+  const grid: PriceCategory[] = timed ? ['green_fee_18', 'green_fee_9', 'twilight'] : ['green_fee_18', 'green_fee_9'];
   const present = grid.filter((c) => golf.prices.some((p) => p.category === c));
   const extras = golf.prices.filter((p) => !grid.includes(p.category));
   const converted = golf.prices.some((p) => p.currency !== currency) && rates;
@@ -59,9 +61,68 @@ function PricesSection({ golf }: { golf: GolfDetail }) {
   const label = (s: string) => (s === 'low' ? t('price.low') : s === 'high' ? t('price.high') : t('price.allYear'));
   const dayLabel = (d: string) => (d === 'weekday' ? t('price.weekday') : d === 'weekend' ? t('price.weekend') : t('price.all'));
 
+  const windowLabel = (p: { fromTime?: string | null; toTime?: string | null }) =>
+    p.fromTime && p.toTime ? `${p.fromTime}–${p.toTime}` : p.fromTime ? t('price.fromTime', { t: p.fromTime }) : p.toTime ? t('price.untilTime', { t: p.toTime }) : null;
+  // Groupes : périodes datées (dans l'ordre de l'année, période en cours mise en avant) ou saisons
+  const md = (s: string) => new Date(2000, Number(s.slice(0, 2)) - 1, Number(s.slice(3))).toLocaleDateString(locale, { day: 'numeric', month: 'short' });
+  const groupOf = (p: PriceRow) => (p.fromDate || p.toDate ? `${p.fromDate ?? '01-01'}|${p.toDate ?? '12-31'}` : p.season);
+  const groups = [...new Set(golf.prices.filter((p) => grid.includes(p.category)).map(groupOf))].sort();
+  const today = new Date();
+  const groupTitle = (k: string) => {
+    if (!k.includes('|')) return k === 'all' ? null : label(k);
+    const [a, b] = k.split('|');
+    return t('price.period', { a: md(a), b: md(b) });
+  };
+  const isNow = (k: string) => k.includes('|') && inDateRange({ fromDate: k.split('|')[0], toDate: k.split('|')[1] }, today);
+
   return (
     <div className="space-y-4">
-      {present.map((cat) => {
+      {timed && (() => {
+        // Période en cours d'abord ; les autres périodes repliées pour garder la fiche lisible
+        const renderGroup = (s: string) => (<table key={s} className={cx('w-full text-sm', isNow(s) && 'rounded-[16px] outline-2 outline-offset-4 outline-fairway-500/40')}>
+            <caption className="mb-1 text-left font-semibold">
+              {t('price.greenFees')}
+              {groupTitle(s) && <span className="font-normal text-muted"> · {groupTitle(s)}</span>}
+              {isNow(s) && <span className="ml-2 align-middle"><Badge tone="green">{t('price.now')}</Badge></span>}
+            </caption>
+            <tbody>
+              {golf.prices
+                .filter((p) => grid.includes(p.category) && groupOf(p) === s)
+                .sort((a, b) => (a.fromTime ?? '').localeCompare(b.fromTime ?? ''))
+                .map((p, i) => {
+                  const v = money(p.amount, p.currency);
+                  return (
+                    <tr key={i} className="border-b border-line/60">
+                      <th scope="row" className="py-2 text-left font-normal">
+                        {t(`price.cat.${p.category}`)}
+                        {(windowLabel(p) || p.dayType !== 'all') && (
+                          <span className="text-muted tabular-nums"> · {[windowLabel(p), p.dayType !== 'all' && dayLabel(p.dayType)].filter(Boolean).join(', ')}</span>
+                        )}
+                        {p.note && <span className="block text-xs text-muted">{p.note}</span>}
+                      </th>
+                      <td className="py-2 text-right text-base font-semibold tabular-nums" title={v.converted ? v.original : undefined}>
+                        {v.text}
+                      </td>
+                    </tr>
+                  );
+                })}
+            </tbody>
+          </table>);
+        const current = groups.filter(isNow);
+        const others = groups.filter((g) => !isNow(g));
+        return current.length && others.length ? (
+          <>
+            {current.map(renderGroup)}
+            <details className="group">
+              <summary className="cursor-pointer text-sm font-semibold text-link">{t('price.otherPeriods', { n: others.length })}</summary>
+              <div className="mt-3 space-y-4">{others.map(renderGroup)}</div>
+            </details>
+          </>
+        ) : (
+          groups.map(renderGroup)
+        );
+      })()}
+      {!timed && present.map((cat) => {
         const m = priceMatrix(golf.prices, cat);
         return (
           <table key={cat} className="w-full text-sm">
@@ -106,8 +167,8 @@ function PricesSection({ golf }: { golf: GolfDetail }) {
                 <tr key={i} className="border-b border-line/60">
                   <th scope="row" className="py-2 text-left font-normal">
                     {t(`price.cat.${p.category}`)}
-                    {(p.season !== 'all' || p.dayType !== 'all') && (
-                      <span className="text-muted"> · {[p.season !== 'all' && label(p.season), p.dayType !== 'all' && dayLabel(p.dayType)].filter(Boolean).join(', ')}</span>
+                    {(p.season !== 'all' || p.dayType !== 'all' || windowLabel(p)) && (
+                      <span className="text-muted"> · {[p.season !== 'all' && label(p.season), p.dayType !== 'all' && dayLabel(p.dayType), windowLabel(p)].filter(Boolean).join(', ')}</span>
                     )}
                     {p.note && <span className="block text-xs text-muted">{p.note}</span>}
                   </th>

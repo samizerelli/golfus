@@ -13,5 +13,7 @@
     "noUnusedLocals": true,
     "types": ["node"]
   },
-  "include": ["server", "shared", "vite.config.ts"]
+  "include": ["server", "shared", "scripts", "vite.config.ts"],
+  // Test des calculs de prix du client (exécuté par tsx, typé par le projet client)
+  "exclude": ["server/tests/prices.test.ts"]
 }

@@ -44,6 +44,10 @@ interface PriceDbRow {
   amount: number;
   currency: string;
   note: string | null;
+  from_time: string | null;
+  to_time: string | null;
+  from_date: string | null;
+  to_date: string | null;
 }
 
 const json = <T>(s: string | null | undefined, fallback: T): T => {
@@ -75,6 +79,10 @@ async function pricesByIds(ids: string[]): Promise<Map<string, PriceRow[]>> {
       amount: Number(r.amount),
       currency: r.currency as PriceRow['currency'],
       note: r.note,
+      fromTime: r.from_time,
+      toTime: r.to_time,
+      fromDate: r.from_date,
+      toDate: r.to_date,
     });
     map.set(r.golf_id, list);
   }
@@ -369,7 +377,7 @@ export async function saveGolf(g: GolfEditable) {
     await db.run('DELETE FROM prices WHERE golf_id = ?', g.id);
     for (const p of g.prices ?? [])
       await db.run(
-        'INSERT INTO prices (golf_id, category, season, day_type, amount, currency, note) VALUES (?,?,?,?,?,?,?)',
+        'INSERT INTO prices (golf_id, category, season, day_type, amount, currency, note, from_time, to_time, from_date, to_date) VALUES (?,?,?,?,?,?,?,?,?,?,?)',
         g.id,
         p.category,
         p.season,
@@ -377,6 +385,10 @@ export async function saveGolf(g: GolfEditable) {
         p.amount,
         p.currency,
         p.note ?? null,
+        p.fromTime ?? null,
+        p.toTime ?? null,
+        p.fromDate ?? null,
+        p.toDate ?? null,
       );
   });
 }

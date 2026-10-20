@@ -47,12 +47,16 @@ export function PricePerPerson({ golf, criteria, large = false, inCard = false }
       </span>
     );
   const v = money(p.amount, p.currency);
+  // Tranche horaire du tarif retenu (twilight dès 14:00, départs 08:00–08:50…)
+  const window = p.category === 'twilight' && p.fromTime ? t('s2.twilightFrom', { t: p.fromTime }) : p.fromTime || p.toTime ? t('s2.window', { a: p.fromTime ?? '', b: p.toTime ?? '' }) : null;
   return (
     <span className="text-right">
+      {p.varies && <span className="text-xs text-muted">{t('s2.from')} </span>}
       <span className={cx('font-semibold tracking-tight tabular-nums', large ? 'text-3xl' : 'text-xl')} title={v.converted ? v.original : undefined}>
         {v.text}
       </span>
       <span className="text-xs text-muted"> {t('s2.perPerson')}</span>
+      {window && <span className="block text-[11px] text-muted tabular-nums">{window}</span>}
       <span className="block text-[11px] font-medium text-gold-ink">{t('s2.indicative')}</span>
     </span>
   );
