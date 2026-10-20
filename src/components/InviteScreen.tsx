@@ -144,7 +144,8 @@ export function InviteForm({ golf, top }: { golf: GolfSummary | null; top?: Reac
   const navigate = useNavigate();
   const qc = useQueryClient();
   const { user } = useAuth();
-  const { criteria: c, setView, origin } = useSearch();
+  const { criteria: c } = useSearch();
+  const { setOpen } = useRail();
   const friends = useQuery({ queryKey: ['friends'], queryFn: api.friends, enabled: !!user });
   const [filter, setFilter] = useState('');
   const [selected, setSelected] = useState<Set<string>>(new Set());
@@ -192,8 +193,6 @@ export function InviteForm({ golf, top }: { golf: GolfSummary | null; top?: Reac
     <button
       type="button"
       onClick={() => {
-        // Sans recherche en cours (arrivée depuis une fiche ou un lien), on revient à l'accueil
-        setView(origin ? 'search' : 'home');
         navigate('/', { viewTransition: true });
       }}
       className="glass glass-interactive grid size-11 shrink-0 place-items-center rounded-full"
@@ -209,8 +208,8 @@ export function InviteForm({ golf, top }: { golf: GolfSummary | null; top?: Reac
         outing={send.data}
         external={external}
         onHome={() => {
-          setView('home');
           navigate('/');
+          setOpen('outings');
         }}
       />
     );

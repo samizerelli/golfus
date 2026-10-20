@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Check, ChevronRight, Lock, Search, Share2, ShieldCheck, UserPlus, Wrench, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { CURRENCIES, type Currency } from '../../shared/types';
 import { LANGS, useI18n } from '../i18n';
 import { api, type Notification, type Outing } from '../lib/api';
@@ -11,7 +11,7 @@ import { AccountPanel, Avatar } from './AccountPanel';
 import { GolfPhoto } from './GolfBits';
 import { Badge, Button, cx, Notice, Segmented } from './ui';
 import { useRail } from './ActionRail';
-import { todayStr, useSearch } from '../state/search';
+import { todayStr } from '../state/search';
 
 const row = 'frost flex items-center gap-3 rounded-[20px] p-2.5 pr-3';
 
@@ -269,8 +269,6 @@ function notifText(n: Notification, t: ReturnType<typeof useI18n>['t'], locale: 
 export function NotificationsBody() {
   const { t, locale } = useI18n();
   const { setOpen } = useRail();
-  const { setView } = useSearch();
-  const navigate = useNavigate();
   const qc = useQueryClient();
   const q = useQuery({ queryKey: ['notifications'], queryFn: api.notifications });
   const read = useMutation({ mutationFn: api.readNotifications, onSuccess: () => qc.invalidateQueries({ queryKey: ['notifications'] }) });
@@ -290,11 +288,8 @@ export function NotificationsBody() {
           <button
             type="button"
             onClick={() => {
-              // Demande d'ami → panneau Amis ; partie → accueil, où sont les parties en cours
-              if (n.type.startsWith('friend_')) return setOpen('friends');
-              setOpen(null);
-              setView('home');
-              navigate('/');
+              // Demande d'ami → panneau Amis ; partie → panneau Mes parties
+              setOpen(n.type.startsWith('friend_') ? 'friends' : 'outings');
             }}
             className={cx('frost glass-interactive flex w-full items-center gap-2 rounded-[20px] p-3 text-left text-sm', !n.readAt && 'ring-2 ring-glacier-400/70')}
           >

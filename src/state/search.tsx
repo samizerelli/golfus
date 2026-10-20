@@ -34,14 +34,9 @@ export const todayStr = () => {
 };
 export const DEFAULT_CRITERIA = (): Criteria => ({ date: todayStr(), timeFrom: '08:00', timeTo: '18:00', holes: 'any', minRating: 0, players: 2, hideUnknown: false });
 
-/** home = accueil (New game + parties en cours) ; search = filtres + golfs disponibles mis à jour en direct */
-export type View = 'home' | 'search';
-
 interface Ctx {
   criteria: Criteria;
   setCriteria: (c: Partial<Criteria>) => void;
-  view: View;
-  setView: (v: View) => void;
   origin: Origin | null;
   setOrigin: (o: Origin | null) => void;
   radius: RadiusKm;
@@ -67,7 +62,6 @@ export function SearchProvider({ children }: { children: ReactNode }) {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [hoverId, setHoverId] = useState<string | null>(null);
   const [criteria, setCriteriaState] = useState<Criteria>(DEFAULT_CRITERIA);
-  const [view, setView] = useState<View>('home');
   const [now, setNow] = useState(() => new Date());
 
   useEffect(() => {
@@ -89,8 +83,6 @@ export function SearchProvider({ children }: { children: ReactNode }) {
     return {
       criteria,
       setCriteria: (c) => setCriteriaState((prev) => ({ ...prev, ...c })),
-      view,
-      setView,
       origin,
       setOrigin: (o) => {
         setOrigin(o);
@@ -105,7 +97,7 @@ export function SearchProvider({ children }: { children: ReactNode }) {
       hoverId,
       setHoverId,
     };
-  }, [hoverId, origin, radius, selectedId, now, criteria, view]);
+  }, [hoverId, origin, radius, selectedId, now, criteria]);
 
   return <SearchContext.Provider value={value}>{children}</SearchContext.Provider>;
 }

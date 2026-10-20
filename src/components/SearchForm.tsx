@@ -1,4 +1,4 @@
-import { ArrowLeft, Minus, Plus } from 'lucide-react';
+import { Minus, Plus } from 'lucide-react';
 import { useState, type ReactNode } from 'react';
 import { RADII_KM, type RadiusKm } from '../../shared/types';
 import { useI18n } from '../i18n';
@@ -136,7 +136,7 @@ export function Stepper({ value, onChange, min = 1, max = 8, label }: { value: n
 /** Filtres de la partie : chaque changement met à jour la liste des golfs disponibles (pas de bouton à valider). */
 export function SearchForm() {
   const { t } = useI18n();
-  const { criteria: c, setCriteria, radius, setRadius, setView } = useSearch();
+  const { criteria: c, setCriteria, radius, setRadius } = useSearch();
   const loc = useLocate();
 
   return (
@@ -144,12 +144,7 @@ export function SearchForm() {
       className="flex flex-col gap-5"
       onSubmit={(e) => e.preventDefault()}
     >
-      <div className="flex items-center gap-2">
-        <button type="button" onClick={() => setView('home')} className="glass glass-interactive grid size-11 shrink-0 place-items-center rounded-full" aria-label={t('s1.backHome')}>
-          <ArrowLeft className="size-5" aria-hidden />
-        </button>
-        <h1 className="text-[24px] leading-tight">{t('s1.title')}</h1>
-      </div>
+      <h1 className="text-[24px] leading-tight">{t('s1.title')}</h1>
 
       <Field
         label={t('s1.location')}

@@ -6,7 +6,6 @@ import { ActionRail } from '../components/ActionRail';
 import { SectionBoundary } from '../components/ErrorBoundary';
 import { BottomSheet, type Snap } from '../components/BottomSheet';
 import { GolfSideCards, InviteForm } from '../components/InviteScreen';
-import { HomeLanding } from '../components/HomeLanding';
 import { Logo } from '../components/Logo';
 import { MapView } from '../components/MapView';
 import { ResultsList } from '../components/ResultsList';
@@ -34,23 +33,16 @@ function scrollListTo(el: HTMLElement | undefined) {
   sc.scrollTo({ top: sc.scrollTop + el.getBoundingClientRect().top - sc.getBoundingClientRect().top - 8, behavior: 'smooth' });
 }
 
-/** Accueil, ou filtres + golfs disponibles (route « / »). Sur ordinateur, la liste est dans un panneau à droite. */
+/** Écran d'arrivée (route « / ») : filtres et golfs disponibles. Sur ordinateur, la liste est dans un panneau à droite. */
 export function HomeScreen() {
-  const { view } = useSearch();
   const { cardRefs, desktop } = useLayout();
   return (
-    <div key={view} className="animate-rise flex min-h-full flex-col">
-      {view === 'home' ? (
-        <HomeLanding />
-      ) : (
-        <>
-          <SearchForm />
-          {!desktop && (
-            <div className="mt-6 border-t border-line pt-5">
-              <ResultsList cardRefs={cardRefs} />
-            </div>
-          )}
-        </>
+    <div className="animate-rise flex min-h-full flex-col">
+      <SearchForm />
+      {!desktop && (
+        <div className="mt-6 border-t border-line pt-5">
+          <ResultsList cardRefs={cardRefs} />
+        </div>
       )}
     </div>
   );
@@ -75,7 +67,7 @@ export function MapLayout() {
   const desktop = useMediaQuery('(min-width: 1024px)');
   const invite = useMatch('/inviter/:id');
   const inviteId = invite?.params.id ? decodeURIComponent(invite.params.id) : null;
-  const { origin, radius, view, selectedId, setSelectedId, hoverId } = useSearch();
+  const { origin, radius, selectedId, setSelectedId, hoverId } = useSearch();
   const { visible, all } = useResults();
   const { money, convert } = useSettings();
   const cardRefs = useRef(new Map<string, HTMLElement>());
@@ -88,16 +80,16 @@ export function MapLayout() {
   // Chaque changement d'écran repart du haut du panneau ; sur mobile, le tiroir reprend sa hauteur par défaut
   useEffect(() => {
     document.querySelectorAll<HTMLElement>('[data-scroll]').forEach((el) => el.scrollTo({ top: 0 }));
-    if (!desktop) setSnap(inviteId || view === 'search' ? 'full' : 'half');
-  }, [view, inviteId, desktop]);
+    if (!desktop) setSnap('full');
+  }, [inviteId, desktop]);
 
-  const golfsOnMap = useMemo(() => (inviteId ? (inviteGolf ? [inviteGolf] : []) : view === 'search' ? visible : []), [inviteId, inviteGolf, view, visible]);
+  const golfsOnMap = useMemo(() => (inviteId ? (inviteGolf ? [inviteGolf] : []) : visible), [inviteId, inviteGolf, visible]);
   const insets = useMemo(
     () =>
       desktop
-        ? { top: 0, bottom: 0, left: !inviteId && view === 'search' ? 872 : 460, right: inviteId ? 440 : 90 }
+        ? { top: 0, bottom: 0, left: !inviteId ? 872 : 460, right: inviteId ? 440 : 90 }
         : { top: 0, bottom: Math.round(window.innerHeight * 0.5), left: 0, right: 0 },
-    [desktop, inviteId, view],
+    [desktop, inviteId],
   );
 
   const labelFor = useCallback(
@@ -129,7 +121,7 @@ export function MapLayout() {
 
   return (
     <div className="relative min-h-0 flex-1 overflow-hidden">
-      <SectionBoundary resetKey={inviteId ?? view}>
+      <SectionBoundary resetKey={inviteId ?? 'search'}>
       <MapView
         origin={origin}
         golfs={golfsOnMap}
@@ -139,7 +131,7 @@ export function MapLayout() {
         unnamedLabel={t('card.unnamed')}
         labelFor={labelFor}
         insets={insets}
-        showRadius={view === 'search' && !inviteId}
+        showRadius={!inviteId}
         focus={inviteId ? inviteGolf : null}
         highlightId={inviteId ? null : hoverId}
       />
@@ -164,7 +156,7 @@ export function MapLayout() {
       )}
 
       {/* Golfs disponibles selon les filtres, mis à jour en direct (ordinateur) */}
-      {desktop && !inviteId && view === 'search' && (
+      {desktop && !inviteId && (
         <aside aria-label={t('results.list')} className="glass glass-rounded animate-rise absolute top-4 bottom-4 left-[452px] z-[1000] flex w-[404px] flex-col">
           <div data-scroll className="min-h-0 flex-1 overflow-y-auto px-4 pt-4 pb-5">
             <ResultsList cardRefs={cardRefs} />

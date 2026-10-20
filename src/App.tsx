@@ -27,18 +27,18 @@ export default function App() {
   const { pathname } = useLocation();
   const { user, loading } = useAuth();
   // Intro « I wanna play » : visiteur non connecté, à l'arrivée sur l'accueil, une fois par session
-  const { view } = useSearch();
+  const { origin } = useSearch();
   const [introOpen, setIntroOpen] = useState(() => !introSeen());
   // Affichée d'emblée (sans attendre la session), sauf si l'appareil a déjà servi à se connecter :
   // on attend alors la réponse pour ne pas la montrer à quelqu'un de connecté
-  const showIntro = introOpen && !user && pathname === '/' && view === 'home' && !(loading && hadAccount());
-  // Dès que le visiteur utilise le site (New game, autre page), l'intro ne doit plus surgir par-dessus
+  const showIntro = introOpen && !user && pathname === '/' && !origin && !(loading && hadAccount());
+  // Dès que le visiteur utilise le site (lieu choisi, autre page), l'intro ne doit plus surgir par-dessus
   useEffect(() => {
-    if (introOpen && (view !== 'home' || pathname !== '/')) {
+    if (introOpen && (origin || pathname !== '/')) {
       markSeen();
       setIntroOpen(false);
     }
-  }, [view, pathname, introOpen]);
+  }, [origin, pathname, introOpen]);
   return (
     <RailProvider>
     <div className="flex h-dvh flex-col">
