@@ -305,6 +305,7 @@ export const en: Dict = {
   'book.title': 'Book a tee time',
   'book.players': 'Players',
   'book.online': 'Book online',
+  'book.prefilledFor': 'Opens the course booking page set to {date}, {n} player(s)',
   'book.onlineHint': 'Opens the club’s website, where you choose the date and players.',
   'book.website': 'See availability on the club’s website',
   'book.email': 'Request a tee time by email',

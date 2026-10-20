@@ -305,6 +305,7 @@ export const es: Dict = {
   'book.title': 'Reservar una salida',
   'book.players': 'Jugadores',
   'book.online': 'Reservar en línea',
+  'book.prefilledFor': 'Abre la reserva del campo para el {date}, {n} jugador(es)',
   'book.onlineHint': 'Se abre la web del club, donde eliges la fecha y los jugadores.',
   'book.website': 'Ver disponibilidad en la web del club',
   'book.email': 'Pedir una salida por correo',

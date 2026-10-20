@@ -4,6 +4,7 @@ import { useState, type MouseEvent, type ReactNode } from 'react';
 import type { GolfSummary } from '../../shared/types';
 import { useI18n } from '../i18n';
 import { api } from '../lib/api';
+import { prefilledBookingUrl } from '../lib/booking';
 import { telHref } from '../lib/links';
 import { useSearch } from '../state/search';
 import { buttonClass, Dialog, haptic, Notice } from './ui';
@@ -50,11 +51,11 @@ function Option({ href, icon, title, hint, external = true, primary = false }: {
  */
 export function BookingButton({ golf, size = 'sm' }: { golf: GolfSummary; size?: 'sm' | 'md' }) {
   const { t, locale } = useI18n();
-  const { playAt } = useSearch();
+  const { playAt, criteria } = useSearch();
   const [open, setOpen] = useState(false);
   const [date, setDate] = useState(() => toDate(playAt));
   const [time, setTime] = useState(() => toTime(playAt));
-  const [players, setPlayers] = useState(2);
+  const [players, setPlayers] = useState(criteria.players);
   // L'e-mail n'est pas dans la liste de résultats : on charge la fiche à l'ouverture (mise en cache)
   const detail = useQuery({ queryKey: ['golf', golf.id], queryFn: () => api.golf(golf.id), enabled: open, staleTime: 10 * 60_000 });
   const email = detail.data?.email ?? null;
@@ -66,6 +67,29 @@ export function BookingButton({ golf, size = 'sm' }: { golf: GolfSummary; size?:
   const body = t('book.body', { players, date: niceDate, time, golf: golf.name });
   const nothing = !golf.bookingUrl && !golf.website && !email && !phone;
 
+  // Réservation en ligne connue : un clic ouvre la page du golf déjà réglée (date, joueurs, matin/après-midi)
+  if (golf.bookingUrl) {
+    const link = prefilledBookingUrl(golf.bookingUrl, { date: criteria.date, timeFrom: criteria.timeFrom, timeTo: criteria.timeTo, players: criteria.players });
+    const when = new Date(`${criteria.date}T12:00:00`).toLocaleDateString(locale, { weekday: 'short', day: 'numeric', month: 'short' });
+    return (
+      <a
+        href={link.url}
+        target="_blank"
+        rel="noopener noreferrer"
+        onClick={(e: MouseEvent) => {
+          e.stopPropagation();
+          haptic();
+        }}
+        className={buttonClass('gold', size)}
+        title={link.filled.date ? t('book.prefilledFor', { date: when, n: criteria.players }) : t('book.onlineHint')}
+      >
+        <Ticket className="size-4" aria-hidden />
+        {t('action.book')}
+        <ExternalLink className="size-3.5 opacity-60" aria-hidden />
+      </a>
+    );
+  }
+
   return (
     <>
       <button
@@ -75,6 +99,7 @@ export function BookingButton({ golf, size = 'sm' }: { golf: GolfSummary; size?:
           haptic();
           setDate(toDate(playAt));
           setTime(toTime(playAt));
+          setPlayers(criteria.players);
           setOpen(true);
         }}
         className={buttonClass('gold', size)}

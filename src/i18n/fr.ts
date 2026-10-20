@@ -303,6 +303,7 @@ export const fr = {
   'book.title': 'Réserver un départ',
   'book.players': 'Joueurs',
   'book.online': 'Réserver en ligne',
+  'book.prefilledFor': 'Ouvre la réservation du golf réglée sur {date}, {n} joueur(s)',
   'book.onlineHint': 'S’ouvre sur le site du golf : vous y choisirez la date et les joueurs.',
   'book.website': 'Voir les disponibilités sur le site du golf',
   'book.email': 'Demander un départ par e-mail',

@@ -26,3 +26,18 @@ test('plusieurs parcours au même moment : tous proposés, le moins cher en prem
   assert.deepEqual(applicablePrices(prices, 'green_fee_18', [], d('2026-10-20')).map((p) => p.amount).sort(), [115, 180]);
   assert.equal(priceFor(prices, 'green_fee_18', [], d('2026-10-20'))?.amount, 115);
 });
+
+test('lien de réservation pré-rempli selon le moteur du golf', async () => {
+  const { prefilledBookingUrl } = await import('../../src/lib/booking.ts');
+  const p = { date: '2026-10-22', timeFrom: '08:00', timeTo: '12:00', players: 3 };
+  const teeone = prefilledBookingUrl('https://open.teeone.golf/es/santamaria/disponibilidad', p);
+  assert.equal(teeone.url, 'https://open.teeone.golf/es/santamaria/disponibilidad?fecha=20261022&numJug=3&hora=m');
+  // Plage à cheval sur midi : pas de filtre matin / après-midi ; 6 joueurs → départs à 4 places
+  assert.equal(
+    prefilledBookingUrl('https://open.teeone.golf/es/santamaria/disponibilidad', { ...p, timeTo: '18:00', players: 6 }).url,
+    'https://open.teeone.golf/es/santamaria/disponibilidad?fecha=20261022&numJug=4',
+  );
+  assert.equal(prefilledBookingUrl('https://alhaurin.golfmanager.com/consumer/ebookings?i=1', p).url, 'https://alhaurin.golfmanager.com/consumer/ebookings?i=1&date=2026-10-22');
+  assert.equal(prefilledBookingUrl('https://reservas-golf.rioreal.com/reserva', p).url, 'https://reservas-golf.rioreal.com/reserva/fecha:2026-10-22');
+  assert.equal(prefilledBookingUrl('https://reservas72.miraflores-golf.com/', p).filled.date, false);
+});
