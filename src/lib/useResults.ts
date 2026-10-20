@@ -36,7 +36,14 @@ export function useResults() {
   const { visible, matches } = useMemo(() => {
     const matches = new Map<string, GolfMatch>();
     for (const g of all) matches.set(g.id, matchGolf(g, criteria));
-    const visible = all.filter((g) => passes(matches.get(g.id)!, criteria)).sort((a, b) => (a.distanceKm ?? 0) - (b.distanceKm ?? 0));
+    // Parcours disponibles : rien de connu ne les exclut (fermé sur le créneau, mauvais nombre de trous, note trop basse)
+    // et on peut les joindre pour réserver (téléphone, site ou lien de réservation).
+    // Ceux dont l'ouverture sur le créneau est confirmée passent en premier, puis tri par distance.
+    const reachable = (g: (typeof all)[number]) => !!(g.phone || g.website || g.bookingUrl);
+    const confirmed = (id: string) => (matches.get(id)!.openInSlot === true ? 0 : 1);
+    const visible = all
+      .filter((g) => reachable(g) && passes(matches.get(g.id)!, criteria))
+      .sort((a, b) => confirmed(a.id) - confirmed(b.id) || (a.distanceKm ?? 0) - (b.distanceKm ?? 0));
     return { visible, matches };
     // hoursReady : on recalcule quand la bibliothèque d'horaires est chargée
     // eslint-disable-next-line react-hooks/exhaustive-deps

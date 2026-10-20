@@ -193,10 +193,6 @@ export function ResultsList({ cardRefs }: { cardRefs: MutableRefObject<Map<strin
           </li>
         ))}
       </ul>
-      <label className="flex min-h-11 items-center justify-between gap-3 text-sm">
-        {t('s2.hideUnknown')}
-        <input type="checkbox" role="switch" checked={c.hideUnknown} onChange={(e) => setCriteria({ hideUnknown: e.target.checked })} className="size-6 accent-fairway-700" />
-      </label>
 
       {golfsQ.isFetching && !golfsQ.data && (
         <ul className="space-y-2" aria-busy="true">
