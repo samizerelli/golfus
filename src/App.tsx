@@ -1,8 +1,9 @@
-import { lazy, Suspense, useState, type ComponentType } from 'react';
+import { lazy, Suspense, useEffect, useState, type ComponentType } from 'react';
 import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import { GlassFx } from './components/glass';
 import { RailProvider } from './components/ActionRail';
-import { Intro, introSeen } from './components/Intro';
+import { hadAccount, Intro, introSeen, markSeen } from './components/Intro';
+import { useSearch } from './state/search';
 import { useAuth } from './lib/auth';
 import { useI18n } from './i18n';
 import { PageSkeleton } from './components/PageSkeleton';
@@ -26,8 +27,18 @@ export default function App() {
   const { pathname } = useLocation();
   const { user, loading } = useAuth();
   // Intro « I wanna play » : visiteur non connecté, à l'arrivée sur l'accueil, une fois par session
+  const { view } = useSearch();
   const [introOpen, setIntroOpen] = useState(() => !introSeen());
-  const showIntro = introOpen && !loading && !user && pathname === '/';
+  // Affichée d'emblée (sans attendre la session), sauf si l'appareil a déjà servi à se connecter :
+  // on attend alors la réponse pour ne pas la montrer à quelqu'un de connecté
+  const showIntro = introOpen && !user && pathname === '/' && view === 'home' && !(loading && hadAccount());
+  // Dès que le visiteur utilise le site (New game, autre page), l'intro ne doit plus surgir par-dessus
+  useEffect(() => {
+    if (introOpen && (view !== 'home' || pathname !== '/')) {
+      markSeen();
+      setIntroOpen(false);
+    }
+  }, [view, pathname, introOpen]);
   return (
     <RailProvider>
     <div className="flex h-dvh flex-col">

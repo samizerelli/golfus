@@ -13,7 +13,7 @@ export function introSeen() {
     return false;
   }
 }
-function markSeen() {
+export function markSeen() {
   try {
     sessionStorage.setItem(SEEN_KEY, '1');
   } catch {
