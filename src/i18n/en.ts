@@ -190,6 +190,7 @@ export const en: Dict = {
   'inv.cancelled': 'This round has been cancelled.',
   'inv.answers': 'Answers',
   'inv.send': 'Send my answer',
+  's3.sendHint': 'Select at least one friend, or tick “Invite someone outside the app” to get a link to share.',
   'nav.home': 'Home',
   'nav.favorites': 'Favourites',
   'nav.settings': 'Settings',

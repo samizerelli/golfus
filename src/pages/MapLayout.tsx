@@ -37,7 +37,7 @@ export function HomeScreen() {
   const { view } = useSearch();
   const { cardRefs } = useLayout();
   return (
-    <div key={view} className="animate-rise">
+    <div key={view} className="animate-rise flex min-h-full flex-col">
       {view === 'search' ? <SearchForm /> : <ResultsList cardRefs={cardRefs} />}
     </div>
   );

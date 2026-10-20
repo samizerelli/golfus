@@ -148,7 +148,7 @@ export function SearchForm() {
 
   return (
     <form
-      className="space-y-5"
+      className="flex min-h-full flex-col gap-5"
       onSubmit={(e) => {
         e.preventDefault();
         submit();
@@ -212,9 +212,12 @@ export function SearchForm() {
         <Stepper label={t('s1.players')} value={c.players} onChange={(players) => setCriteria({ players })} />
       </Field>
 
-      <Button type="submit" variant="primary" className="h-14 w-full text-base">
-        <Search className="size-5" aria-hidden /> {t('s1.submit')}
-      </Button>
+      {/* Bouton de validation toujours visible en bas du panneau (au-dessus de la barre d'icônes sur mobile) */}
+      <div className="sticky bottom-[calc(-5.5rem-env(safe-area-inset-bottom))] -mx-3 mt-auto -mb-[calc(5.5rem+env(safe-area-inset-bottom))] bg-gradient-to-t from-[var(--surface)] from-70% to-transparent px-3 pt-4 pb-[calc(5rem+env(safe-area-inset-bottom))] lg:bottom-0 lg:-mx-1 lg:mb-0 lg:px-1 lg:pb-1">
+        <Button type="submit" variant="primary" className="h-14 w-full text-base">
+          <Search className="size-5" aria-hidden /> {t('s1.submit')}
+        </Button>
+      </div>
     </form>
   );
 }

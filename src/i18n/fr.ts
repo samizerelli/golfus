@@ -188,6 +188,7 @@ export const fr = {
   'inv.cancelled': 'Cette partie a été annulée.',
   'inv.answers': 'Réponses',
   'inv.send': 'Envoyer ma réponse',
+  's3.sendHint': 'Sélectionnez au moins un ami, ou cochez « Inviter quelqu’un hors de l’app » pour obtenir un lien à partager.',
   'nav.home': 'Accueil',
   'nav.favorites': 'Favoris',
   'nav.settings': 'Réglages',

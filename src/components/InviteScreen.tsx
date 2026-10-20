@@ -315,6 +315,8 @@ export function InviteForm({ golf }: { golf: GolfSummary | null }) {
             {t('s3.send')}
             {selected.size > 0 && ` (${selected.size})`}
           </Button>
+          {/* Pourquoi le bouton est grisé */}
+          {!canSend && !send.isPending && golf && <p className="mt-2 text-center text-xs text-muted">{t('s3.sendHint')}</p>}
         </div>
       )}
     </div>

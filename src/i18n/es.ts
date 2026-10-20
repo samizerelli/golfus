@@ -190,6 +190,7 @@ export const es: Dict = {
   'inv.cancelled': 'Esta partida ha sido cancelada.',
   'inv.answers': 'Respuestas',
   'inv.send': 'Enviar mi respuesta',
+  's3.sendHint': 'Selecciona al menos un amigo o marca «Invitar a alguien fuera de la app» para obtener un enlace.',
   'nav.home': 'Inicio',
   'nav.favorites': 'Favoritos',
   'nav.settings': 'Ajustes',
