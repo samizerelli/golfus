@@ -12,6 +12,12 @@
   # PGlite ne sert qu'en local : jamais embarqué dans la fonction (en ligne, c'est Netlify Database)
   external_node_modules = ["@electric-sql/pglite"]
 
+# Fichier d'une ancienne version absent : vraie erreur 404 (et non la page d'accueil), l'app se recharge alors
+[[redirects]]
+  from = "/assets/*"
+  to = "/404"
+  status = 404
+
 [[redirects]]
   from = "/*"
   to = "/index.html"

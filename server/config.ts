@@ -14,7 +14,8 @@ export const config = {
   adminPassword: process.env.ADMIN_PASSWORD ?? '',
   adminSecret: process.env.ADMIN_SESSION_SECRET ?? '',
   databasePath: process.env.DATABASE_PATH === ':memory:' ? ':memory:' : path.resolve(process.env.DATABASE_PATH || './data/golfus.db'),
-  showDemo: bool(process.env.SHOW_DEMO_DATA, true),
+  // Golfs de démonstration (tarifs fictifs) : visibles en local, masqués en ligne sauf SHOW_DEMO_DATA=true
+  showDemo: bool(process.env.SHOW_DEMO_DATA, process.env.NODE_ENV !== 'production'),
   cacheTtlMs: Number(process.env.CACHE_TTL_HOURS ?? 24) * 3600_000,
   userAgent: `GolfUs/1.0 (+self-hosted${contact ? `; ${contact}` : ''})`,
   contactEmail: contact || null,

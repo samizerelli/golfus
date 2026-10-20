@@ -28,27 +28,41 @@ function pillIcon(label: string | null, selected: boolean, demo: boolean) {
   });
 }
 
+/** Une carte masquée (taille nulle) ne peut pas calculer de cadrage : Leaflet renverrait des coordonnées NaN */
+const hasSize = (map: L.Map) => {
+  const s = map.getSize();
+  return s.x > 0 && s.y > 0;
+};
+
 function FitToResults({ origin, golfs, radiusKm, insets }: { origin: Origin | null; golfs: GolfSummary[]; radiusKm: number; insets: Insets }) {
   const map = useMap();
   const key = origin ? `${origin.lat},${origin.lon},${radiusKm},${golfs.length > 0}` : 'none';
   const last = useRef('');
   useEffect(() => {
-    if (key === last.current || !origin) return;
-    last.current = key;
-    // Cadrage centré sur le point de départ : boîte symétrique englobant les 15 golfs les plus proches
-    const near = golfs.slice(0, 15);
-    const dLat = Math.max(0.01, ...near.map((g) => Math.abs(g.lat - origin.lat)));
-    const dLon = Math.max(0.01, ...near.map((g) => Math.abs(g.lon - origin.lon)));
-    const opts = { paddingTopLeft: [insets.left + 30, insets.top + 30] as L.PointTuple, paddingBottomRight: [(insets.right ?? 0) + 30, insets.bottom + 30] as L.PointTuple, maxZoom: 13 };
-    if (near.length)
-      map.flyToBounds(
-        [
-          [origin.lat - dLat, origin.lon - dLon],
-          [origin.lat + dLat, origin.lon + dLon],
-        ],
-        { ...opts, duration: 0.9 },
-      );
-    else map.flyTo([origin.lat, origin.lon], radiusKm > 50 ? 8 : radiusKm > 25 ? 9 : 10, { duration: 0.9 });
+    const run = () => {
+      if (key === last.current || !origin || !hasSize(map)) return;
+      last.current = key;
+      // Cadrage centré sur le point de départ : boîte symétrique englobant les 15 golfs les plus proches
+      const near = golfs.slice(0, 15);
+      const dLat = Math.max(0.01, ...near.map((g) => Math.abs(g.lat - origin.lat)));
+      const dLon = Math.max(0.01, ...near.map((g) => Math.abs(g.lon - origin.lon)));
+      const opts = { paddingTopLeft: [insets.left + 30, insets.top + 30] as L.PointTuple, paddingBottomRight: [(insets.right ?? 0) + 30, insets.bottom + 30] as L.PointTuple, maxZoom: 13 };
+      if (near.length)
+        map.flyToBounds(
+          [
+            [origin.lat - dLat, origin.lon - dLon],
+            [origin.lat + dLat, origin.lon + dLon],
+          ],
+          { ...opts, duration: 0.9 },
+        );
+      else map.flyTo([origin.lat, origin.lon], radiusKm > 50 ? 8 : radiusKm > 25 ? 9 : 10, { duration: 0.9 });
+    };
+    run();
+    // Carte masquée au moment du changement : cadrage dès qu'elle retrouve une taille
+    map.on('resize', run);
+    return () => {
+      map.off('resize', run);
+    };
   }, [key, origin, golfs, radiusKm, map, insets]);
   return null;
 }
@@ -68,17 +82,27 @@ function AttributionTop() {
 /** Écran 3 : zoom fluide sur le golf choisi, en évitant les panneaux */
 function FocusGolf({ golf, insets }: { golf: GolfSummary | null; insets: Insets }) {
   const map = useMap();
+  const done = useRef('');
   useEffect(() => {
-    if (!golf) return;
-    const d = 0.01;
-    map.flyToBounds(
-      [
-        [golf.lat - d, golf.lon - d],
-        [golf.lat + d, golf.lon + d],
-      ],
-      { paddingTopLeft: [insets.left + 40, insets.top + 40], paddingBottomRight: [(insets.right ?? 0) + 40, insets.bottom + 40], maxZoom: 14, duration: 0.8 },
-    );
     // Recadrage aussi quand les panneaux changent (passage mobile ↔ ordinateur)
+    const key = golf ? `${golf.id}|${insets.left}|${insets.right}|${insets.bottom}` : '';
+    const run = () => {
+      if (!golf || done.current === key || !hasSize(map)) return;
+      done.current = key;
+      const d = 0.01;
+      map.flyToBounds(
+        [
+          [golf.lat - d, golf.lon - d],
+          [golf.lat + d, golf.lon + d],
+        ],
+        { paddingTopLeft: [insets.left + 40, insets.top + 40], paddingBottomRight: [(insets.right ?? 0) + 40, insets.bottom + 40], maxZoom: 14, duration: 0.8 },
+      );
+    };
+    run();
+    map.on('resize', run);
+    return () => {
+      map.off('resize', run);
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [golf?.id, map, insets.left, insets.right, insets.bottom]);
   return null;
@@ -135,6 +159,7 @@ function GolfMarkers({
     g.on('clusterclick', (e) => {
       const c = (e as unknown as { layer: L.MarkerCluster }).layer;
       const ins = insetsRef.current;
+      if (!hasSize(map)) return;
       if (map.getZoom() >= map.getMaxZoom() - 1) return c.spiderfy();
       map.flyToBounds(c.getBounds(), {
         paddingTopLeft: [ins.left + 40, ins.top + 40],

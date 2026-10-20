@@ -1,8 +1,9 @@
 import { useQuery } from '@tanstack/react-query';
-import { useCallback, useEffect, useMemo, useRef, useState, type MutableRefObject } from 'react';
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState, type MutableRefObject } from 'react';
 import { Outlet, useMatch, useOutletContext } from 'react-router-dom';
 import type { GolfSummary } from '../../shared/types';
 import { ActionRail } from '../components/ActionRail';
+import { SectionBoundary } from '../components/ErrorBoundary';
 import { BottomSheet, type Snap } from '../components/BottomSheet';
 import { GolfSideCards, InviteForm } from '../components/InviteScreen';
 import { HomeLanding } from '../components/HomeLanding';
@@ -120,10 +121,15 @@ export function MapLayout() {
   );
 
   const ctx: Ctx = { cardRefs, desktop, inviteGolf };
-  const content = <Outlet context={ctx} />;
+  const content = (
+    <Suspense fallback={<div className="skeleton mt-2 h-40 w-full rounded-[24px]" aria-hidden />}>
+      <Outlet context={ctx} />
+    </Suspense>
+  );
 
   return (
     <div className="relative min-h-0 flex-1 overflow-hidden">
+      <SectionBoundary resetKey={inviteId ?? view}>
       <MapView
         origin={origin}
         golfs={golfsOnMap}
@@ -137,6 +143,7 @@ export function MapLayout() {
         focus={inviteId ? inviteGolf : null}
         highlightId={inviteId ? null : hoverId}
       />
+      </SectionBoundary>
 
       {desktop ? (
         <aside className="glass glass-rounded absolute top-4 bottom-4 left-4 z-[1000] flex w-[420px] flex-col">
