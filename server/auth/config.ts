@@ -22,6 +22,26 @@ function fail(email: string) {
   failures.set(email, { n: fresh ? 1 : f!.n + 1, until: Date.now() + 15 * 60_000 });
 }
 
+/**
+ * Vérifie e-mail + mot de passe (site et app iOS), avec la même protection contre les essais répétés.
+ * Renvoie l'utilisateur, ou null.
+ */
+export async function checkCredentials(rawEmail: unknown, rawPassword: unknown) {
+  const email = String(rawEmail ?? '').trim().toLowerCase();
+  const password = String(rawPassword ?? '');
+  if (!email || !password || blocked(email)) return null;
+  const u = await db.get<{ id: string; email: string; name: string | null; password_hash: string | null }>(
+    'SELECT id, email, name, password_hash FROM users WHERE email = ?',
+    email,
+  );
+  if (!u || !(await verifyPassword(password, u.password_hash))) {
+    fail(email);
+    return null;
+  }
+  failures.delete(email);
+  return { id: u.id, email: u.email, name: u.name };
+}
+
 export const authConfig: ExpressAuthConfig = {
   adapter: PostgresAdapter(),
   secret: config.authSecret || undefined,
@@ -35,19 +55,8 @@ export const authConfig: ExpressAuthConfig = {
       id: 'credentials',
       credentials: { email: {}, password: {} },
       async authorize(creds) {
-        const email = String(creds?.email ?? '').trim().toLowerCase();
-        const password = String(creds?.password ?? '');
-        if (!email || !password || blocked(email)) return null;
-        const u = await db.get<{ id: string; email: string; name: string | null; image: string | null; password_hash: string | null }>(
-          'SELECT id, email, name, image, password_hash FROM users WHERE email = ?',
-          email,
-        );
-        if (!u || !(await verifyPassword(password, u.password_hash))) {
-          fail(email);
-          return null;
-        }
-        failures.delete(email);
-        return { id: u.id, email: u.email, name: u.name, image: null };
+        const u = await checkCredentials(creds?.email, creds?.password);
+        return u ? { ...u, image: null } : null;
       },
     }),
     // Lien magique : uniquement si un serveur d'envoi d'e-mails est configuré (ou en développement)

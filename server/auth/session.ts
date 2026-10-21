@@ -1,7 +1,9 @@
 import { getSession } from '@auth/express';
 import type { NextFunction, Request, Response } from 'express';
 import { db } from '../db/index.ts';
+import { config } from '../config.ts';
 import { authConfig } from './config.ts';
+import { bearer, verifyMobileToken } from './mobile.ts';
 
 export interface CurrentUser {
   id: string;
@@ -23,6 +25,16 @@ declare module 'express-serve-static-core' {
 export async function attachUser(req: Request, _res: Response, next: NextFunction) {
   req.user = null;
   try {
+    // App iOS : jeton « Authorization: Bearer … » (pas de cookie)
+    const token = bearer(req.get('authorization'));
+    if (token) {
+      const c = await verifyMobileToken(token);
+      if (c) {
+        const u = await db.get<{ id: string; email: string; name: string | null; role: 'user' | 'admin' }>('SELECT id, email, name, role FROM users WHERE id = ?', c.uid);
+        if (u) req.user = { ...u, method: c.method, authAt: c.authAt };
+      }
+      return next();
+    }
     const s = (await getSession(req, authConfig)) as { user?: { id?: string }; method?: string; authAt?: number } | null;
     if (s?.user?.id) {
       const u = await db.get<{ id: string; email: string; name: string | null; role: 'user' | 'admin' }>('SELECT id, email, name, role FROM users WHERE id = ?', s.user.id);
@@ -47,7 +59,9 @@ export function requireUser(req: Request, res: Response, next: NextFunction) {
 export function csrfGuard(req: Request, res: Response, next: NextFunction) {
   if (['GET', 'HEAD', 'OPTIONS'].includes(req.method) || req.path.startsWith('/auth/')) return next();
   if (req.get('x-gf-csrf') !== '1') return res.status(403).json({ error: 'csrf' });
+  // App iOS : authentification par jeton (aucun cookie envoyé automatiquement) depuis son origine déclarée
   const origin = req.get('origin');
+  if (origin && config.appOrigins.includes(origin) && bearer(req.get('authorization'))) return next();
   if (origin) {
     let host = '';
     try {

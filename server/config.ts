@@ -19,6 +19,11 @@ export const config = {
   cacheTtlMs: Number(process.env.CACHE_TTL_HOURS ?? 24) * 3600_000,
   userAgent: `GolfUs/1.0 (+self-hosted${contact ? `; ${contact}` : ''})`,
   contactEmail: contact || null,
+  /** Origines de l'app iOS (Capacitor) autorisées à appeler l'API (CORS) */
+  appOrigins: (process.env.APP_ORIGINS || 'capacitor://localhost,ionic://localhost')
+    .split(',')
+    .map((s) => s.trim())
+    .filter(Boolean),
   overpassUrls: (
     process.env.OVERPASS_URLS ||
     'https://overpass-api.de/api/interpreter,https://maps.mail.ru/osm/tools/overpass/api/interpreter,https://overpass.kumi.systems/api/interpreter'

@@ -1,7 +1,9 @@
 import { ExpressAuth } from '@auth/express';
 import express, { type NextFunction, type Request, type Response } from 'express';
 import { authConfig } from './auth/config.ts';
+import { mobileRouter } from './auth/mobile.ts';
 import { attachUser, csrfGuard } from './auth/session.ts';
+import { config } from './config.ts';
 import { accountRouter } from './routes/account.ts';
 import { adminRouter } from './routes/admin.ts';
 import { publicRouter } from './routes/public.ts';
@@ -34,10 +36,29 @@ export function createApp(extra?: (app: express.Express) => void) {
     next();
   });
 
+  // App iOS (Capacitor) : la page vient de capacitor://localhost, l'API de golfus.ch → CORS limité à ces origines,
+  // sans cookies (l'app s'authentifie par jeton)
+  app.use('/api', (req, res, next) => {
+    const origin = req.get('origin');
+    if (origin && config.appOrigins.includes(origin)) {
+      res.set({
+        'Access-Control-Allow-Origin': origin,
+        'Access-Control-Allow-Methods': 'GET,POST,PUT,PATCH,DELETE,OPTIONS',
+        'Access-Control-Allow-Headers': 'Authorization,Content-Type,X-GF-CSRF',
+        'Access-Control-Max-Age': '600',
+        Vary: 'Origin',
+      });
+      if (req.method === 'OPTIONS') return res.status(204).end();
+    }
+    next();
+  });
+
   // Aucun journal des requêtes : les coordonnées présentes dans les URL ne sont jamais écrites.
   app.use('/api', rateLimit(240, 60_000));
   // Connexion (Auth.js) : /api/auth/signin, /callback, /session, /signout…
   app.use('/api/auth', rateLimit(40, 60_000), ExpressAuth(authConfig));
+  // Connexion de l'app iOS par jeton (avant la protection CSRF, qui concerne les cookies du site)
+  app.use('/api', mobileRouter);
   app.use('/api', csrfGuard, attachUser);
   app.use('/api/admin', adminRouter);
   app.use('/api', accountRouter);

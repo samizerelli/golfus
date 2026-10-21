@@ -10,6 +10,9 @@ import type {
   TravelInfo,
 } from '../../shared/types';
 
+import { isNative, tokenStore } from './platform';
+
+/** Adresse du serveur : vide sur le web (même origine), https://golfus.ch dans l'app iOS (VITE_API_BASE) */
 const BASE = (import.meta.env.VITE_API_BASE ?? '').replace(/\/$/, '') + '/api';
 
 export interface Friend {
@@ -113,10 +116,34 @@ async function authPost(path: string, fields: Record<string, string>) {
   return { ok: res.ok && !error, error, url: data.url };
 }
 
+/** App iOS : connexion par jeton (les cookies intersites sont bloqués dans la WebView) */
+async function nativeSignIn(email: string, password: string) {
+  try {
+    const res = await fetch(`${BASE}/mobile/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-GF-CSRF': '1' },
+      body: JSON.stringify({ email, password }),
+    });
+    if (!res.ok) return { ok: false, error: res.status === 401 ? 'CredentialsSignin' : res.status === 429 ? 'rate_limited' : 'network', url: undefined };
+    const { token } = (await res.json()) as { token: string };
+    await tokenStore.set(token);
+    return { ok: true, error: null, url: undefined };
+  } catch {
+    return { ok: false, error: 'network', url: undefined };
+  }
+}
+
 export const auth = {
-  signInPassword: (email: string, password: string) => authPost('callback/credentials', { email, password, callbackUrl: location.origin + '/profil' }),
+  signInPassword: (email: string, password: string) =>
+    isNative() ? nativeSignIn(email, password) : authPost('callback/credentials', { email, password, callbackUrl: location.origin + '/profil' }),
   sendMagicLink: (email: string, callbackUrl: string) => authPost('signin/email', { email, callbackUrl }),
-  signOut: () => authPost('signout', { callbackUrl: location.origin + '/' }),
+  signOut: async () => {
+    if (isNative()) {
+      await tokenStore.clear();
+      return { ok: true, error: null, url: undefined };
+    }
+    return authPost('signout', { callbackUrl: location.origin + '/' });
+  },
   /** Google / Apple : redirection complète du navigateur (formulaire POST avec jeton CSRF) */
   async oauth(provider: 'google' | 'apple') {
     const { csrfToken } = (await fetch(`${BASE}/auth/csrf`, { credentials: 'include' }).then((r) => r.json())) as { csrfToken: string };
@@ -140,11 +167,13 @@ export class ApiError extends Error {
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   let res: Response;
   try {
+    // Web : cookie de session ; app iOS : jeton dans l'en-tête Authorization (aucun cookie)
+    const token = isNative() ? tokenStore.get() : null;
     res = await fetch(BASE + path, {
-      credentials: 'include',
+      credentials: isNative() ? 'omit' : 'include',
       ...init,
       // En-tête anti-CSRF exigé par le serveur pour toute modification
-      headers: { 'Content-Type': 'application/json', 'X-GF-CSRF': '1', ...init?.headers },
+      headers: { 'Content-Type': 'application/json', 'X-GF-CSRF': '1', ...(token ? { Authorization: `Bearer ${token}` } : {}), ...init?.headers },
     });
   } catch (e) {
     if ((e as Error).name === 'AbortError') throw e;
@@ -178,7 +207,12 @@ export const api = {
     request<{ id: number }>(`/golfs/${encodeURIComponent(id)}/reviews`, { method: 'POST', body: JSON.stringify(body) }),
 
   me: () => request<{ user: Me | null }>('/me'),
-  authProviders: () => request<{ credentials: boolean; email: boolean; google: boolean; apple: boolean }>('/auth-providers'),
+  // App iOS : e-mail + mot de passe seulement pour l'instant (lien magique et Google/Apple reposent sur des cookies
+  // du site ; « Se connecter avec Apple » natif arrive à l'étape 4)
+  authProviders: async () => {
+    const p = await request<{ credentials: boolean; email: boolean; google: boolean; apple: boolean }>('/auth-providers');
+    return isNative() ? { ...p, email: false, google: false, apple: false } : p;
+  },
   register: (body: { email: string; password: string; name: string; lang: string; terms: true }) =>
     request<{ ok: true }>('/account/register', { method: 'POST', body: JSON.stringify(body) }),
   updateMe: (body: Partial<{ name: string; handicapIndex: number | null; lang: string }>) =>

@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Check, ChevronRight, Lock, Search, Share2, ShieldCheck, UserPlus, Wrench, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { PUBLIC_ORIGIN } from '../lib/platform';
 import { CURRENCIES, type Currency } from '../../shared/types';
 import { LANGS, useI18n } from '../i18n';
 import { api, type Notification, type Outing } from '../lib/api';
@@ -51,7 +52,7 @@ export function FavoritesBody({ onNavigate }: { onNavigate: () => void }) {
 const RESP_TONE = { yes: 'green', maybe: 'gold', no: 'red', pending: 'neutral' } as const;
 
 export function shareUrl(token: string) {
-  return `${location.origin}/invitation/${token}`;
+  return `${PUBLIC_ORIGIN}/invitation/${token}`;
 }
 
 function OutingCard({ o }: { o: Outing }) {

@@ -3,6 +3,7 @@ import { useState, type CSSProperties, type MouseEvent } from 'react';
 import type { GolfSummary } from '../../shared/types';
 import { useI18n } from '../i18n';
 import { useFavorites } from '../lib/favorites';
+import { PUBLIC_ORIGIN } from '../lib/platform';
 import { formatIntervals, intervalsOn, nextChange, parseHours, stateAt, useHoursLib } from '../lib/hours';
 import { directionsUrl, telHref } from '../lib/links';
 import { mainCategory, priceFor, priceMatrix } from '../lib/prices';
@@ -227,7 +228,7 @@ export function ShareButton({ golf, variant = 'secondary' }: { golf: GolfSummary
   const { t } = useI18n();
   const [copied, setCopied] = useState(false);
   const share = async () => {
-    const url = `${location.origin}/golf/${encodeURIComponent(golf.id)}`;
+    const url = `${PUBLIC_ORIGIN}/golf/${encodeURIComponent(golf.id)}`;
     const text = t('share.text', { name: golf.name });
     if (navigator.share) {
       try {

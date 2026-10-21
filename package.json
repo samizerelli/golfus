@@ -12,6 +12,7 @@
     "dev:api": "tsx watch --env-file-if-exists=.env server/index.ts",
     "dev:web": "vite",
     "build": "tsc -b && npm run check:data && vite build",
+    "build:ios": "tsc -b && npm run check:data && vite build --mode ios --outDir dist-ios",
     "start": "NODE_ENV=production tsx --env-file-if-exists=.env server/index.ts",
     "seed": "tsx --env-file-if-exists=.env server/db/seed.ts",
     "test": "DATABASE_PATH=:memory: tsx --test server/tests/*.test.ts",
