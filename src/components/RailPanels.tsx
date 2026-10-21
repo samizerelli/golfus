@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Bell, Check, ChevronRight, FileText, Lock, Search, Share2, ShieldCheck, UserPlus, Wrench, X } from 'lucide-react';
+import { Bell, Check, ChevronRight, FileText, LifeBuoy, Lock, Search, Share2, ShieldCheck, UserPlus, Wrench, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { isNative, PUBLIC_ORIGIN } from '../lib/platform';
@@ -437,6 +437,7 @@ export function SettingsBody({ onNavigate }: { onNavigate: () => void }) {
       <Notice>{t('welcome.privacy')}</Notice>
       <div className="frost overflow-hidden rounded-[20px]">
         {[
+          { to: '/aide', label: t('nav.help'), Icon: LifeBuoy },
           { to: '/conditions', label: t('nav.terms'), Icon: FileText },
           { to: '/confidentialite', label: t('nav.privacy'), Icon: ShieldCheck },
           { to: '/mentions-legales', label: t('nav.legal'), Icon: Lock },

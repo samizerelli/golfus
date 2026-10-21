@@ -6,8 +6,8 @@
 
 | Règle Apple | Exigence | Dans GolfUs |
 |---|---|---|
-| 5.1.1 (v) | Supprimer son compte depuis l'app | Profil › Données › Supprimer mon compte (définitif, données effacées). Compte Apple : accès révoqué chez Apple si la clé `APPLE_SIWA_*` est configurée |
-| 5.1.1 / RGPD | Accès aux données | Profil › Données › Télécharger mes données : lien de 5 minutes ouvert dans Safari intégré (fichier JSON) |
+| 5.1.1 (v) | Supprimer son compte depuis l'app | Profil › Mes données › Supprimer mon compte (définitif, données effacées). Compte Apple : accès révoqué chez Apple si la clé `APPLE_SIWA_*` est configurée |
+| 5.1.1 / RGPD | Accès aux données | Profil › Mes données › Télécharger mes données : lien de 5 minutes ouvert dans Safari intégré (fichier JSON) |
 | 5.1.1 (iv) | Autorisations demandées au bon moment, textes clairs | Localisation : à l'ouverture de la recherche (fonction principale), texte FR/EN/ES. Notifications : seulement au clic sur « Activer » |
 | 1.2 | Contenus des utilisateurs | Filtre automatique (prénoms, avis, messages), bouton « Signaler » (avis, joueurs, invitations), blocage des joueurs, conditions avec tolérance zéro (`/conditions`), traitement sous 24 h dans /admin › Signalements, avis masqué après 3 signalements |
 | 4.8 | « Se connecter avec Apple » si une connexion tierce est proposée | Dans l'app, seule la connexion e-mail est proposée (Google désactivé), donc non obligatoire ; « Se connecter avec Apple » est tout de même présent |

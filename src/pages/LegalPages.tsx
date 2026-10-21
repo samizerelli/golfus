@@ -89,7 +89,7 @@ export function TermsPage() {
       <h2>Votre compte</h2>
       <p>
         Le compte est gratuit et personnel. Vous êtes responsable de ce que vous publiez avec lui. Vous pouvez supprimer votre
-        compte et télécharger vos données à tout moment depuis Profil › Données.
+        compte et télécharger vos données à tout moment depuis Profil › Mes données.
       </p>
       <h2>Contenus publiés : tolérance zéro</h2>
       <p>
@@ -123,19 +123,21 @@ export function TermsPage() {
 export function PrivacyPage() {
   return (
     <Page title="Politique de confidentialité">
+      <p className="text-sm text-muted">Mise à jour le 21 octobre 2026. S’applique au site golfus.ch et à l’app GolfUs pour iPhone.</p>
       <h2>En résumé</h2>
       <ul>
         <li>
           <strong>Votre position géographique n’est ni enregistrée ni partagée.</strong>
         </li>
-        <li>Aucun compte, aucun cookie publicitaire ni outil de mesure d’audience.</li>
-        <li>Vos favoris et préférences restent dans votre navigateur.</li>
+        <li>Aucune publicité, aucun outil de mesure d’audience, aucun pistage.</li>
+        <li>Sans compte, rien ne vous identifie : favoris et préférences restent sur votre appareil.</li>
+        <li>Avec un compte, nous gardons seulement ce qu’il faut pour vos amis et vos parties ; vous pouvez tout télécharger ou tout supprimer à tout moment.</li>
       </ul>
+
       <h2>Géolocalisation</h2>
       <p>
-        Lorsque vous touchez « Me localiser », votre navigateur vous demande votre accord. Si vous acceptez, la position est
-        utilisée uniquement pendant votre visite, en mémoire, pour trouver les golfs proches. Elle n’est jamais écrite sur
-        disque, ni dans votre navigateur, ni sur notre serveur, ni dans des journaux.
+        Pour trouver les golfs proches, le site (ou l’app) vous demande votre accord. La position sert uniquement pendant votre
+        visite, en mémoire. Elle n’est jamais écrite sur disque, ni sur notre serveur, ni dans des journaux.
       </p>
       <p>Pour interroger les services cartographiques, notre serveur :</p>
       <ul>
@@ -157,41 +159,74 @@ export function PrivacyPage() {
         </li>
       </ul>
       <p>
-        Ces requêtes sont faites par notre serveur : votre adresse IP n’est pas transmise à ces services. En revanche, l’affichage
-        du fond de carte est chargé directement par votre navigateur depuis les serveurs de tuiles d’OpenStreetMap, qui voient
-        donc votre adresse IP et la zone de carte affichée (comme pour toute carte en ligne).
+        Ces requêtes sont faites par notre serveur : votre adresse IP n’est pas transmise à ces services. En revanche, le fond de
+        carte est chargé directement depuis les serveurs de tuiles d’OpenStreetMap, qui voient donc votre adresse IP et la zone
+        affichée (comme pour toute carte en ligne).
       </p>
       <h2>Position approximative (repli)</h2>
       <p>
         Si la géolocalisation échoue, vous pouvez choisir « Position approximative ». Notre serveur demande alors au service
-        ipwho.is (ou GeoJS en secours) la ville correspondant à votre adresse IP. Cette demande n’a lieu que si vous cliquez sur
-        ce bouton ; le résultat (ville, coordonnées arrondies à environ 1 km) n’est ni mis en cache ni enregistré.
+        ipwho.is (ou GeoJS en secours) la ville correspondant à votre adresse IP. Le résultat n’est ni mis en cache ni enregistré.
       </p>
-      <h2>Recherche de lieux</h2>
+      <h2>Recherche de lieux et disponibilités</h2>
       <p>
-        Le texte que vous tapez dans la recherche est transmis, via notre serveur, au service Photon (Komoot) pour proposer des
-        lieux. Il n’est pas associé à votre identité.
+        Le texte tapé dans la recherche est transmis, via notre serveur, au service Photon (Komoot). Pour afficher les départs
+        libres, notre serveur interroge le moteur de réservation de certains golfs avec la date choisie seulement. Rien de tout
+        cela n’est associé à votre identité.
       </p>
-      <h2>Stockage local (navigateur)</h2>
+
+      <h2>Compte GolfUs (facultatif)</h2>
+      <p>Si vous créez un compte, nous enregistrons :</p>
+      <ul>
+        <li>votre e-mail, votre prénom, votre mot de passe sous forme hachée (jamais en clair), et si vous le souhaitez une photo et votre index ;</li>
+        <li>vos amis et demandes d’ami, les parties que vous organisez ou auxquelles vous répondez, vos notifications ;</li>
+        <li>la date de votre dernière connexion, pour la sécurité du compte.</li>
+      </ul>
       <p>
-        Le site enregistre dans le <em>localStorage</em> de votre navigateur : vos favoris, la langue, la devise et le thème. Ces
-        données ne quittent pas votre appareil ; vous pouvez les effacer à tout moment depuis les réglages du navigateur.
+        Ces données servent uniquement au fonctionnement du service (amis, invitations, rappels). Votre prénom et votre photo sont
+        visibles par vos amis et par les joueurs qui vous recherchent ; votre e-mail n’est jamais montré. Elles sont conservées
+        jusqu’à la suppression du compte, qui efface tout immédiatement.
       </p>
-      <h2>Avis</h2>
+      <h2>Se connecter avec Apple</h2>
       <p>
-        Si vous publiez un avis, le pseudo, la note et le commentaire que vous saisissez sont enregistrés et rendus publics.
-        Aucune adresse IP n’est conservée. Pour faire supprimer un avis, contactez l’éditeur (voir les mentions légales).
+        Avec « Se connecter avec Apple », Apple nous transmet un identifiant propre à GolfUs, votre e-mail (éventuellement une
+        adresse relais Apple que vous pouvez désactiver) et, la première fois, votre prénom. Lorsque ce service est configuré, la
+        suppression du compte révoque aussi l’accès auprès d’Apple.
       </p>
-      <h2>Administration</h2>
+      <h2>Notifications sur iPhone</h2>
       <p>
-        L’espace d’administration utilise un cookie technique de session (strictement nécessaire), réservé à l’exploitant du
-        site.
+        Si vous les activez, l’app enregistre l’identifiant de notification de votre iPhone fourni par Apple. Il sert uniquement à
+        vous prévenir des invitations, des réponses, des annulations et de la veille d’une partie. Il est supprimé à la
+        déconnexion, à la suppression du compte, ou quand Apple le déclare invalide. Le contenu des notifications transite par le
+        service de notifications d’Apple.
       </p>
+      <h2>Avis, signalements et blocages</h2>
+      <p>
+        Un avis publie le pseudo, la note et le commentaire saisis ; aucune adresse IP n’est conservée. Quand vous signalez un
+        contenu, nous enregistrons le motif, votre éventuelle précision et, si vous êtes connecté, votre compte, pour traiter le
+        signalement. La liste des joueurs que vous bloquez est enregistrée avec votre compte et supprimée avec lui.
+      </p>
+      <h2>Stockage sur votre appareil</h2>
+      <p>
+        Le site enregistre dans votre navigateur (<em>localStorage</em>) vos favoris, la langue, la devise et le thème. Sur le
+        site, la connexion utilise un cookie de session strictement nécessaire. Dans l’app iPhone, la connexion est gardée dans le
+        trousseau sécurisé d’iOS.
+      </p>
+
+      <h2>Hébergement et sous-traitants</h2>
+      <ul>
+        <li>Netlify, Inc. (hébergement du site, du serveur et de la base de données).</li>
+        <li>Apple (notifications sur iPhone, « Se connecter avec Apple »), seulement si vous utilisez ces fonctions.</li>
+        <li>Services cartographiques cités plus haut, sans donnée vous identifiant.</li>
+      </ul>
+      <p>Aucune donnée n’est vendue ni utilisée à des fins publicitaires.</p>
+
       <h2>Vos droits</h2>
       <p>
-        Conformément au RGPD, vous disposez d’un droit d’accès, de rectification et d’effacement. Comme nous ne conservons pas de
-        données vous identifiant (hors avis publiés), ces droits s’exercent principalement sur les avis. Contact : [adresse
-        e-mail de l’éditeur]. Vous pouvez aussi saisir la CNIL (www.cnil.fr).
+        Conformément au RGPD et à la loi suisse sur la protection des données, vous disposez d’un droit d’accès, de rectification,
+        d’effacement et de portabilité. Depuis Profil › Mes données, vous pouvez télécharger toutes vos données ou supprimer votre
+        compte, sans nous écrire. Pour toute autre demande, utilisez le formulaire de la page <Link to="/aide">Aide et contact</Link>.
+        Vous pouvez aussi saisir l’autorité de protection des données de votre pays (CNIL en France, PFPDT en Suisse).
       </p>
     </Page>
   );

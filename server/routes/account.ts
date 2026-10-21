@@ -153,6 +153,10 @@ accountRouter.get('/me/export', userRateLimit('export', 5, 3600_000), async (req
     outings_organized: await db.all('SELECT * FROM outings WHERE organizer_id = ?', id),
     outing_responses: await db.all('SELECT outing_id, response, updated_at FROM outing_guests WHERE user_id = ?', id),
     notifications: await db.all('SELECT type, payload, created_at, read_at FROM notifications WHERE user_id = ?', id),
+    blocked_players: await db.all('SELECT blocked_id, created_at FROM user_blocks WHERE blocker_id = ?', id),
+    reports_sent: await db.all('SELECT kind, target_id, reason, details, created_at FROM reports WHERE reporter_id = ?', id),
+    contact_messages: await db.all('SELECT topic, message, created_at FROM contact_messages WHERE user_id = ?', id),
+    push_devices: await db.all('SELECT platform, lang, created_at FROM push_devices WHERE user_id = ?', id),
   };
   res.setHeader('Content-Disposition', `attachment; filename="golfus-export-${new Date().toISOString().slice(0, 10)}.json"`);
   res.json(data);
@@ -167,6 +171,8 @@ accountRouter.delete('/me', requireUser, async (req, res) => {
   if (b.confirmEmail !== expected) return res.status(400).json({ error: 'confirm_mismatch' });
   // Compte créé avec Apple : accès révoqué chez Apple avant suppression (si la clé est configurée)
   await revokeAppleFor(req.user!.id);
+  // Messages envoyés depuis le compte (ils contiennent l'e-mail) : effacés avec lui
+  await db.run('DELETE FROM contact_messages WHERE user_id = ?', req.user!.id);
   await db.run('DELETE FROM users WHERE id = ?', req.user!.id);
   for (const name of ['authjs.session-token', '__Secure-authjs.session-token']) res.clearCookie(name, { path: '/' });
   res.json({ ok: true });

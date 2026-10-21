@@ -251,6 +251,22 @@ CREATE INDEX IF NOT EXISTS user_blocks_blocked ON user_blocks(blocked_id);
 ALTER TABLE reviews ADD COLUMN IF NOT EXISTS hidden_at TIMESTAMPTZ;
 `,
   },
+  {
+    id: 10,
+    name: 'messages du formulaire « Aide et contact »',
+    sql: `
+CREATE TABLE IF NOT EXISTS contact_messages (
+  id SERIAL PRIMARY KEY,
+  user_id TEXT REFERENCES users(id) ON DELETE SET NULL,
+  email TEXT NOT NULL,
+  topic TEXT NOT NULL,
+  message TEXT NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  handled_at TIMESTAMPTZ
+);
+CREATE INDEX IF NOT EXISTS contact_messages_open ON contact_messages(handled_at, created_at);
+`,
+  },
 ];
 
 interface MigDriver {

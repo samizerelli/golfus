@@ -82,6 +82,21 @@ adminRouter.post('/reports/close', async (req, res) => {
   res.json({ ok: true });
 });
 
+// ───── Messages du formulaire « Aide et contact » ─────
+adminRouter.get('/messages', async (req, res) => {
+  res.json(
+    await db.all(
+      `SELECT id, email, topic, message, created_at AS "createdAt", handled_at AS "handledAt" FROM contact_messages
+       ${req.query.all ? '' : 'WHERE handled_at IS NULL'} ORDER BY created_at DESC LIMIT 200`,
+    ),
+  );
+});
+
+adminRouter.post('/messages/:id/handled', async (req, res) => {
+  await db.run('UPDATE contact_messages SET handled_at = now() WHERE id = ?', Number(req.params.id));
+  res.json({ ok: true });
+});
+
 adminRouter.delete('/outings/:id', async (req, res) => {
   await db.run('DELETE FROM outings WHERE id = ?', req.params.id);
   res.json({ ok: true });

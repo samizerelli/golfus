@@ -22,6 +22,7 @@ const LoginPage = named(() => import('./pages/LoginPage'), 'LoginPage');
 const LegalPage = named(() => import('./pages/LegalPages'), 'LegalPage');
 const PrivacyPage = named(() => import('./pages/LegalPages'), 'PrivacyPage');
 const TermsPage = named(() => import('./pages/LegalPages'), 'TermsPage');
+const SupportPage = named(() => import('./pages/SupportPage'), 'SupportPage');
 const AdminApp = lazy(() => import('./pages/admin/AdminApp'));
 
 /** App iOS : ouvre l'écran demandé par iOS (notification, lien golfus.ch) et tient à jour le jeton push. */
@@ -89,6 +90,7 @@ export default function App() {
             <Route path="/mentions-legales" element={<LegalPage />} />
             <Route path="/confidentialite" element={<PrivacyPage />} />
             <Route path="/conditions" element={<TermsPage />} />
+            <Route path="/aide" element={<SupportPage />} />
             <Route path="/admin/*" element={<AdminApp />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>

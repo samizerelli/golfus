@@ -265,6 +265,9 @@ export const api = {
   /** App iOS : lien d'export temporaire (5 min), ouvert dans Safari intégré */
   exportLink: () => request<{ url: string }>('/me/export-link', { method: 'POST' }),
 
+  /** Formulaire « Aide et contact » */
+  contact: (body: { email: string; topic: string; message: string }) => request<{ ok: true }>('/contact', { method: 'POST', body: JSON.stringify(body) }),
+
   // ───── Modération : signalements et blocages ─────
   report: (body: { kind: 'review' | 'user' | 'outing'; targetId: string; reason: string; details?: string }) =>
     request<{ ok: true }>('/reports', { method: 'POST', body: JSON.stringify(body) }),
@@ -319,6 +322,8 @@ export const api = {
     reports: () => request<AdminReport[]>('/admin/reports'),
     closeReport: (kind: string, targetId: string, status: 'resolved' | 'dismissed') =>
       request<{ ok: true }>('/admin/reports/close', { method: 'POST', body: JSON.stringify({ kind, targetId, status }) }),
+    messages: () => request<{ id: number; email: string; topic: string; message: string; createdAt: string }[]>('/admin/messages'),
+    messageHandled: (id: number) => request<{ ok: true }>(`/admin/messages/${id}/handled`, { method: 'POST' }),
     deleteOuting: (id: string) => request<{ ok: true }>(`/admin/outings/${encodeURIComponent(id)}`, { method: 'DELETE' }),
     extract: (golfId: string, url?: string) => request<SiteExtraction>('/admin/extract', { method: 'POST', body: JSON.stringify({ golfId, url }) }),
     latestExtraction: (golfId: string) => request<SiteExtraction | null>(`/admin/extractions/latest/${encodeURIComponent(golfId)}`),

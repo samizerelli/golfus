@@ -1,6 +1,6 @@
 // Espace d'administration (en français uniquement : il est destiné à l'exploitant du site).
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Flag, Globe, KeyRound, LogOut, Plus, ShieldCheck, Trash2, Users } from 'lucide-react';
+import { Check, Flag, Globe, KeyRound, LogOut, Mail, Plus, ShieldCheck, Trash2, Users } from 'lucide-react';
 import { useEffect, useMemo, useState, type FormEvent, type ReactNode } from 'react';
 import { Link, Route, Routes, useNavigate, useParams } from 'react-router-dom';
 import {
@@ -118,6 +118,9 @@ function AdminList() {
         <div className="flex flex-wrap gap-2">
         <Link to="/admin/collecte" className={buttonClass('secondary', 'sm')}>
           <Globe className="size-4" aria-hidden /> Collecte sites officiels
+        </Link>
+        <Link to="/admin/messages" className={buttonClass('secondary', 'sm')}>
+          <Mail className="size-4" aria-hidden /> Messages
         </Link>
         <Link to="/admin/signalements" className={buttonClass('secondary', 'sm')}>
           <Flag className="size-4" aria-hidden /> Signalements
@@ -821,6 +824,44 @@ function AdminReports() {
   );
 }
 
+/** Messages du formulaire « Aide et contact » : répondre par e-mail, puis marquer comme traité. */
+function AdminMessages() {
+  const qc = useQueryClient();
+  const msgs = useQuery({ queryKey: ['admin-messages'], queryFn: api.admin.messages });
+  const done = useMutation({ mutationFn: api.admin.messageHandled, onSuccess: () => qc.invalidateQueries({ queryKey: ['admin-messages'] }) });
+  const topic: Record<string, string> = { question: 'Question', bug: 'Bug', account: 'Compte', content: 'Contenu inapproprié', privacy: 'Données personnelles', other: 'Autre' };
+  return (
+    <div className="mx-auto w-full max-w-4xl space-y-4 p-4">
+      <Link to="/admin" className="text-sm text-muted underline underline-offset-2">
+        ← Administration
+      </Link>
+      <h1 className="text-3xl font-semibold">Messages</h1>
+      <p className="text-sm text-muted">Envoyés depuis la page « Aide et contact ». Répondez par e-mail, puis marquez le message comme traité.</p>
+      <Card title={`${msgs.data?.length ?? 0} à traiter`}>
+        {msgs.isLoading && <p className="text-muted">Chargement…</p>}
+        {msgs.data?.length === 0 && <p className="text-muted">Aucun message en attente.</p>}
+        <ul className="divide-y divide-[var(--line)]">
+          {msgs.data?.map((m) => (
+            <li key={m.id} className="space-y-2 py-3">
+              <p className="text-sm">
+                <span className="mr-2 rounded-full bg-glacier-100 px-2 py-0.5 text-xs font-semibold">{topic[m.topic] ?? m.topic}</span>
+                <a href={`mailto:${m.email}?subject=${encodeURIComponent('GolfUs — votre message')}`} className="text-link underline">
+                  {m.email}
+                </a>{' '}
+                <span className="text-xs text-muted">· {new Date(m.createdAt).toLocaleString('fr-FR')}</span>
+              </p>
+              <p className="text-sm whitespace-pre-line">{m.message}</p>
+              <Button size="sm" onClick={() => done.mutate(m.id)}>
+                <Check className="size-4" aria-hidden /> Traité
+              </Button>
+            </li>
+          ))}
+        </ul>
+      </Card>
+    </div>
+  );
+}
+
 export default function AdminApp() {
   const session = useSession();
   let body: ReactNode;
@@ -843,6 +884,7 @@ export default function AdminApp() {
         <Route path="golf/:id" element={<AdminEdit />} />
         <Route path="utilisateurs" element={<AdminUsers />} />
         <Route path="signalements" element={<AdminReports />} />
+        <Route path="messages" element={<AdminMessages />} />
         <Route path="collecte" element={<AdminCollect />} />
       </Routes>
     );

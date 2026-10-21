@@ -96,3 +96,19 @@ moderationRouter.delete('/blocks/:userId', requireUser, async (req, res) => {
 export async function isBlocked(a: string, b: string) {
   return !!(await db.get('SELECT 1 FROM user_blocks WHERE (blocker_id = ? AND blocked_id = ?) OR (blocker_id = ? AND blocked_id = ?)', a, b, b, a));
 }
+
+// ───────── Aide et contact ─────────
+
+const Contact = z.object({
+  email: z.string().trim().toLowerCase().email().max(200),
+  topic: z.enum(['question', 'bug', 'account', 'content', 'privacy', 'other']),
+  message: z.string().trim().min(5).max(3000),
+});
+
+/** Formulaire « Aide et contact » : message lu dans /admin › Messages (réponse par e-mail à l'adresse donnée). */
+moderationRouter.post('/contact', userRateLimit('contact', 5, 3600_000), async (req, res) => {
+  const b = parse(Contact, req.body, res);
+  if (!b) return;
+  await db.run('INSERT INTO contact_messages (user_id, email, topic, message) VALUES (?, ?, ?, ?)', req.user?.id ?? null, b.email, b.topic, b.message);
+  res.status(201).json({ ok: true });
+});

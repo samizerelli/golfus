@@ -85,3 +85,11 @@ test('app : export des données par lien temporaire ; connexion Apple refusée s
   const apple = await fetch(`${base}/mobile/apple`, { method: 'POST', headers: { ...json, Origin: APP }, body: JSON.stringify({ identityToken: 'x'.repeat(40), nonce: 'n'.repeat(32) }) });
   assert.equal(apple.status, 401);
 });
+
+test('aide et contact : message enregistré, champs validés', async () => {
+  const ok = await fetch(`${base}/contact`, { method: 'POST', headers: json, body: JSON.stringify({ email: 'Golfeur@Example.com', topic: 'bug', message: 'Le prix de La Cala est faux.' }) });
+  assert.equal(ok.status, 201);
+  assert.deepEqual(await db.get("SELECT email, topic FROM contact_messages WHERE message LIKE 'Le prix%'"), { email: 'golfeur@example.com', topic: 'bug' });
+  const bad = await fetch(`${base}/contact`, { method: 'POST', headers: json, body: JSON.stringify({ email: 'pas-un-email', topic: 'bug', message: 'Bonjour' }) });
+  assert.equal(bad.status, 400);
+});
