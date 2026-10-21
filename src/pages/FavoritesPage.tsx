@@ -1,5 +1,6 @@
 import { ChevronRight, Heart, HeartOff } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { BackLink } from '../components/BackLink';
 import { GolfPhoto } from '../components/GolfBits';
 import { Badge } from '../components/ui';
 import { useI18n } from '../i18n';
@@ -15,6 +16,7 @@ export function FavoritesPage() {
   return (
     <div className="min-h-0 flex-1 overflow-y-auto">
       <div className="mx-auto w-full max-w-2xl space-y-4 px-4 pt-[max(1.25rem,env(safe-area-inset-top))] pb-32">
+        <BackLink home />
         <h1 className="text-[28px] leading-tight">{t('fav.title')}</h1>
         <p className="text-sm text-muted">{t('fav.local')}</p>
         {favorites.length === 0 && (

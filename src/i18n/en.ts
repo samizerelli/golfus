@@ -3,6 +3,7 @@ import type { Dict } from './fr';
 export const en: Dict = {
   'app.tagline': 'Golf courses around you, compared',
   'nav.profile': 'Profile',
+  'nav.back': 'Back',
   'hours.openUntil': 'Open · until {t}',
   'hours.closedShort': 'Closed',
   'auth.title': 'Sign in',

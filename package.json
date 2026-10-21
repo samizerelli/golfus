@@ -13,6 +13,9 @@
     "dev:web": "vite",
     "build": "tsc -b && npm run check:data && vite build",
     "build:ios": "tsc -b && npm run check:data && vite build --mode ios --outDir dist-ios",
+    "ios:sync": "npm run build:ios && cap sync ios",
+    "ios:open": "cap open ios",
+    "ios:sim": "npm run ios:sync && xcodebuild -project ios/App/App.xcodeproj -scheme App -configuration Debug -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' -derivedDataPath ios/build build",
     "start": "NODE_ENV=production tsx --env-file-if-exists=.env server/index.ts",
     "seed": "tsx --env-file-if-exists=.env server/db/seed.ts",
     "test": "DATABASE_PATH=:memory: tsx --test server/tests/*.test.ts",
@@ -21,7 +24,19 @@
     "check": "tsc -b && npm test && npm run check:data"
   },
   "dependencies": {
+    "@aparajita/capacitor-secure-storage": "8.0.1",
     "@auth/express": "^0.12.3",
+    "@capacitor/app": "8.1.2",
+    "@capacitor/browser": "8.0.5",
+    "@capacitor/core": "8.5.3",
+    "@capacitor/geolocation": "8.2.3",
+    "@capacitor/haptics": "8.0.2",
+    "@capacitor/ios": "8.5.3",
+    "@capacitor/keyboard": "8.0.6",
+    "@capacitor/push-notifications": "8.1.3",
+    "@capacitor/share": "8.0.3",
+    "@capacitor/splash-screen": "8.0.2",
+    "@capacitor/status-bar": "8.0.4",
     "@electric-sql/pglite": "^0.5.8",
     "@netlify/database": "^2.0.1",
     "@tanstack/react-query": "^5.104.4",
@@ -39,6 +54,7 @@
     "zod": "^4.6.5"
   },
   "devDependencies": {
+    "@capacitor/cli": "8.5.3",
     "@tailwindcss/vite": "^4.3.3",
     "@types/express": "^5.0.6",
     "@types/leaflet": "^1.9.22",

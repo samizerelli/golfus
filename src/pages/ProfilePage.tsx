@@ -1,5 +1,7 @@
 import { ChevronRight, Lock, ShieldCheck, Wrench } from 'lucide-react';
 import { AccountPanel } from '../components/AccountPanel';
+import { BackLink } from '../components/BackLink';
+import { isNative } from '../lib/platform';
 import type { ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { CURRENCIES, type Currency } from '../../shared/types';
@@ -23,6 +25,7 @@ export function ProfilePage() {
   return (
     <div className="min-h-0 flex-1 overflow-y-auto">
       <div className="mx-auto w-full max-w-xl space-y-5 px-4 pt-[max(1.25rem,env(safe-area-inset-top))] pb-32">
+        <BackLink home />
         <header className="flex items-center gap-3">
           <Logo className="size-11" />
           <div>
@@ -64,7 +67,8 @@ export function ProfilePage() {
           {[
             { to: '/confidentialite', label: t('nav.privacy'), Icon: ShieldCheck },
             { to: '/mentions-legales', label: t('nav.legal'), Icon: Lock },
-            { to: '/admin', label: t('account.admin'), Icon: Wrench },
+            // Administration : sur le site seulement, pas dans l'app
+            ...(isNative() ? [] : [{ to: '/admin', label: t('account.admin'), Icon: Wrench }]),
           ].map(({ to, label, Icon }) => (
             <Link key={to} to={to} className="flex min-h-14 items-center gap-3 px-5 py-3 hover:bg-white/30 dark:hover:bg-white/5">
               <Icon className="size-5 text-muted" aria-hidden />

@@ -39,7 +39,8 @@ export function LoginPage() {
 
   // Après connexion : retour à la page d'origine (ex. lien d'invitation), sinon à l'accueil
   const retour = params.get('retour');
-  const after = retour && retour.startsWith('/') && !retour.startsWith('//') ? retour : '/';
+  // Chemin interne uniquement : « /… » sans « // », sans antislash ni caractère de contrôle (redirection ouverte)
+  const after = retour && /^\/(?![/\\])[^\\\s]*$/.test(retour) ? retour : '/';
   useEffect(() => {
     if (user) navigate(after, { replace: true });
   }, [user, navigate, after]);

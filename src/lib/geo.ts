@@ -1,3 +1,5 @@
+import { isNative } from './platform';
+
 export function haversineKm(lat1: number, lon1: number, lat2: number, lon2: number) {
   const toRad = (d: number) => (d * Math.PI) / 180;
   const dLat = toRad(lat2 - lat1);
@@ -18,7 +20,26 @@ export async function geoPermission(): Promise<PermissionState | 'unknown'> {
   }
 }
 
+/**
+ * App iOS : module de localisation natif (une seule demande d'autorisation, au nom de GolfUs, avec le texte
+ * de Info.plist) au lieu de l'API du navigateur intégré, qui afficherait « localhost souhaite… ».
+ */
+async function nativeOnce(opts: PositionOptions): Promise<{ lat: number; lon: number }> {
+  const { Geolocation } = await import('@capacitor/geolocation');
+  let perm = await Geolocation.checkPermissions().catch(() => null);
+  if (perm?.location === 'prompt' || perm?.location === 'prompt-with-rationale') perm = await Geolocation.requestPermissions({ permissions: ['location'] }).catch(() => null);
+  if (perm?.location === 'denied') throw 'denied' satisfies GeoErrorCode;
+  try {
+    const p = await Geolocation.getCurrentPosition({ enableHighAccuracy: opts.enableHighAccuracy, timeout: opts.timeout, maximumAge: opts.maximumAge });
+    return { lat: p.coords.latitude, lon: p.coords.longitude };
+  } catch (e) {
+    const msg = String((e as Error)?.message ?? e).toLowerCase();
+    throw (msg.includes('denied') ? 'denied' : msg.includes('timeout') ? 'timeout' : 'unavailable') satisfies GeoErrorCode;
+  }
+}
+
 function once(opts: PositionOptions, watchdogMs: number): Promise<{ lat: number; lon: number }> {
+  if (isNative()) return nativeOnce(opts);
   return new Promise((resolve, reject) => {
     // Filet de sécurité : si la demande d'autorisation est ignorée/fermée, certains navigateurs
     // n'appellent jamais les callbacks et l'option « timeout » ne s'applique pas.
@@ -42,9 +63,11 @@ function once(opts: PositionOptions, watchdogMs: number): Promise<{ lat: number;
  * Le chien de garde (30 s) laisse le temps de répondre à la demande d'autorisation du navigateur.
  */
 export async function getPositionAuto(): Promise<{ lat: number; lon: number }> {
-  if (!window.isSecureContext) throw 'insecure' satisfies GeoErrorCode;
-  if (!('geolocation' in navigator)) throw 'unsupported' satisfies GeoErrorCode;
-  if ((await geoPermission()) === 'denied') throw 'denied' satisfies GeoErrorCode;
+  if (!isNative()) {
+    if (!window.isSecureContext) throw 'insecure' satisfies GeoErrorCode;
+    if (!('geolocation' in navigator)) throw 'unsupported' satisfies GeoErrorCode;
+    if ((await geoPermission()) === 'denied') throw 'denied' satisfies GeoErrorCode;
+  }
   return once({ enableHighAccuracy: true, timeout: 8000, maximumAge: 60000 }, 30000);
 }
 
@@ -52,9 +75,11 @@ export async function getPositionAuto(): Promise<{ lat: number; lon: number }> {
 export const DEFAULT_MAP_CENTER = { lat: 36.51, lon: -4.88 };
 
 export async function getPosition(): Promise<{ lat: number; lon: number }> {
-  if (!window.isSecureContext) throw 'insecure' satisfies GeoErrorCode;
-  if (!('geolocation' in navigator)) throw 'unsupported' satisfies GeoErrorCode;
-  if ((await geoPermission()) === 'denied') throw 'denied' satisfies GeoErrorCode;
+  if (!isNative()) {
+    if (!window.isSecureContext) throw 'insecure' satisfies GeoErrorCode;
+    if (!('geolocation' in navigator)) throw 'unsupported' satisfies GeoErrorCode;
+    if ((await geoPermission()) === 'denied') throw 'denied' satisfies GeoErrorCode;
+  }
   try {
     return await once({ enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 }, 30000);
   } catch (e) {

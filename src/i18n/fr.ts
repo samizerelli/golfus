@@ -1,6 +1,7 @@
 export const fr = {
   'app.tagline': 'Les golfs autour de vous, comparés',
   'nav.profile': 'Profil',
+  'nav.back': 'Retour',
   'hours.openUntil': 'Ouvert · jusqu’à {t}',
   'hours.closedShort': 'Fermé',
   'auth.title': 'Connexion',

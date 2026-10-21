@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 2732 2732">
+<defs>
+<radialGradient id="bg" cx="0.5" cy="0.4" r="0.8"><stop offset="0" stop-color="#2f7a5f"/><stop offset="1" stop-color="#0e2a20"/></radialGradient>
+<radialGradient id="ball" cx="0.35" cy="0.3" r="0.8"><stop offset="0" stop-color="#ffffff"/><stop offset="0.7" stop-color="#eef2ef"/><stop offset="1" stop-color="#c9d3cd"/></radialGradient>
+</defs>
+<rect width="2732" height="2732" fill="url(#bg)"/>
+<circle cx="1366" cy="1290" r="300" fill="url(#ball)"/>
+<text x="1366" y="1270" text-anchor="middle" font-family="Helvetica Neue, Arial, sans-serif" font-size="96" font-weight="700" fill="#1f5d4a">I wanna</text>
+<text x="1366" y="1370" text-anchor="middle" font-family="Helvetica Neue, Arial, sans-serif" font-size="96" font-weight="700" fill="#1f5d4a">play</text>
+<text x="1366" y="1760" text-anchor="middle" font-family="Helvetica Neue, Arial, sans-serif" font-size="120" font-weight="700" fill="#ffffff">GolfUs</text>
+</svg>

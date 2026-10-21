@@ -260,6 +260,28 @@ Le même code sert le site (https://golfus.ch) et l'app iPhone.
 - **CORS** : seule l'origine de l'app est autorisée (`APP_ORIGINS`, par défaut `capacitor://localhost,ionic://localhost`).
 - **Liens partagés** (invitations, fiches) : toujours sur l'adresse publique (`PUBLIC_ORIGIN`), jamais `capacitor://localhost`.
 - **Serveur** : l'app utilise le serveur de production existant (Netlify Functions + Netlify Database, HTTPS sur golfus.ch).
+- **Projet Xcode** : `ios/` (Capacitor 8, Swift Package Manager, sans CocoaPods). Identifiant `ch.golfus.app`, nom « GolfUs ».
+
+### Lancer l'app dans le simulateur (Mac + Xcode)
+
+```bash
+npm run ios:open     # ouvre le projet dans Xcode : choisir un iPhone simulé puis ▶
+npm run ios:sim      # ou : compile seulement pour le simulateur (vérification sans Xcode ouvert)
+```
+
+Avant, et après chaque modification du code web : `npm run ios:sync` (reconstruit et copie dans `ios/`).
+
+### Comportements propres à l'app
+
+- **Localisation** : module natif `@capacitor/geolocation` (une seule demande, au nom de GolfUs, texte en FR/EN/ES
+  dans `ios/App/App/*.lproj/InfoPlist.strings`). Le site garde l'API du navigateur.
+- **Jeton** : conservé dans le trousseau iOS (Keychain), jamais dans le localStorage.
+- **Liens externes** (réservation, site du golf, plateformes) : Safari intégré à l'app, avec bouton de fermeture.
+- **Barre d'état** : texte clair sur les écrans sombres (intro, thème sombre), foncé sinon.
+- **Navigation** : bouton « Retour » sur Profil, Favoris et pages légales (pas de bouton Précédent dans une app).
+- **Administration** : lien masqué dans l'app ; elle reste accessible sur le site.
+- **Connexion Google / Apple / lien par e-mail** : désactivés dans l'app pour l'instant (e-mail + mot de passe seulement).
+  « Se connecter avec Apple » arrivera à l'étape 4 (obligatoire pour l'App Store si d'autres connexions sociales existent).
 
 ## Sources de données et limites
 

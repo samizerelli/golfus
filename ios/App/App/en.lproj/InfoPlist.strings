@@ -1,0 +1,3 @@
+/* Textes système de l'app (autorisation de localisation) */
+"NSLocationWhenInUseUsageDescription" = "GolfUs uses your location to show golf courses around you and the travel time to each one. It is never saved or shared.";
+"CFBundleDisplayName" = "GolfUs";

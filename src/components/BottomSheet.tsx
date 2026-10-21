@@ -8,7 +8,18 @@ const ORDER: Snap[] = ['peek', 'half', 'full'];
 /** Hauteurs des 3 crans, calculées sur la hauteur visible réelle (équivalent 100dvh) */
 function heights() {
   const vh = window.visualViewport?.height ?? window.innerHeight;
-  return { peek: 196, half: Math.round(vh * 0.5), full: Math.round(vh - 64) };
+  // Plein écran : sous l'encoche / Dynamic Island de l'iPhone (zone sûre du haut), avec une marge
+  return { peek: 196, half: Math.round(vh * 0.5), full: Math.round(vh - Math.max(64, safeTop() + 16)) };
+}
+
+/** Hauteur de la zone sûre du haut (encoche), lue depuis env(safe-area-inset-top) */
+function safeTop() {
+  const probe = document.createElement('div');
+  probe.style.cssText = 'position:fixed;top:0;height:env(safe-area-inset-top);visibility:hidden;pointer-events:none';
+  document.body.appendChild(probe);
+  const h = probe.getBoundingClientRect().height;
+  probe.remove();
+  return h;
 }
 
 /**

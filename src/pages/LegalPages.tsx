@@ -1,12 +1,15 @@
 import type { ReactNode } from 'react';
-import { Link } from 'react-router-dom';
+import { BackLink } from '../components/BackLink';
 import { useI18n } from '../i18n';
 
 function Page({ title, children }: { title: string; children: ReactNode }) {
   const { lang } = useI18n();
   return (
-    <div className="min-h-0 flex-1 overflow-y-auto">
-      <article className="glass glass-rounded mx-auto my-4 w-[calc(100%-1.5rem)] max-w-2xl space-y-4 p-5 pb-8 leading-relaxed sm:p-8 [&_h2]:mt-6 [&_h2]:text-xl [&_h2]:font-semibold [&_a]:underline [&_li]:ml-5 [&_li]:list-disc">
+    <div className="min-h-0 flex-1 overflow-y-auto pt-[env(safe-area-inset-top)]">
+      <div className="mx-auto w-[calc(100%-1.5rem)] max-w-2xl pt-2">
+        <BackLink />
+      </div>
+      <article className="glass glass-rounded mx-auto mb-4 w-[calc(100%-1.5rem)] max-w-2xl space-y-4 p-5 pb-8 leading-relaxed sm:p-8 [&_h2]:mt-6 [&_h2]:text-xl [&_h2]:font-semibold [&_a]:underline [&_li]:ml-5 [&_li]:list-disc">
         <h1 className="text-[28px] leading-tight">{title}</h1>
         {lang !== 'fr' && (
           <p lang="en" className="frost rounded-[20px] p-3 text-sm">
@@ -15,9 +18,6 @@ function Page({ title, children }: { title: string; children: ReactNode }) {
           </p>
         )}
         {children}
-        <p className="pt-4">
-          <Link to="/">← GolfUs</Link>
-        </p>
       </article>
     </div>
   );

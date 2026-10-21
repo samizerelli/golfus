@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useI18n } from '../i18n';
 import { haptic } from './ui';
@@ -88,6 +88,12 @@ export function Intro({ onClose }: { onClose: () => void }) {
   const [pressed, setPressed] = useState(false);
   const returning = hadAccount();
   const action = returning ? t('auth.tabLogin') : t('auth.tabRegister');
+
+  // Fond sombre : l'app iOS passe la barre d'état en texte clair tant que l'intro est affichée
+  useEffect(() => {
+    document.documentElement.classList.add('intro-open');
+    return () => document.documentElement.classList.remove('intro-open');
+  }, []);
 
   const go = () => {
     haptic(18);

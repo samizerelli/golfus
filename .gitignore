@@ -11,3 +11,4 @@ data/*.db-*
 # Base locale (PGlite)
 data/pglite/
 dist-ios
+ios/build

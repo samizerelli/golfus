@@ -2,7 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Check, ChevronRight, Lock, Search, Share2, ShieldCheck, UserPlus, Wrench, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { PUBLIC_ORIGIN } from '../lib/platform';
+import { isNative, PUBLIC_ORIGIN } from '../lib/platform';
 import { CURRENCIES, type Currency } from '../../shared/types';
 import { LANGS, useI18n } from '../i18n';
 import { api, type Notification, type Outing } from '../lib/api';
@@ -345,7 +345,8 @@ export function SettingsBody({ onNavigate }: { onNavigate: () => void }) {
         {[
           { to: '/confidentialite', label: t('nav.privacy'), Icon: ShieldCheck },
           { to: '/mentions-legales', label: t('nav.legal'), Icon: Lock },
-          { to: '/admin', label: t('account.admin'), Icon: Wrench },
+          // Administration : sur le site seulement, pas dans l'app
+          ...(isNative() ? [] : [{ to: '/admin', label: t('account.admin'), Icon: Wrench }]),
         ].map(({ to, label, Icon }) => (
           <Link key={to} to={to} onClick={onNavigate} className="flex min-h-12 items-center gap-3 px-4 hover:bg-white/30 dark:hover:bg-white/5">
             <Icon className="size-4 text-muted" aria-hidden />
