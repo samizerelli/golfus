@@ -87,7 +87,11 @@ function driver() {
     const d = await createDriver();
     await runMigrations(d);
     return d;
-  })();
+  })().catch((e) => {
+    // Échec (base momentanément indisponible…) : nouvel essai à la requête suivante
+    ready = null;
+    throw e;
+  });
   return ready;
 }
 

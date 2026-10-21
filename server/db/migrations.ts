@@ -215,27 +215,32 @@ interface MigDriver {
 }
 
 /** Applique les migrations manquantes, sous verrou consultatif (plusieurs fonctions peuvent démarrer en même temps). */
+/**
+ * Applique les migrations manquantes. Plusieurs instances peuvent démarrer en même temps (fonctions Netlify) :
+ * chaque migration se fait dans une transaction protégée par un verrou de transaction (compatible avec les
+ * pools de connexions en mode transaction), avec une nouvelle vérification une fois le verrou obtenu.
+ */
 export async function runMigrations(d: MigDriver) {
   await d.withClient(async (q) => {
-    await q('SELECT pg_advisory_lock(727401)', []);
-    try {
-      await q('CREATE TABLE IF NOT EXISTS schema_migrations (id INTEGER PRIMARY KEY, name TEXT NOT NULL, applied_at TIMESTAMPTZ NOT NULL DEFAULT now())', []);
-      const done = new Set((await q('SELECT id FROM schema_migrations', [])).rows.map((r) => Number(r.id)));
-      for (const m of migrations) {
-        if (done.has(m.id)) continue;
-        await q('BEGIN', []);
-        try {
+    await q('CREATE TABLE IF NOT EXISTS schema_migrations (id INTEGER PRIMARY KEY, name TEXT NOT NULL, applied_at TIMESTAMPTZ NOT NULL DEFAULT now())', []);
+    const done = new Set((await q('SELECT id FROM schema_migrations', [])).rows.map((r) => Number(r.id)));
+    for (const m of migrations) {
+      if (done.has(m.id)) continue;
+      await q('BEGIN', []);
+      try {
+        await q('SELECT pg_advisory_xact_lock(727401)', []);
+        // Une autre instance l'a peut-être appliquée pendant l'attente du verrou
+        const already = (await q('SELECT 1 FROM schema_migrations WHERE id = $1', [m.id])).rows.length > 0;
+        if (!already) {
           for (const stmt of m.sql.split(/;\s*\n/).map((s) => s.trim()).filter((s) => s && !/^(--[^\n]*\n?)+$/.test(s))) await q(stmt, []);
-          await q('INSERT INTO schema_migrations (id, name) VALUES ($1, $2)', [m.id, m.name]);
-          await q('COMMIT', []);
-          console.log(`🗄️  Migration ${m.id} appliquée : ${m.name}`);
-        } catch (e) {
-          await q('ROLLBACK', []);
-          throw new Error(`Migration ${m.id} échouée : ${(e as Error).message}`);
+          await q('INSERT INTO schema_migrations (id, name) VALUES ($1, $2) ON CONFLICT (id) DO NOTHING', [m.id, m.name]);
         }
+        await q('COMMIT', []);
+        if (!already) console.log(`🗄️  Migration ${m.id} appliquée : ${m.name}`);
+      } catch (e) {
+        await q('ROLLBACK', []);
+        throw new Error(`Migration ${m.id} échouée : ${(e as Error).message}`);
       }
-    } finally {
-      await q('SELECT pg_advisory_unlock(727401)', []);
     }
   });
 }
