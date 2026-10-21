@@ -11,7 +11,7 @@ Textes prêts à copier dans App Store Connect › votre app › version 1.0. Li
 | URL marketing | https://golfus.ch |
 | URL de la politique de confidentialité | https://golfus.ch/confidentialite |
 | Catégorie principale / secondaire | Sports / Voyages |
-| Copyright | 2026 [votre nom] |
+| Copyright | 2026 Sami Zerelli |
 | Prix | Gratuit |
 | Captures d'écran (iPhone 6,9 pouces, 1320 × 2868) | `docs/app-store/1-accueil.jpg` à `5-fiche-golf.jpg` |
 

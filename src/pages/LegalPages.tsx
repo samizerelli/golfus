@@ -29,12 +29,14 @@ export function LegalPage() {
     <Page title="Mentions légales">
       <h2>Éditeur du site</h2>
       <p>
-        [Nom ou raison sociale de l’éditeur] — [adresse postale] — [adresse e-mail de contact].
+        Sami Zerelli
         <br />
-        Directeur de la publication : [nom].
-      </p>
-      <p className="text-sm text-muted">
-        À compléter avant toute mise en ligne publique (obligatoire en France : loi n° 2004-575 du 21 juin 2004, art. 6).
+        3b avenue de Chamonix, 1207 Genève, Suisse
+        <br />
+        E-mail : <a href="mailto:sami.zerelli@gmail.com">sami.zerelli@gmail.com</a> — ou le formulaire de la page{' '}
+        <Link to="/aide">Aide et contact</Link>.
+        <br />
+        Responsable de la publication : Sami Zerelli.
       </p>
       <h2>Hébergement</h2>
       <p>
@@ -113,7 +115,8 @@ export function TermsPage() {
       </p>
       <h2>Contact</h2>
       <p>
-        Pour toute question ou réclamation : voir les <Link to="/mentions-legales">mentions légales</Link>. Données personnelles :
+        Pour toute question ou réclamation : <a href="mailto:sami.zerelli@gmail.com">sami.zerelli@gmail.com</a> ou la page{' '}
+        <Link to="/aide">Aide et contact</Link>. Données personnelles :
         voir la <Link to="/confidentialite">politique de confidentialité</Link>.
       </p>
     </Page>
@@ -225,7 +228,9 @@ export function PrivacyPage() {
       <p>
         Conformément au RGPD et à la loi suisse sur la protection des données, vous disposez d’un droit d’accès, de rectification,
         d’effacement et de portabilité. Depuis Profil › Mes données, vous pouvez télécharger toutes vos données ou supprimer votre
-        compte, sans nous écrire. Pour toute autre demande, utilisez le formulaire de la page <Link to="/aide">Aide et contact</Link>.
+        compte, sans nous écrire. Pour toute autre demande : écrivez à <a href="mailto:sami.zerelli@gmail.com">sami.zerelli@gmail.com</a> (responsable du
+        traitement : Sami Zerelli, 3b avenue de Chamonix, 1207 Genève, Suisse) ou utilisez le formulaire de la page{' '}
+        <Link to="/aide">Aide et contact</Link>.
         Vous pouvez aussi saisir l’autorité de protection des données de votre pays (CNIL en France, PFPDT en Suisse).
       </p>
     </Page>
