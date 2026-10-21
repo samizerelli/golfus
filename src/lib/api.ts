@@ -166,8 +166,8 @@ export const api = {
   /** Départs libres selon les critères, pour les golfs dont le moteur de réservation le publie */
   availability: (ids: string[], date: string, from: string, to: string, players: number, signal?: AbortSignal) =>
     request<Record<string, Availability>>(`/availability?${new URLSearchParams({ ids: ids.join(','), date, from, to, players: String(players) })}`, { signal }),
-  travel: (lat: number, lon: number, destinations: { id: string; lat: number; lon: number }[]) =>
-    request<TravelInfo[]>('/travel', { method: 'POST', body: JSON.stringify({ lat, lon, destinations }) }),
+  travel: (lat: number, lon: number, destinations: { id: string; lat: number; lon: number }[], signal?: AbortSignal) =>
+    request<TravelInfo[]>('/travel', { method: 'POST', body: JSON.stringify({ lat, lon, destinations }), signal }),
   autocomplete: (text: string, lang: string, signal?: AbortSignal) =>
     request<PlaceSuggestion[]>(`/geocode/autocomplete?${q({ q: text, lang })}`, { signal }),
   reverse: (lat: number, lon: number, lang: string) =>

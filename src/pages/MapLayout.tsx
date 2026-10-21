@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState, type MutableRefObject } from 'react';
-import { Outlet, useMatch, useOutletContext } from 'react-router-dom';
+import { Outlet, useMatch, useOutletContext, useSearchParams } from 'react-router-dom';
 import type { GolfSummary } from '../../shared/types';
 import { ActionRail } from '../components/ActionRail';
 import { SectionBoundary } from '../components/ErrorBoundary';
@@ -33,9 +33,22 @@ function scrollListTo(el: HTMLElement | undefined) {
   sc.scrollTo({ top: sc.scrollTop + el.getBoundingClientRect().top - sc.getBoundingClientRect().top - 8, behavior: 'smooth' });
 }
 
+/**
+ * Filtres recopiés dans l'adresse (?date=&from=&to=&holes=&players=&radius=) pour qu'un rechargement les garde.
+ * La position n'y est jamais écrite (vie privée) : elle est redemandée à l'ouverture.
+ */
+function useFiltersInUrl() {
+  const { criteria: c, radius } = useSearch();
+  const [, setParams] = useSearchParams();
+  useEffect(() => {
+    setParams({ date: c.date, from: c.timeFrom, to: c.timeTo, holes: c.holes, players: String(c.players), radius: String(radius) }, { replace: true });
+  }, [c.date, c.timeFrom, c.timeTo, c.holes, c.players, radius, setParams]);
+}
+
 /** Écran d'arrivée (route « / ») : filtres et golfs disponibles. Sur ordinateur, la liste est dans un panneau à droite. */
 export function HomeScreen() {
   const { cardRefs, desktop } = useLayout();
+  useFiltersInUrl();
   return (
     <div className="animate-rise flex min-h-full flex-col">
       <SearchForm />
@@ -67,7 +80,7 @@ export function MapLayout() {
   const desktop = useMediaQuery('(min-width: 1024px)');
   const invite = useMatch('/inviter/:id');
   const inviteId = invite?.params.id ? decodeURIComponent(invite.params.id) : null;
-  const { origin, radius, selectedId, setSelectedId, hoverId } = useSearch();
+  const { origin, radius, selectedId, setSelectedId, hoverId, mapHint } = useSearch();
   const { visible, all } = useResults();
   const { money, convert } = useSettings();
   const cardRefs = useRef(new Map<string, HTMLElement>());
@@ -80,7 +93,8 @@ export function MapLayout() {
   // Chaque changement d'écran repart du haut du panneau ; sur mobile, le tiroir reprend sa hauteur par défaut
   useEffect(() => {
     document.querySelectorAll<HTMLElement>('[data-scroll]').forEach((el) => el.scrollTo({ top: 0 }));
-    if (!desktop) setSnap('full');
+    // Recherche : tiroir à mi-hauteur pour voir la carte (cercle du rayon) ; invitation : plein écran
+    if (!desktop) setSnap(inviteId ? 'full' : 'half');
   }, [inviteId, desktop]);
 
   const golfsOnMap = useMemo(() => (inviteId ? (inviteGolf ? [inviteGolf] : []) : visible), [inviteId, inviteGolf, visible]);
@@ -134,6 +148,7 @@ export function MapLayout() {
         showRadius={!inviteId}
         focus={inviteId ? inviteGolf : null}
         highlightId={inviteId ? null : hoverId}
+        hint={mapHint}
       />
       </SectionBoundary>
 

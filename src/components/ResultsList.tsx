@@ -193,7 +193,7 @@ export function ResultsList({ cardRefs }: { cardRefs: MutableRefObject<Map<strin
   const { t, tp, locale } = useI18n();
   const navigate = useNavigate();
   const { criteria: c, setCriteria, origin, radius, setRadius, selectedId, setSelectedId, hoverId, setHoverId } = useSearch();
-  const { golfsQ, all, visible, matches, travel, avail, availLoading, hiddenFull } = useResults();
+  const { golfsQ, all, visible, matches, travel, avail, availLoading, hiddenFull, refreshing } = useResults();
   const topRef = useRef<HTMLDivElement>(null);
   const err = golfsQ.error as ApiError | null;
   const next = RADII_KM.find((r) => r > radius) as RadiusKm | undefined;
@@ -256,7 +256,9 @@ export function ResultsList({ cardRefs }: { cardRefs: MutableRefObject<Map<strin
           </div>
         </div>
       )}
-      <ul className="space-y-2" aria-label={t('results.list')}>
+      {/* Rafraîchissement : fine barre animée, anciens résultats conservés (légèrement estompés) */}
+      <div className={cx('shimmer-bar h-0.5 rounded-full transition-opacity duration-300', refreshing ? 'opacity-100' : 'opacity-0')} aria-hidden />
+      <ul className={cx('space-y-2 transition-opacity duration-300', refreshing && 'opacity-60')} aria-label={t('results.list')} aria-busy={refreshing}>
         {visible.map((g, i) => (
           <ResultCard
             key={g.id}

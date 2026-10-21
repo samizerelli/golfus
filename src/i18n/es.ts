@@ -231,6 +231,7 @@ export const es: Dict = {
   'geo.ipFailed': 'No se ha podido estimar tu ubicación. Escribe una ciudad.',
   'geo.ipNote': 'Basada en tu dirección IP, con precisión de ciudad.',
   'geo.approx': 'ubicación aproximada',
+  'geo.autoFailed': 'Ubicación no disponible.',
   'geo.retry': 'Reintentar',
   'welcome.privacy': 'Tu ubicación no se guarda ni se comparte.',
   'results.loading': 'Buscando campos de golf…',
@@ -403,6 +404,7 @@ export const es: Dict = {
   'sheet.expand': 'Ampliar la lista',
   'sheet.collapse': 'Reducir la lista',
   'map.label': 'Mapa de campos de golf',
+  'map.youAreHere': 'Estás aquí',
   'map.you': 'Punto de búsqueda',
 
   'footer.osm': 'Datos cartográficos © colaboradores de OpenStreetMap',

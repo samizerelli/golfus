@@ -229,6 +229,7 @@ export const fr = {
   'geo.ipFailed': 'Impossible d’estimer votre position. Saisissez une ville.',
   'geo.ipNote': 'Basée sur votre adresse IP, précision de l’ordre de la ville.',
   'geo.approx': 'position approximative',
+  'geo.autoFailed': 'Position indisponible.',
   'geo.retry': 'Réessayer',
   'welcome.privacy': 'Votre position n’est ni enregistrée ni partagée.',
   'results.loading': 'Recherche des golfs…',
@@ -401,6 +402,7 @@ export const fr = {
   'sheet.expand': 'Agrandir la liste',
   'sheet.collapse': 'Réduire la liste',
   'map.label': 'Carte des golfs',
+  'map.youAreHere': 'Vous êtes ici',
   'map.you': 'Point de recherche',
 
   'footer.osm': 'Données cartographiques © contributeurs OpenStreetMap',

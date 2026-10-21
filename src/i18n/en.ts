@@ -231,6 +231,7 @@ export const en: Dict = {
   'geo.ipFailed': 'Your location couldn’t be estimated. Please type a city.',
   'geo.ipNote': 'Based on your IP address, accurate to roughly the city.',
   'geo.approx': 'approximate location',
+  'geo.autoFailed': 'Location unavailable.',
   'geo.retry': 'Try again',
   'welcome.privacy': 'Your location is never stored or shared.',
   'results.loading': 'Searching for golf courses…',
@@ -403,6 +404,7 @@ export const en: Dict = {
   'sheet.expand': 'Expand list',
   'sheet.collapse': 'Collapse list',
   'map.label': 'Golf course map',
+  'map.youAreHere': 'You are here',
   'map.you': 'Search point',
 
   'footer.osm': 'Map data © OpenStreetMap contributors',

@@ -1,5 +1,5 @@
 import { Minus, Plus } from 'lucide-react';
-import { type ReactNode } from 'react';
+import { useEffect, type ReactNode } from 'react';
 import { RADII_KM, type RadiusKm } from '../../shared/types';
 import { useI18n } from '../i18n';
 import { todayStr, useSearch, type HolesFilter } from '../state/search';
@@ -94,11 +94,21 @@ export function Stepper({ value, onChange, min = 1, max = 8, label }: { value: n
   );
 }
 
+let autoLocateTried = false;
+
 /** Filtres de la partie : chaque changement met à jour la liste des golfs disponibles (pas de bouton à valider). */
 export function SearchForm() {
   const { t } = useI18n();
-  const { criteria: c, setCriteria, radius, setRadius } = useSearch();
+  const { draft: c, setCriteria, radius, setRadius, origin } = useSearch();
   const loc = useLocate();
+
+  // Localisation automatique à l'ouverture (une seule fois par chargement de page), sans bouton
+  useEffect(() => {
+    if (origin || autoLocateTried) return;
+    autoLocateTried = true;
+    void loc.locate({ auto: true });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
     <form
@@ -123,6 +133,15 @@ export function SearchForm() {
         }
       >
         <LocationSearch trailing={<LocateInline loc={loc} />} />
+        {loc.busy && !origin && <p className="text-xs text-muted" aria-live="polite">{t('search.locating')}</p>}
+        {loc.autoFailed && !origin && (
+          <p className="text-xs text-muted" role="status">
+            {t('geo.autoFailed')}{' '}
+            <button type="button" className="font-semibold text-link underline-offset-2 hover:underline" onClick={() => document.getElementById('place-search')?.focus()}>
+              {t('geo.typeCity')}
+            </button>
+          </p>
+        )}
         <LocateError loc={loc} />
       </Field>
 

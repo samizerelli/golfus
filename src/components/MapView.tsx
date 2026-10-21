@@ -1,7 +1,7 @@
 import L from '../lib/leafletGlobal';
 import 'leaflet.markercluster';
 import { useEffect, useRef } from 'react';
-import { Circle, MapContainer, Marker, TileLayer, useMap } from 'react-leaflet';
+import { Circle, MapContainer, Marker, TileLayer, Tooltip, useMap } from 'react-leaflet';
 import type { GolfSummary } from '../../shared/types';
 import { useI18n } from '../i18n';
 import type { Origin } from '../state/search';
@@ -34,28 +34,24 @@ const hasSize = (map: L.Map) => {
   return s.x > 0 && s.y > 0;
 };
 
-function FitToResults({ origin, golfs, radiusKm, insets }: { origin: Origin | null; golfs: GolfSummary[]; radiusKm: number; insets: Insets }) {
+/** Cadrage exact sur le cercle du rayon de recherche autour du point de départ (recadré quand le rayon change). */
+function FitToRadius({ origin, radiusKm, insets, hint }: { origin: Origin | null; radiusKm: number; insets: Insets; hint: { lat: number; lon: number } | null }) {
   const map = useMap();
-  const key = origin ? `${origin.lat},${origin.lon},${radiusKm},${golfs.length > 0}` : 'none';
+  const key = origin ? `${origin.lat},${origin.lon},${radiusKm}` : hint ? `hint:${hint.lat},${hint.lon}` : 'none';
   const last = useRef('');
   useEffect(() => {
     const run = () => {
-      if (key === last.current || !origin || !hasSize(map)) return;
+      if (key === last.current || key === 'none' || !hasSize(map)) return;
       last.current = key;
-      // Cadrage centré sur le point de départ : boîte symétrique englobant les 15 golfs les plus proches
-      const near = golfs.slice(0, 15);
-      const dLat = Math.max(0.01, ...near.map((g) => Math.abs(g.lat - origin.lat)));
-      const dLon = Math.max(0.01, ...near.map((g) => Math.abs(g.lon - origin.lon)));
-      const opts = { paddingTopLeft: [insets.left + 30, insets.top + 30] as L.PointTuple, paddingBottomRight: [(insets.right ?? 0) + 30, insets.bottom + 30] as L.PointTuple, maxZoom: 13 };
-      if (near.length)
-        map.flyToBounds(
-          [
-            [origin.lat - dLat, origin.lon - dLon],
-            [origin.lat + dLat, origin.lon + dLon],
-          ],
-          { ...opts, duration: 0.9 },
-        );
-      else map.flyTo([origin.lat, origin.lon], radiusKm > 50 ? 8 : radiusKm > 25 ? 9 : 10, { duration: 0.9 });
+      if (!origin && hint) return void map.flyTo([hint.lat, hint.lon], 10, { duration: 0.9 });
+      if (!origin) return;
+      // Boîte englobant le cercle : diamètre = 2 × rayon
+      const bounds = L.latLng(origin.lat, origin.lon).toBounds(radiusKm * 2000);
+      map.flyToBounds(bounds, {
+        paddingTopLeft: [insets.left + 16, insets.top + 16],
+        paddingBottomRight: [(insets.right ?? 0) + 16, insets.bottom + 16],
+        duration: 0.9,
+      });
     };
     run();
     // Carte masquée au moment du changement : cadrage dès qu'elle retrouve une taille
@@ -63,7 +59,7 @@ function FitToResults({ origin, golfs, radiusKm, insets }: { origin: Origin | nu
     return () => {
       map.off('resize', run);
     };
-  }, [key, origin, golfs, radiusKm, map, insets]);
+  }, [key, origin, radiusKm, map, insets, hint]);
   return null;
 }
 
@@ -258,6 +254,7 @@ export function MapView({
   showRadius = true,
   focus = null,
   highlightId = null,
+  hint = null,
 }: {
   origin: Origin | null;
   golfs: GolfSummary[];
@@ -272,6 +269,8 @@ export function MapView({
   /** Golf sur lequel centrer la carte (écran 3) */
   focus?: GolfSummary | null;
   highlightId?: string | null;
+  /** Centre de repli quand la position n'est pas connue */
+  hint?: { lat: number; lon: number } | null;
 }) {
   const { t } = useI18n();
 
@@ -286,7 +285,7 @@ export function MapView({
           className="map-tiles"
         />
         <AutoResize />
-        {!focus && <FitToResults origin={origin} golfs={golfs} radiusKm={radiusKm} insets={insets} />}
+        {!focus && <FitToRadius origin={origin} radiusKm={radiusKm} insets={insets} hint={hint} />}
         <FocusGolf golf={focus} insets={insets} />
         {origin && (
           <>
@@ -296,7 +295,14 @@ export function MapView({
               pathOptions={{ color: '#7fb6e6', weight: 1.5, dashArray: '4 8', fillColor: '#7fb6e6', fillOpacity: 0.06 }}
               interactive={false}
             />}
-            <Marker position={[origin.lat, origin.lon]} icon={userIcon} title={t('map.you')} alt={t('map.you')} keyboard={false} />
+            <Marker position={[origin.lat, origin.lon]} icon={userIcon} title={t('map.you')} alt={t('map.you')} keyboard={false}>
+              {/* Étiquette permanente quand la position vient de l'appareil */}
+              {origin.source === 'gps' && (
+                <Tooltip permanent direction="top" offset={[0, -12]} className="you-are-here">
+                  {t('map.youAreHere')}
+                </Tooltip>
+              )}
+            </Marker>
           </>
         )}
         <GolfMarkers golfs={golfs} selectedId={selectedId} highlightId={highlightId} onSelect={onSelect} labelFor={labelFor} unnamedLabel={unnamedLabel} insets={insets} follow={!focus} />

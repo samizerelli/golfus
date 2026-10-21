@@ -37,6 +37,20 @@ function once(opts: PositionOptions, watchdogMs: number): Promise<{ lat: number;
   });
 }
 
+/**
+ * Localisation automatique à l'ouverture : haute précision, 8 s une fois l'autorisation donnée.
+ * Le chien de garde (30 s) laisse le temps de répondre à la demande d'autorisation du navigateur.
+ */
+export async function getPositionAuto(): Promise<{ lat: number; lon: number }> {
+  if (!window.isSecureContext) throw 'insecure' satisfies GeoErrorCode;
+  if (!('geolocation' in navigator)) throw 'unsupported' satisfies GeoErrorCode;
+  if ((await geoPermission()) === 'denied') throw 'denied' satisfies GeoErrorCode;
+  return once({ enableHighAccuracy: true, timeout: 8000, maximumAge: 60000 }, 30000);
+}
+
+/** Position par défaut de la carte quand la localisation est impossible (Costa del Sol, où se trouvent les fiches vérifiées) */
+export const DEFAULT_MAP_CENTER = { lat: 36.51, lon: -4.88 };
+
 export async function getPosition(): Promise<{ lat: number; lon: number }> {
   if (!window.isSecureContext) throw 'insecure' satisfies GeoErrorCode;
   if (!('geolocation' in navigator)) throw 'unsupported' satisfies GeoErrorCode;

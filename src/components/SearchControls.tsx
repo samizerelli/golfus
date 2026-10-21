@@ -3,7 +3,7 @@ import { useEffect, useId, useRef, useState, type ReactNode } from 'react';
 import type { PlaceSuggestion } from '../../shared/types';
 import { useI18n } from '../i18n';
 import { api } from '../lib/api';
-import { getPosition, platform, type GeoErrorCode } from '../lib/geo';
+import { DEFAULT_MAP_CENTER, getPosition, getPositionAuto, platform, type GeoErrorCode } from '../lib/geo';
 import { useSearch } from '../state/search';
 import { cx, haptic } from './ui';
 
@@ -167,18 +167,22 @@ export function LocationSearch({ trailing, className, onFocus }: { trailing?: Re
 
 export function useLocate() {
   const { lang } = useI18n();
-  const { setOrigin } = useSearch();
+  const { setOrigin, setMapHint } = useSearch();
   const [busy, setBusy] = useState(false);
   const [ipBusy, setIpBusy] = useState(false);
   const [error, setError] = useState<GeoErrorCode | 'ipFailed' | null>(null);
+  /** Échec de la localisation automatique : simple message discret, rien n'est bloqué */
+  const [autoFailed, setAutoFailed] = useState(false);
 
-  const locate = async () => {
+  /** auto = à l'ouverture de la page, sans action de l'utilisateur */
+  const locate = async (opts: { auto?: boolean } = {}) => {
     if (busy) return;
     setBusy(true);
     setError(null);
     try {
-      const p = await getPosition();
-      haptic(12);
+      const p = opts.auto ? await getPositionAuto() : await getPosition();
+      setAutoFailed(false);
+      if (!opts.auto) haptic(12);
       setOrigin({ ...p, label: null, source: 'gps' });
       // Nom de ville approximatif, uniquement pour l'affichage
       api
@@ -186,7 +190,10 @@ export function useLocate() {
         .then((r) => r.label && setOrigin({ ...p, label: r.label, source: 'gps' }))
         .catch(() => undefined);
     } catch (e) {
-      setError(typeof e === 'string' ? (e as GeoErrorCode) : 'unavailable');
+      if (opts.auto) {
+        setAutoFailed(true);
+        setMapHint(DEFAULT_MAP_CENTER);
+      } else setError(typeof e === 'string' ? (e as GeoErrorCode) : 'unavailable');
     } finally {
       setBusy(false);
     }
@@ -207,7 +214,7 @@ export function useLocate() {
     }
   };
 
-  return { locate, locateByIp, busy, ipBusy, error, clearError: () => setError(null) };
+  return { locate, locateByIp, busy, ipBusy, error, autoFailed, clearError: () => setError(null) };
 }
 
 /** Bouton « Me localiser » intégré à la barre de recherche */
@@ -216,7 +223,7 @@ export function LocateInline({ loc }: { loc: ReturnType<typeof useLocate> }) {
   return (
     <button
       type="button"
-      onClick={loc.locate}
+      onClick={() => loc.locate()}
       aria-busy={loc.busy}
       aria-label={loc.busy ? t('search.locating') : t('search.locate')}
       title={t('search.locate')}
@@ -267,7 +274,7 @@ export function LocateError({ loc }: { loc: ReturnType<typeof useLocate> }) {
           </button>
         )}
         {loc.error !== 'denied' && loc.error !== 'insecure' && loc.error !== 'unsupported' && loc.error !== 'ipFailed' && (
-          <button type="button" className={pillBtn} onClick={loc.locate}>
+          <button type="button" className={pillBtn} onClick={() => loc.locate()}>
             <RotateCw className="size-4" aria-hidden />
             {t('geo.retry')}
           </button>

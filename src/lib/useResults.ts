@@ -7,7 +7,7 @@ import { api } from './api';
 import { useHoursLib } from './hours';
 
 export function useResults() {
-  const { origin, radius, criteria } = useSearch();
+  const { origin, radius, criteria, draft } = useSearch();
   const hoursReady = useHoursLib();
 
   const golfsQ = useQuery({
@@ -15,13 +15,16 @@ export function useResults() {
     queryFn: ({ signal }) => api.golfs(origin!.lat, origin!.lon, radius, signal),
     enabled: !!origin,
     retry: (count, err) => count < 1 && (err as { status?: number }).status !== 400,
+    // Changement de rayon : les résultats précédents restent affichés jusqu'aux nouveaux (même point de départ)
+    placeholderData: (prev, prevQuery) => (prevQuery?.queryKey[1] === origin?.lat && prevQuery?.queryKey[2] === origin?.lon ? prev : undefined),
   });
-  const all = golfsQ.data?.golfs ?? [];
+  // Rayon réduit : les golfs déjà chargés hors du nouveau cercle disparaissent tout de suite, sans attendre le serveur
+  const all = useMemo(() => (golfsQ.data?.golfs ?? []).filter((g) => g.distanceKm == null || g.distanceKm <= radius), [golfsQ.data, radius]);
 
   const nearest = useMemo(() => all.slice(0, 40).map((g) => ({ id: g.id, lat: g.lat, lon: g.lon })), [all]);
   const travelQ = useQuery({
     queryKey: ['travel', origin?.lat, origin?.lon, nearest.map((n) => n.id).join(',')],
-    queryFn: () => api.travel(origin!.lat, origin!.lon, nearest),
+    queryFn: ({ signal }) => api.travel(origin!.lat, origin!.lon, nearest, signal),
     enabled: !!origin && nearest.length > 0,
     staleTime: 30 * 60_000,
   });
@@ -66,5 +69,7 @@ export function useResults() {
 
   // Clubs retirés car complets : nommés sous le compteur (rien n'est masqué sans le dire)
   const hiddenFull = avail ? all.filter((g) => avail[g.id]?.status === 'full').map((g) => g.name) : [];
-  return { golfsQ, all, visible, matches, travel, travelLoading, avail, availLoading: availQ.isFetching, hiddenFull };
+  // Rafraîchissement en cours (nouveau rayon, filtres pas encore appliqués, disponibilités) : résultats conservés, état léger
+  const refreshing = (golfsQ.isFetching && !!golfsQ.data) || availQ.isFetching || draft !== criteria;
+  return { golfsQ, all, visible, matches, travel, travelLoading, avail, availLoading: availQ.isFetching, hiddenFull, refreshing };
 }

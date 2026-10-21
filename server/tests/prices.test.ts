@@ -62,3 +62,21 @@ test('comparatif : du moins cher au plus cher, liens datés, aucun prix inventé
   assert.equal(list.find((x) => x.kind === 'club')?.basis, 'date');
   assert.equal(cheaperElsewhere(golf, c)?.amount, 104.38);
 });
+
+test('créneau par défaut = heure de l’appareil arrondie, filtres repris de l’adresse', async () => {
+  const { defaultSlot, criteriaFromUrl } = await import('../../src/state/search.tsx');
+  const at = (h: number, m: number) => new Date(2026, 9, 21, h, m);
+  assert.deepEqual(defaultSlot(at(13, 2)), { date: '2026-10-21', timeFrom: '13:00', timeTo: '16:00' });
+  assert.equal(defaultSlot(at(13, 20)).timeFrom, '13:30');
+  assert.equal(defaultSlot(at(19, 40)).timeTo, '21:00');
+  // Trop tôt : début de journée ; trop tard : le lendemain matin
+  assert.equal(defaultSlot(at(5, 0)).timeFrom, '06:00');
+  assert.deepEqual(defaultSlot(at(21, 10)), { date: '2026-10-22', timeFrom: '08:00', timeTo: '11:00' });
+  const u = criteriaFromUrl('?date=2099-01-02&from=09:00&to=12:00&holes=18&players=3&radius=50&lat=1');
+  assert.deepEqual([u.criteria.date, u.criteria.timeFrom, u.criteria.timeTo, u.criteria.holes, u.criteria.players, u.radius], ['2099-01-02', '09:00', '12:00', '18', 3, 50]);
+  // Valeurs invalides ignorées
+  const bad = criteriaFromUrl('?from=12:00&to=09:00&players=99&radius=7&holes=x');
+  assert.equal(bad.radius, null);
+  assert.equal(bad.criteria.players, 2);
+  assert.equal(bad.criteria.holes, 'any');
+});
