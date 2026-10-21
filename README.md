@@ -248,6 +248,19 @@ docker run -p 8787:8787 -v golf-data:/data --env-file .env golfus
   - [Nominatim](https://operations.osmfoundation.org/policies/nominatim/) : 1 requête par seconde, respectée par le serveur ;
   - OSRM démo : passez à `ORS_API_KEY` ou à votre propre serveur OSRM.
 
+## App iOS (Capacitor) — en préparation
+
+Le même code sert le site (https://golfus.ch) et l'app iPhone.
+
+- **Construction** : `npm run build:ios` (valeurs publiques dans `.env.ios` : `VITE_API_BASE`, `VITE_PUBLIC_URL`) → dossier `dist-ios`.
+- **Connexion dans l'app** : iOS bloque les cookies intersites dans la WebView (`capacitor://localhost` → `golfus.ch`).
+  L'app se connecte par `POST /api/mobile/login` et reçoit un jeton signé (30 jours) qu'elle envoie dans
+  `Authorization: Bearer …`. Le jeton est révoqué par « Se déconnecter partout » ou un changement de mot de passe.
+  Le site garde sa session par cookie.
+- **CORS** : seule l'origine de l'app est autorisée (`APP_ORIGINS`, par défaut `capacitor://localhost,ionic://localhost`).
+- **Liens partagés** (invitations, fiches) : toujours sur l'adresse publique (`PUBLIC_ORIGIN`), jamais `capacitor://localhost`.
+- **Serveur** : l'app utilise le serveur de production existant (Netlify Functions + Netlify Database, HTTPS sur golfus.ch).
+
 ## Sources de données et limites
 
 | Donnée | Source | Remarques |
