@@ -248,7 +248,7 @@ docker run -p 8787:8787 -v golf-data:/data --env-file .env golfus
   - [Nominatim](https://operations.osmfoundation.org/policies/nominatim/) : 1 requête par seconde, respectée par le serveur ;
   - OSRM démo : passez à `ORS_API_KEY` ou à votre propre serveur OSRM.
 
-## App iOS (Capacitor) — en préparation
+## App iOS (Capacitor)
 
 Le même code sert le site (https://golfus.ch) et l'app iPhone.
 
@@ -296,6 +296,8 @@ Avant, et après chaque modification du code web : `npm run ios:sync` (reconstru
   « Signaler » sur les avis, joueurs et invitations, blocage des joueurs, conditions d'utilisation (`/conditions`),
   traitement dans /admin › Signalements. Un avis signalé 3 fois est masqué en attendant la décision.
 - **Conformité App Store** (confidentialité, âge, risque 4.2, actions avant soumission) : voir `docs/APP_STORE.md`.
+- **Publication** (compte Apple Developer, signature, iPhone de test, Archive, TestFlight, retours des testeurs, liste
+  de tests) : voir `docs/GUIDE_IOS.md`. L'app est réservée à l'iPhone, en portrait.
 
 ### Activer les notifications et les Universal Links (compte Apple Developer requis)
 
