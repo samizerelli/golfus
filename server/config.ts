@@ -19,6 +19,18 @@ export const config = {
   cacheTtlMs: Number(process.env.CACHE_TTL_HOURS ?? 24) * 3600_000,
   userAgent: `GolfUs/1.0 (+self-hosted${contact ? `; ${contact}` : ''})`,
   contactEmail: contact || null,
+  /**
+   * Notifications push iOS (APNs). Sans clé, rien n'est envoyé : les notifications restent dans l'app.
+   * La clé .p8 (contenu, retours à la ligne en \\n) reste dans les variables d'environnement, jamais dans le code.
+   */
+  apns: {
+    keyId: process.env.APNS_KEY_ID?.trim() || '',
+    teamId: process.env.APPLE_TEAM_ID?.trim() || '',
+    privateKey: (process.env.APNS_PRIVATE_KEY || '').replace(/\\n/g, '\n').trim(),
+    bundleId: process.env.APNS_BUNDLE_ID?.trim() || 'ch.golfus.app',
+    // false = serveur « sandbox » (app lancée depuis Xcode) ; true = TestFlight et App Store
+    production: bool(process.env.APNS_PRODUCTION, true),
+  },
   /** Origines de l'app iOS (Capacitor) autorisées à appeler l'API (CORS) */
   appOrigins: (process.env.APP_ORIGINS || 'capacitor://localhost,ionic://localhost')
     .split(',')

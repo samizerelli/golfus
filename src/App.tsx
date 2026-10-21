@@ -1,11 +1,13 @@
 import { lazy, Suspense, useEffect, useState, type ComponentType } from 'react';
-import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
+import { Navigate, Route, Routes, useLocation, useNavigate } from 'react-router-dom';
 import { GlassFx } from './components/glass';
-import { RailProvider } from './components/ActionRail';
+import { RailProvider, useRail } from './components/ActionRail';
 import { hadAccount, Intro, introSeen, markSeen } from './components/Intro';
 import { useAuth } from './lib/auth';
 import { useI18n } from './i18n';
 import { PageSkeleton } from './components/PageSkeleton';
+import { isNative, onOpenInApp } from './lib/platform';
+import { refreshPush } from './lib/push';
 
 // Pages secondaires chargées à la demande : l'accueil (carte + recherche) s'affiche plus vite
 const named = <K extends string>(load: () => Promise<Record<K, ComponentType>>, name: K) => lazy(() => load().then((m) => ({ default: m[name] })));
@@ -20,6 +22,26 @@ const LoginPage = named(() => import('./pages/LoginPage'), 'LoginPage');
 const LegalPage = named(() => import('./pages/LegalPages'), 'LegalPage');
 const PrivacyPage = named(() => import('./pages/LegalPages'), 'PrivacyPage');
 const AdminApp = lazy(() => import('./pages/admin/AdminApp'));
+
+/** App iOS : ouvre l'écran demandé par iOS (notification, lien golfus.ch) et tient à jour le jeton push. */
+function NativeBridge() {
+  const navigate = useNavigate();
+  const { setOpen } = useRail();
+  const { user } = useAuth();
+  const { lang } = useI18n();
+  useEffect(
+    () =>
+      onOpenInApp(({ path, panel }) => {
+        if (path) navigate(path);
+        if (panel) setOpen(panel);
+      }),
+    [navigate, setOpen],
+  );
+  useEffect(() => {
+    if (user) void refreshPush(lang);
+  }, [user?.id, lang]); // eslint-disable-line react-hooks/exhaustive-deps
+  return null;
+}
 
 export default function App() {
   const { t } = useI18n();
@@ -40,6 +62,7 @@ export default function App() {
   }, [pathname, introOpen]);
   return (
     <RailProvider>
+    {isNative() && <NativeBridge />}
     <div className="flex h-dvh flex-col">
       <GlassFx />
       {showIntro && <Intro onClose={() => setIntroOpen(false)} />}

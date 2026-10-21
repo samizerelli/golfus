@@ -10,7 +10,7 @@ import type {
   TravelInfo,
 } from '../../shared/types';
 
-import { isNative, tokenStore } from './platform';
+import { isNative, pushDeviceStore, tokenStore } from './platform';
 
 /** Adresse du serveur : vide sur le web (même origine), https://golfus.ch dans l'app iOS (VITE_API_BASE) */
 const BASE = (import.meta.env.VITE_API_BASE ?? '').replace(/\/$/, '') + '/api';
@@ -139,6 +139,9 @@ export const auth = {
   sendMagicLink: (email: string, callbackUrl: string) => authPost('signin/email', { email, callbackUrl }),
   signOut: async () => {
     if (isNative()) {
+      // Cet iPhone ne doit plus recevoir les notifications du compte qui se déconnecte
+      const device = pushDeviceStore.get();
+      if (device) await request(`/push/devices/${device}`, { method: 'DELETE' }).catch(() => undefined);
       await tokenStore.clear();
       return { ok: true, error: null, url: undefined };
     }
@@ -223,6 +226,8 @@ export const api = {
   logoutAll: () => request<{ ok: true }>('/me/logout-all', { method: 'POST' }),
   deleteMe: (confirmEmail: string) => request<{ ok: true }>('/me', { method: 'DELETE', body: JSON.stringify({ confirmEmail }) }),
   exportUrl: () => BASE + '/me/export',
+  /** App iOS : jeton APNs de l'appareil, pour recevoir les notifications des parties */
+  registerPushDevice: (token: string, lang: string) => request<{ ok: true }>('/push/devices', { method: 'POST', body: JSON.stringify({ token, lang }) }),
 
   // ───── Amis, parties, notifications ─────
   friends: () => request<{ friends: Friend[]; incoming: Friend[]; outgoing: Friend[] }>('/friends'),

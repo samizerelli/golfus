@@ -1,8 +1,10 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Check, ChevronRight, Lock, Search, Share2, ShieldCheck, UserPlus, Wrench, X } from 'lucide-react';
+import { Bell, Check, ChevronRight, Lock, Search, Share2, ShieldCheck, UserPlus, Wrench, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { isNative, PUBLIC_ORIGIN } from '../lib/platform';
+import { shareLink } from '../lib/share';
+import { enablePush, pushState, type PushState } from '../lib/push';
 import { CURRENCIES, type Currency } from '../../shared/types';
 import { LANGS, useI18n } from '../i18n';
 import { api, type Notification, type Outing } from '../lib/api';
@@ -10,7 +12,7 @@ import { useFavorites } from '../lib/favorites';
 import { useSettings, type Theme } from '../lib/settings';
 import { AccountPanel, Avatar } from './AccountPanel';
 import { GolfPhoto } from './GolfBits';
-import { Badge, Button, cx, Notice, Segmented } from './ui';
+import { Badge, Button, cx, haptic, Notice, Segmented } from './ui';
 import { useRail } from './ActionRail';
 import { todayStr } from '../state/search';
 
@@ -111,8 +113,7 @@ function OutingCard({ o }: { o: Outing }) {
               size="sm"
               onClick={async () => {
                 const url = shareUrl(o.shareToken!);
-                if (navigator.share) await navigator.share({ title: o.golf.name, url }).catch(() => undefined);
-                else await navigator.clipboard.writeText(url).catch(() => undefined);
+                if ((await shareLink({ title: o.golf.name, url })) === 'unsupported') await navigator.clipboard.writeText(url).catch(() => undefined);
               }}
             >
               <Share2 className="size-4" aria-hidden /> {t('out.share')}
@@ -281,8 +282,16 @@ export function NotificationsBody() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [q.data?.unread]);
   if (q.isLoading) return <div className="skeleton h-16 w-full rounded-[20px]" aria-hidden />;
-  if (!q.data?.items.length) return <p className="text-sm text-muted">{t('notif.empty')}</p>;
+  if (!q.data?.items.length)
+    return (
+      <>
+        {isNative() && <PushCard />}
+        <p className="text-sm text-muted">{t('notif.empty')}</p>
+      </>
+    );
   return (
+    <>
+    {isNative() && <PushCard />}
     <ul className="space-y-2" aria-live="polite">
       {q.data.items.map((n) => (
         <li key={n.id}>
@@ -303,6 +312,36 @@ export function NotificationsBody() {
         </li>
       ))}
     </ul>
+    </>
+  );
+}
+
+/** App iOS : proposition d'activer les notifications (l'autorisation n'est demandée qu'au clic) */
+function PushCard() {
+  const { t, lang } = useI18n();
+  const [state, setState] = useState<PushState | 'busy' | 'error' | null>(null);
+  useEffect(() => {
+    void pushState().then(setState);
+  }, []);
+  if (state === null || state === 'unsupported' || state === 'granted') return null;
+  if (state === 'denied') return <Notice>{t('push.denied')}</Notice>;
+  return (
+    <div className="frost mb-3 space-y-2 rounded-[20px] p-3">
+      <p className="text-sm">{t('push.pitch')}</p>
+      {state === 'error' && <p className="text-xs text-red-700 dark:text-red-300">{t('push.error')}</p>}
+      <Button
+        size="sm"
+        variant="primary"
+        disabled={state === 'busy'}
+        onClick={async () => {
+          haptic(10);
+          setState('busy');
+          setState(await enablePush(lang).catch(() => 'error' as const));
+        }}
+      >
+        <Bell className="size-4" aria-hidden /> {t('push.enable')}
+      </Button>
+    </div>
   );
 }
 

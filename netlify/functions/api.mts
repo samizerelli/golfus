@@ -51,4 +51,5 @@ export default async (req: Request, context: { ip?: string }) => {
   return new Response(res.body, { status: res.status, headers: res.headers });
 };
 
-export const config = { path: '/api/*' };
+// Universal Links (app iOS) : fichier d'association servi par l'API, voir server/routes/push.ts
+export const config = { path: ['/api/*', '/.well-known/apple-app-site-association'] };

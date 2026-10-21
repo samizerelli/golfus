@@ -2,6 +2,7 @@ import { X } from 'lucide-react';
 import { useEffect, useId, useRef, type ButtonHTMLAttributes, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { useI18n } from '../i18n';
+import { isNative } from '../lib/platform';
 
 const cx = (...c: (string | false | null | undefined)[]) => c.filter(Boolean).join(' ');
 export { cx };
@@ -16,8 +17,14 @@ const VARIANTS: Record<Variant, string> = {
   glass: 'glass text-ink',
 };
 
-/** Retour haptique léger (Android ; ignoré ailleurs) */
+/** Retour haptique léger : moteur haptique de l'iPhone dans l'app, vibration sur Android, ignoré ailleurs */
 export function haptic(ms = 8) {
+  if (isNative()) {
+    void import('@capacitor/haptics')
+      .then(({ Haptics, ImpactStyle }) => Haptics.impact({ style: ms >= 15 ? ImpactStyle.Medium : ImpactStyle.Light }))
+      .catch(() => undefined);
+    return;
+  }
   try {
     // Uniquement après une action de l'utilisateur (sinon le navigateur bloque et signale une erreur)
     if (navigator.userActivation?.hasBeenActive === false) return;

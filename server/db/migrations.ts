@@ -208,6 +208,22 @@ ALTER TABLE prices ADD COLUMN IF NOT EXISTS to_date TEXT;
 ALTER TABLE golfs ADD COLUMN IF NOT EXISTS offers TEXT NOT NULL DEFAULT '[]';
 `,
   },
+  {
+    id: 8,
+    name: 'notifications push (appareils iOS) et rappel la veille des parties',
+    sql: `
+CREATE TABLE IF NOT EXISTS push_devices (
+  token TEXT PRIMARY KEY,
+  user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  platform TEXT NOT NULL DEFAULT 'ios',
+  lang TEXT NOT NULL DEFAULT 'fr',
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS push_devices_user ON push_devices(user_id);
+ALTER TABLE outings ADD COLUMN IF NOT EXISTS reminded_at TIMESTAMPTZ;
+`,
+  },
 ];
 
 interface MigDriver {

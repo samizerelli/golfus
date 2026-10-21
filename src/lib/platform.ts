@@ -41,3 +41,47 @@ export const tokenStore = {
     await backend?.clear();
   },
 };
+
+/** Jeton APNs de cet iPhone (pour le retirer du serveur à la déconnexion). Pas une donnée secrète. */
+export const pushDeviceStore = {
+  get(): string | null {
+    try {
+      return localStorage.getItem('golfus.pushDevice');
+    } catch {
+      return null;
+    }
+  },
+  set(token: string | null) {
+    try {
+      if (token) localStorage.setItem('golfus.pushDevice', token);
+      else localStorage.removeItem('golfus.pushDevice');
+    } catch {
+      /* stockage indisponible */
+    }
+  },
+};
+
+/**
+ * Ouverture demandée par iOS (notification touchée, lien golfus.ch ouvert dans l'app). Peut arriver avant que
+ * l'interface soit prête : la demande est gardée jusqu'à ce qu'un écouteur s'abonne (voir NativeBridge).
+ */
+export interface OpenRequest {
+  path?: string;
+  panel?: 'outings' | 'friends' | 'notifications';
+}
+let pendingOpen: OpenRequest | null = null;
+let openListener: ((r: OpenRequest) => void) | null = null;
+export function openInApp(r: OpenRequest) {
+  if (openListener) openListener(r);
+  else pendingOpen = r;
+}
+export function onOpenInApp(cb: (r: OpenRequest) => void) {
+  openListener = cb;
+  if (pendingOpen) {
+    cb(pendingOpen);
+    pendingOpen = null;
+  }
+  return () => {
+    if (openListener === cb) openListener = null;
+  };
+}

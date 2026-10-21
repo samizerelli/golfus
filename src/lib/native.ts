@@ -3,8 +3,9 @@
  * - Jeton de connexion conservé dans le trousseau iOS (Keychain).
  * - Barre d'état assortie au thème clair / sombre.
  * - Sites externes (réservation, itinéraire, plateformes) ouverts dans Safari intégré, pas dans l'app.
+ * - Notification touchée ou lien golfus.ch (Universal Link) : ouverture du bon écran.
  */
-import { isNative, PUBLIC_ORIGIN, tokenStore } from './platform';
+import { isNative, openInApp, PUBLIC_ORIGIN, tokenStore } from './platform';
 
 const TOKEN_KEY = 'golfus.session';
 
@@ -12,11 +13,28 @@ export async function initNative() {
   if (!isNative()) return;
   document.documentElement.classList.add('native-ios');
 
-  const [{ SecureStorage }, { StatusBar, Style }, { Browser }] = await Promise.all([
+  const [{ SecureStorage }, { StatusBar, Style }, { Browser }, { App }, { PushNotifications }] = await Promise.all([
     import('@aparajita/capacitor-secure-storage'),
     import('@capacitor/status-bar'),
     import('@capacitor/browser'),
+    import('@capacitor/app'),
+    import('@capacitor/push-notifications'),
   ]);
+
+  // Notification touchée : panneau « Mes parties » (ou celui indiqué par le serveur)
+  void PushNotifications.addListener('pushNotificationActionPerformed', (a) => {
+    const panel = (a.notification.data as { panel?: string } | undefined)?.panel;
+    openInApp({ path: '/', panel: panel === 'friends' || panel === 'notifications' ? panel : 'outings' });
+  });
+  // Lien https://golfus.ch/… ouvert dans l'app (Universal Link) : même page que sur le site
+  void App.addListener('appUrlOpen', ({ url }) => {
+    try {
+      const u = new URL(url);
+      if (u.origin === PUBLIC_ORIGIN) openInApp({ path: u.pathname + u.search });
+    } catch {
+      /* adresse invalide */
+    }
+  });
 
   // Trousseau iOS : le jeton survit à la fermeture de l'app, chiffré par le système
   await tokenStore.init({

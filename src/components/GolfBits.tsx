@@ -11,6 +11,7 @@ import { useSettings } from '../lib/settings';
 import { useSearch } from '../state/search';
 import { BookingButton } from './BookingButton';
 import { Badge, buttonClass, cx, haptic } from './ui';
+import { shareLink } from '../lib/share';
 
 /** Illustration de remplacement quand aucune photo libre n'est disponible */
 export function GolfPhoto({ src, alt, className, style }: { src: string | null; alt: string; className?: string; style?: CSSProperties }) {
@@ -230,14 +231,7 @@ export function ShareButton({ golf, variant = 'secondary' }: { golf: GolfSummary
   const share = async () => {
     const url = `${PUBLIC_ORIGIN}/golf/${encodeURIComponent(golf.id)}`;
     const text = t('share.text', { name: golf.name });
-    if (navigator.share) {
-      try {
-        await navigator.share({ title: golf.name, text, url });
-        return;
-      } catch (e) {
-        if ((e as Error).name === 'AbortError') return;
-      }
-    }
+    if ((await shareLink({ title: golf.name, text, url })) !== 'unsupported') return;
     try {
       await navigator.clipboard.writeText(url);
       setCopied(true);

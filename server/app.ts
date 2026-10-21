@@ -8,6 +8,7 @@ import { accountRouter } from './routes/account.ts';
 import { adminRouter } from './routes/admin.ts';
 import { publicRouter } from './routes/public.ts';
 import { socialRouter } from './routes/social.ts';
+import { appleAppSiteAssociation, pushRouter } from './routes/push.ts';
 import { rateLimit } from './lib/rateLimit.ts';
 
 /** Application Express (API) : utilisée par le serveur Node (server/index.ts) et par la fonction Netlify. */
@@ -57,12 +58,15 @@ export function createApp(extra?: (app: express.Express) => void) {
   app.use('/api', rateLimit(240, 60_000));
   // Connexion (Auth.js) : /api/auth/signin, /callback, /session, /signout…
   app.use('/api/auth', rateLimit(40, 60_000), ExpressAuth(authConfig));
+  // Universal Links de l'app iOS (fichier d'association Apple)
+  app.get('/.well-known/apple-app-site-association', appleAppSiteAssociation);
   // Connexion de l'app iOS par jeton (avant la protection CSRF, qui concerne les cookies du site)
   app.use('/api', mobileRouter);
   app.use('/api', csrfGuard, attachUser);
   app.use('/api/admin', adminRouter);
   app.use('/api', accountRouter);
   app.use('/api', socialRouter);
+  app.use('/api', pushRouter);
   app.use('/api', publicRouter);
   app.use('/api', (_req, res) => res.status(404).json({ error: 'not_found' }));
 

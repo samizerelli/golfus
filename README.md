@@ -280,8 +280,26 @@ Avant, et après chaque modification du code web : `npm run ios:sync` (reconstru
 - **Barre d'état** : texte clair sur les écrans sombres (intro, thème sombre), foncé sinon.
 - **Navigation** : bouton « Retour » sur Profil, Favoris et pages légales (pas de bouton Précédent dans une app).
 - **Administration** : lien masqué dans l'app ; elle reste accessible sur le site.
+- **Partage** : feuille de partage iOS (Messages, WhatsApp, Mail…) pour les fiches et les invitations.
+- **Retour haptique** : moteur haptique de l'iPhone (balle de l'intro, boutons principaux).
+- **Notifications push** : proposées dans le panneau Notifications (bouton « Activer », jamais au lancement).
+  Envoyées pour les parties : invitation, réponse, annulation et rappel la veille (tâche planifiée
+  `netlify/functions/reminders.mts`, chaque jour à 16:00 UTC). Texte dans la langue de l'appareil.
+  Sans les variables `APNS_*`, rien ne part : les notifications restent visibles dans l'app.
+- **Universal Links** : `https://golfus.ch/invitation/…` et `/golf/…` ouvrent l'app si elle est installée
+  (fichier `/.well-known/apple-app-site-association`, publié dès que `APPLE_TEAM_ID` est défini).
 - **Connexion Google / Apple / lien par e-mail** : désactivés dans l'app pour l'instant (e-mail + mot de passe seulement).
   « Se connecter avec Apple » arrivera à l'étape 4 (obligatoire pour l'App Store si d'autres connexions sociales existent).
+
+### Activer les notifications et les Universal Links (compte Apple Developer requis)
+
+1. Xcode › projet **App** › cible **App** › *Signing & Capabilities* : choisir votre équipe (*Team*).
+2. **+ Capability › Push Notifications**, puis **+ Capability › Associated Domains** avec `applinks:golfus.ch`.
+3. developer.apple.com › *Keys* › **+** › cocher *Apple Push Notifications service (APNs)* › télécharger le `.p8`
+   (une seule fois possible) et noter son *Key ID*.
+4. Netlify › *Site configuration › Environment variables* : `APPLE_TEAM_ID`, `APNS_KEY_ID`, `APNS_PRIVATE_KEY`
+   (contenu du `.p8`), puis redéployer. Vérification : https://golfus.ch/.well-known/apple-app-site-association
+   doit afficher votre identifiant d'équipe.
 
 ## Sources de données et limites
 

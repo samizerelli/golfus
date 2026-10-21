@@ -4,6 +4,7 @@ import { z } from 'zod';
 import { requireUser } from '../auth/session.ts';
 import { db } from '../db/index.ts';
 import { parse, userRateLimit } from '../lib/http-helpers.ts';
+import { pushToUser } from '../services/push.ts';
 
 /**
  * Amis, invitations à jouer (« parties ») et notifications.
@@ -18,6 +19,8 @@ type Resp = 'yes' | 'maybe' | 'no';
 
 export async function notify(userId: string, type: string, payload: Record<string, unknown>) {
   await db.run('INSERT INTO notifications (user_id, type, payload) VALUES (?, ?, ?)', userId, type, JSON.stringify(payload));
+  // Sur iPhone (si les notifications sont activées) : parties seulement, voir services/push.ts
+  await pushToUser(userId, type, payload);
 }
 
 async function areFriends(a: string, b: string) {
