@@ -50,7 +50,8 @@ export function defaultSlot(now = new Date()): Pick<Criteria, 'date' | 'timeFrom
   return { date: todayStr(), timeFrom: hhmm(from), timeTo: hhmm(Math.min(SLOT_MAX, from + SLOT_LEN)) };
 }
 
-export const DEFAULT_CRITERIA = (): Criteria => ({ ...defaultSlot(), holes: 'any', players: 2, hideUnknown: false });
+// Parcours 18 trous par défaut (modifiable dans les filtres)
+export const DEFAULT_CRITERIA = (): Criteria => ({ ...defaultSlot(), holes: '18', players: 2, hideUnknown: false });
 
 /** Filtres repris de l'adresse (?date=&from=&to=&holes=&players=&radius=) ; valeurs invalides ignorées. La position n'y figure jamais. */
 export function criteriaFromUrl(search: string): { criteria: Criteria; radius: RadiusKm | null } {

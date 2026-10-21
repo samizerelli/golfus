@@ -78,5 +78,5 @@ test('créneau par défaut = heure de l’appareil arrondie, filtres repris de l
   const bad = criteriaFromUrl('?from=12:00&to=09:00&players=99&radius=7&holes=x');
   assert.equal(bad.radius, null);
   assert.equal(bad.criteria.players, 2);
-  assert.equal(bad.criteria.holes, 'any');
+  assert.equal(bad.criteria.holes, '18');
 });
