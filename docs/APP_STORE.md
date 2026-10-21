@@ -11,9 +11,10 @@
 | 5.1.1 (iv) | Autorisations demandées au bon moment, textes clairs | Localisation : à l'ouverture de la recherche (fonction principale), texte FR/EN/ES. Notifications : seulement au clic sur « Activer » |
 | 1.2 | Contenus des utilisateurs | Filtre automatique (prénoms, avis, messages), bouton « Signaler » (avis, joueurs, invitations), blocage des joueurs, conditions avec tolérance zéro (`/conditions`), traitement sous 24 h dans /admin › Signalements, avis masqué après 3 signalements |
 | 4.8 | « Se connecter avec Apple » si une connexion tierce est proposée | Dans l'app, seule la connexion e-mail est proposée (Google désactivé), donc non obligatoire ; « Se connecter avec Apple » est tout de même présent |
-| 5.1.2 | Politique de confidentialité | https://golfus.ch/confidentialite (lien aussi dans l'app : Profil) |
+| 5.1.2 | Politique de confidentialité | https://golfus.ch/confidentialite (lien aussi dans l'app : Profil), à jour des comptes, notifications et signalements |
+| 1.5 | URL d'assistance avec moyen de contact | https://golfus.ch/aide : questions fréquentes et formulaire, messages dans /admin › Messages |
 | 2.1 | App complète, compte de démonstration pour l'examen | **À TOI** : créer un compte de test et le donner dans « App Review Information » |
-| 2.3 / exactitude | Pas de données trompeuses | **À TOI** : retirer les golfs de démonstration en ligne (`SHOW_DEMO_DATA`) |
+| 2.3 / exactitude | Pas de données trompeuses | Golfs de démonstration retirés en ligne le 21 octobre 2026 : seules les fiches vérifiées s'affichent |
 | 4.2 | Pas un simple site emballé | Voir section 4 |
 
 ## 2. « App Privacy » (Confidentialité de l'app)
@@ -59,9 +60,10 @@ GolfUs réutilise le code du site : c'est le point le plus souvent reproché aux
 
 1. **Mentions légales** : compléter l'éditeur (nom, adresse, e-mail de contact) dans `src/pages/LegalPages.tsx`. Apple exige
    un moyen de contact pour les contenus des utilisateurs. Donnez-moi ces informations et je les intègre.
-2. **Golfs de démonstration** : retirer `SHOW_DEMO_DATA=true` dans Netlify (tarifs et avis fictifs).
-3. **Xcode › Signing & Capabilities** : ajouter « Sign in with Apple » (en plus de Push Notifications et Associated Domains).
-4. **Facultatif** : clé « Sign in with Apple » (developer.apple.com › Keys) → `APPLE_SIWA_KEY_ID`, `APPLE_SIWA_PRIVATE_KEY`
+2. **Xcode › Signing & Capabilities** : ajouter « Sign in with Apple » (en plus de Push Notifications et Associated Domains).
+3. **Facultatif** : clé « Sign in with Apple » (developer.apple.com › Keys) → `APPLE_SIWA_KEY_ID`, `APPLE_SIWA_PRIVATE_KEY`
    dans Netlify, pour révoquer l'accès Apple quand un compte est supprimé (recommandé par Apple).
-5. **Compte de démonstration** pour l'examen : à créer vous-même sur golfus.ch.
-6. **Modération** : consulter /admin › Signalements chaque jour (engagement de traitement sous 24 h).
+4. **Compte de démonstration** pour l'examen : à créer vous-même sur golfus.ch.
+5. **Modération** : consulter /admin › Signalements et /admin › Messages chaque jour (engagement de traitement sous 24 h).
+
+Textes de la fiche, captures d'écran et notes pour l'examen : `docs/app-store/FICHE.md`.

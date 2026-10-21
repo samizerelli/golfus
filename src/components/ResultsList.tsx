@@ -164,8 +164,11 @@ const ResultCard = forwardRef<
             <span>{golf.holes ? t('card.holes', { n: golf.holes }) : t('s2.holesUnknown')}</span>
             {golf.isDemo && <Badge tone="demo">{t('demo.badge')}</Badge>}
           </p>
-          <RatingLine golf={golf} />
-          <AvailabilityLine avail={avail} />
+          {/* Note et disponibilité : sur une ligne si la place le permet (grands écrans), espacées */}
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+            <RatingLine golf={golf} />
+            <AvailabilityLine avail={avail} />
+          </div>
           <div className="flex items-center justify-between gap-2">
             <SlotStatus golf={golf} match={match} date={criteria.date} />
             <span className="flex shrink-0 items-center gap-1">

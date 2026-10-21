@@ -295,7 +295,8 @@ Avant, et après chaque modification du code web : `npm run ios:sync` (reconstru
 - **Modération** (règle App Store 1.2) : filtre automatique des termes injurieux (`server/lib/moderation.ts`), bouton
   « Signaler » sur les avis, joueurs et invitations, blocage des joueurs, conditions d'utilisation (`/conditions`),
   traitement dans /admin › Signalements. Un avis signalé 3 fois est masqué en attendant la décision.
-- **Conformité App Store** (confidentialité, âge, risque 4.2, actions avant soumission) : voir `docs/APP_STORE.md`.
+- **Conformité App Store** (confidentialité, âge, risque 4.2, actions avant soumission) : voir `docs/APP_STORE.md` ;
+  fiche (textes FR/EN/ES, captures 6,9 pouces, notes pour l'examen) : `docs/app-store/FICHE.md`.
 - **Publication** (compte Apple Developer, signature, iPhone de test, Archive, TestFlight, retours des testeurs, liste
   de tests) : voir `docs/GUIDE_IOS.md`. L'app est réservée à l'iPhone, en portrait.
 
