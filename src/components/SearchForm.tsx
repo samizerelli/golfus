@@ -1,10 +1,10 @@
 import { Minus, Plus } from 'lucide-react';
-import { useState, type ReactNode } from 'react';
+import { type ReactNode } from 'react';
 import { RADII_KM, type RadiusKm } from '../../shared/types';
 import { useI18n } from '../i18n';
 import { todayStr, useSearch, type HolesFilter } from '../state/search';
 import { LocateError, LocateInline, LocationSearch, useLocate } from './SearchControls';
-import { cx, haptic, Segmented } from './ui';
+import { Segmented } from './ui';
 
 const toMin = (t: string) => {
   const [h, m] = t.split(':').map(Number);
@@ -74,45 +74,6 @@ export function TimeRange({ from, to, onChange }: { from: string; to: string; on
         <span>06:00</span>
         <span>21:00</span>
       </div>
-    </div>
-  );
-}
-
-/** Sélecteur de note minimale : 0 (toutes) à 5 étoiles. */
-export function StarPicker({ value, onChange }: { value: number; onChange: (n: number) => void }) {
-  const { t } = useI18n();
-  const [hover, setHover] = useState<number | null>(null);
-  const shown = hover ?? value;
-  return (
-    <div className="flex items-center gap-1" role="radiogroup" aria-label={t('s1.rating')} onMouseLeave={() => setHover(null)}>
-      {[1, 2, 3, 4, 5].map((n) => (
-        <button
-          key={n}
-          type="button"
-          role="radio"
-          aria-checked={value === n}
-          aria-label={t('s1.ratingMin', { n })}
-          onMouseEnter={() => setHover(n)}
-          onClick={() => {
-            haptic();
-            onChange(value === n ? 0 : n);
-          }}
-          className="grid size-11 place-items-center rounded-full text-[28px] leading-none transition-transform active:scale-90"
-        >
-          <span aria-hidden className={n <= shown ? 'text-gold-600' : 'text-[rgba(15,26,36,0.18)] dark:text-white/20'}>
-            ★
-          </span>
-        </button>
-      ))}
-      <button
-        type="button"
-        role="radio"
-        aria-checked={value === 0}
-        onClick={() => onChange(0)}
-        className={cx('ml-1 h-11 rounded-full px-3 text-sm font-medium', value === 0 ? 'bg-white text-ink shadow-sm dark:bg-white/15' : 'text-muted')}
-      >
-        {t('s1.ratingAny')}
-      </button>
     </div>
   );
 }
@@ -193,9 +154,6 @@ export function SearchForm() {
         />
       </Field>
 
-      <Field label={t('s1.rating')}>
-        <StarPicker value={c.minRating} onChange={(minRating) => setCriteria({ minRating })} />
-      </Field>
 
       <Field label={t('s1.players')}>
         <Stepper label={t('s1.players')} value={c.players} onChange={(players) => setCriteria({ players })} />

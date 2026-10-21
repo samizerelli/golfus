@@ -54,7 +54,7 @@ test('comparatif : du moins cher au plus cher, liens datés, aucun prix inventé
       { platform: 'club_online' as const, amount: 130, currency: 'EUR' as const, observedFor: '2026-10-20' },
     ],
   };
-  const c = { date: '2026-10-24', timeFrom: '08:00', timeTo: '12:00', holes: 'any' as const, minRating: 0, players: 2, hideUnknown: false };
+  const c = { date: '2026-10-24', timeFrom: '08:00', timeTo: '12:00', holes: 'any' as const, players: 2, hideUnknown: false };
   const list = bookingChoices(golf, c);
   assert.deepEqual(list.map((x) => [x.kind, x.amount]), [['platform', 104.38], ['club_online', 130], ['club', 139], ['platform', null]]);
   assert.equal(list[0].cheapest, true);

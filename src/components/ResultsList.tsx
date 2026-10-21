@@ -248,7 +248,7 @@ export function ResultsList({ cardRefs }: { cardRefs: MutableRefObject<Map<strin
             <Button
               onClick={() => {
                 const d = DEFAULT_CRITERIA();
-                setCriteria({ holes: 'any', minRating: 0, hideUnknown: false, timeFrom: '06:00', timeTo: '21:00', players: c.players, date: c.date ?? d.date });
+                setCriteria({ holes: 'any', hideUnknown: false, timeFrom: '06:00', timeTo: '21:00', players: c.players, date: c.date ?? d.date });
               }}
             >
               {t('s2.relax')}

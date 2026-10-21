@@ -9,7 +9,6 @@ export interface GolfMatch {
   /** Le golf est-il ouvert pendant la plage horaire choisie ? */
   openInSlot: Tri;
   holesOk: Tri;
-  ratingOk: Tri;
 }
 
 const at = (date: string, hhmm: string) => {
@@ -35,13 +34,12 @@ export function matchGolf(g: GolfSummary, c: Criteria): GolfMatch {
   return {
     openInSlot: openDuringSlot(g, c),
     holesOk: c.holes === 'any' ? true : g.holes == null ? null : c.holes === '9' ? g.holes <= 9 : g.holes >= 18,
-    ratingOk: c.minRating === 0 ? true : g.rating == null ? null : g.rating.average >= c.minRating,
   };
 }
 
 /** Règle : une info connue et non conforme exclut le golf ; une info inconnue l'exclut seulement si hideUnknown. */
 export function passes(m: GolfMatch, c: Criteria) {
-  return [m.openInSlot, m.holesOk, m.ratingOk].every((v) => v === true || (v === null && !c.hideUnknown));
+  return [m.openInSlot, m.holesOk].every((v) => v === true || (v === null && !c.hideUnknown));
 }
 
 const toMin = (hhmm: string) => {

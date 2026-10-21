@@ -20,10 +20,8 @@ export interface Criteria {
   timeFrom: string;
   timeTo: string;
   holes: HolesFilter;
-  /** Note minimale (0 = toutes) */
-  minRating: number;
   players: number;
-  /** Masquer les golfs dont une information filtrée (horaires, trous, note) est inconnue */
+  /** Masquer les golfs dont une information filtrée (horaires, trous) est inconnue */
   hideUnknown: boolean;
 }
 
@@ -32,7 +30,7 @@ export const todayStr = () => {
   const d = new Date();
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 };
-export const DEFAULT_CRITERIA = (): Criteria => ({ date: todayStr(), timeFrom: '08:00', timeTo: '18:00', holes: 'any', minRating: 0, players: 2, hideUnknown: false });
+export const DEFAULT_CRITERIA = (): Criteria => ({ date: todayStr(), timeFrom: '08:00', timeTo: '18:00', holes: 'any', players: 2, hideUnknown: false });
 
 interface Ctx {
   criteria: Criteria;
