@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Bell, Check, ChevronRight, Lock, Search, Share2, ShieldCheck, UserPlus, Wrench, X } from 'lucide-react';
+import { Bell, Check, ChevronRight, FileText, Lock, Search, Share2, ShieldCheck, UserPlus, Wrench, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { isNative, PUBLIC_ORIGIN } from '../lib/platform';
@@ -15,6 +15,7 @@ import { GolfPhoto } from './GolfBits';
 import { Badge, Button, cx, haptic, Notice, Segmented } from './ui';
 import { useRail } from './ActionRail';
 import { todayStr } from '../state/search';
+import { ReportButton } from './Moderation';
 
 const row = 'frost flex items-center gap-3 rounded-[20px] p-2.5 pr-3';
 
@@ -219,6 +220,7 @@ export function FriendsBody() {
                 <button type="button" onClick={() => remove.mutate(f.id)} className="grid size-11 place-items-center rounded-full hover:bg-card-2" aria-label={t('fr.decline')}>
                   <X className="size-4" aria-hidden />
                 </button>
+                <BlockButton id={f.id} name={f.name} onDone={refresh} />
               </li>
             ))}
           </ul>
@@ -240,6 +242,8 @@ export function FriendsBody() {
               <button type="button" onClick={() => confirm(`${t('fr.remove')} ${f.name} ?`) && remove.mutate(f.id)} className="h-11 px-2 text-xs text-muted hover:text-ink">
                 {t('fr.remove')}
               </button>
+              <ReportButton kind="user" targetId={f.id} className="px-1" />
+              <BlockButton id={f.id} name={f.name} onDone={refresh} />
             </li>
           ))}
         </ul>
@@ -257,6 +261,7 @@ export function FriendsBody() {
           </ul>
         </section>
       )}
+      <BlockedList />
     </>
   );
 }
@@ -266,6 +271,56 @@ function notifText(n: Notification, t: ReturnType<typeof useI18n>['t'], locale: 
   const date = typeof p.date === 'string' ? new Date(`${p.date}T12:00:00`).toLocaleDateString(locale, { day: 'numeric', month: 'short' }) : '';
   const response = typeof p.response === 'string' ? t(`out.${p.response}` as 'out.yes') : '';
   return t(`notif.${n.type}` as 'notif.outing_invite', { name: String(p.name ?? '—'), from: String(p.from ?? '—'), golf: String(p.golf ?? ''), date, response });
+}
+
+/** Bloquer un joueur (confirmation, puis rafraîchissement des listes) */
+function BlockButton({ id, name, onDone }: { id: string; name: string | null; onDone: () => void }) {
+  const { t } = useI18n();
+  const qc = useQueryClient();
+  return (
+    <button
+      type="button"
+      onClick={async () => {
+        if (!confirm(t('mod.blockConfirm', { name: name ?? '—' }))) return;
+        await api.block(id).catch(() => undefined);
+        qc.invalidateQueries({ queryKey: ['blocks'] });
+        onDone();
+      }}
+      className="h-11 px-1 text-xs text-red-700 hover:underline dark:text-red-300"
+    >
+      {t('mod.block')}
+    </button>
+  );
+}
+
+/** Joueurs bloqués, avec « Débloquer » */
+function BlockedList() {
+  const { t } = useI18n();
+  const qc = useQueryClient();
+  const q = useQuery({ queryKey: ['blocks'], queryFn: api.blocks });
+  if (!q.data?.length) return null;
+  return (
+    <section className="space-y-2">
+      <h3 className="text-sm font-semibold text-muted">{t('mod.blocked')}</h3>
+      <ul className="space-y-1">
+        {q.data.map((u) => (
+          <li key={u.id} className="flex min-h-11 items-center gap-2 text-sm">
+            <span className="min-w-0 flex-1 truncate">{u.name}</span>
+            <button
+              type="button"
+              className="h-11 px-2 text-xs font-medium text-link"
+              onClick={async () => {
+                await api.unblock(u.id).catch(() => undefined);
+                qc.invalidateQueries({ queryKey: ['blocks'] });
+              }}
+            >
+              {t('mod.unblock')}
+            </button>
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
 }
 
 export function NotificationsBody() {
@@ -382,6 +437,7 @@ export function SettingsBody({ onNavigate }: { onNavigate: () => void }) {
       <Notice>{t('welcome.privacy')}</Notice>
       <div className="frost overflow-hidden rounded-[20px]">
         {[
+          { to: '/conditions', label: t('nav.terms'), Icon: FileText },
           { to: '/confidentialite', label: t('nav.privacy'), Icon: ShieldCheck },
           { to: '/mentions-legales', label: t('nav.legal'), Icon: Lock },
           // Administration : sur le site seulement, pas dans l'app

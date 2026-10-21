@@ -5,6 +5,8 @@ import { requireUser } from '../auth/session.ts';
 import { db } from '../db/index.ts';
 import { parse, userRateLimit } from '../lib/http-helpers.ts';
 import { pushToUser } from '../services/push.ts';
+import { clean } from '../lib/moderation.ts';
+import { isBlocked } from './moderation.ts';
 
 /**
  * Amis, invitations à jouer (« parties ») et notifications.
@@ -55,10 +57,14 @@ socialRouter.get('/users/search', requireUser, userRateLimit('user-search', 40, 
   res.json(
     await db.all(
       `SELECT id, name, image, handicap_index AS "handicapIndex" FROM users
-       WHERE id != ? AND (lower(email) = lower(?) OR lower(name) LIKE lower(?)) ORDER BY name LIMIT 10`,
+       WHERE id != ? AND (lower(email) = lower(?) OR lower(name) LIKE lower(?))
+         AND id NOT IN (SELECT blocked_id FROM user_blocks WHERE blocker_id = ? UNION SELECT blocker_id FROM user_blocks WHERE blocked_id = ?)
+       ORDER BY name LIMIT 10`,
       req.user!.id,
       q,
       `${q.replace(/[%_\\]/g, (c) => `\\${c}`)}%`,
+      req.user!.id,
+      req.user!.id,
     ),
   );
 });
@@ -69,6 +75,8 @@ socialRouter.post('/friends/request', requireUser, userRateLimit('friend-request
   const me = req.user!.id;
   if (b.userId === me) return res.status(400).json({ error: 'self' });
   if (!(await db.get('SELECT 1 FROM users WHERE id = ?', b.userId))) return res.status(404).json({ error: 'not_found' });
+  // Blocage : rien n'est créé ni notifié, la réponse ne révèle pas le blocage
+  if (await isBlocked(me, b.userId)) return res.json({ status: 'pending' });
   const [a, c] = pair(me, b.userId);
   const ex = await db.get<{ status: string; requested_by: string }>('SELECT status, requested_by FROM friendships WHERE user_a = ? AND user_b = ?', a, c);
   if (ex?.status === 'accepted') return res.json({ status: 'accepted' });
@@ -113,7 +121,7 @@ const outingInput = z.object({
   timeTo: zTime,
   holes: z.union([z.literal(9), z.literal(18)]).nullable(),
   players: z.number().int().min(1).max(12),
-  message: z.string().trim().max(1000).nullable(),
+  message: z.string().trim().max(1000).refine(clean, { message: 'inappropriate' }).nullable(),
   friendIds: z.array(z.string().uuid()).max(20),
 });
 
@@ -263,7 +271,7 @@ socialRouter.get('/invitations/:token', async (req, res) => {
 
 socialRouter.post('/invitations/:token/respond', userRateLimit('guest-respond', 20, 3600_000), async (req, res) => {
   const b = parse(
-    z.object({ name: z.string().trim().max(60).optional(), response: z.enum(['yes', 'maybe', 'no']), guestToken: z.string().max(40).optional() }),
+    z.object({ name: z.string().trim().max(60).refine(clean, { message: 'inappropriate' }).optional(), response: z.enum(['yes', 'maybe', 'no']), guestToken: z.string().max(40).optional() }),
     req.body,
     res,
   );

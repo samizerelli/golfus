@@ -31,6 +31,11 @@ export const config = {
     // false = serveur « sandbox » (app lancée depuis Xcode) ; true = TestFlight et App Store
     production: bool(process.env.APNS_PRODUCTION, true),
   },
+  /** « Se connecter avec Apple » : clé facultative, sert seulement à révoquer l'accès à la suppression du compte */
+  appleNative: {
+    siwaKeyId: process.env.APPLE_SIWA_KEY_ID?.trim() || '',
+    siwaPrivateKey: (process.env.APPLE_SIWA_PRIVATE_KEY || '').replace(/\\n/g, '\n').trim(),
+  },
   /** Origines de l'app iOS (Capacitor) autorisées à appeler l'API (CORS) */
   appOrigins: (process.env.APP_ORIGINS || 'capacitor://localhost,ionic://localhost')
     .split(',')

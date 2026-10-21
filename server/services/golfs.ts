@@ -94,7 +94,7 @@ async function ratingsByIds(ids: string[]): Promise<Map<string, Rating>> {
   const map = new Map<string, Rating>();
   if (!ids.length) return map;
   const rows = await db.all<{ golf_id: string; avg: number; n: number }>(
-    `SELECT golf_id, AVG(rating)::float AS avg, COUNT(*)::int AS n FROM reviews WHERE golf_id IN (${inList(ids)}) ${
+    `SELECT golf_id, AVG(rating)::float AS avg, COUNT(*)::int AS n FROM reviews WHERE golf_id IN (${inList(ids)}) AND hidden_at IS NULL ${
       config.showDemo ? '' : 'AND is_demo = 0'
     } GROUP BY golf_id`,
     ...ids,
@@ -204,7 +204,7 @@ export async function searchGolfs(lat: number, lon: number, radiusKm: number): P
 
 export async function getReviews(id: string): Promise<Review[]> {
   return db.all<Review>(
-    `SELECT id, author, rating, comment, created_at AS "createdAt" FROM reviews WHERE golf_id = ? ${
+    `SELECT id, author, rating, comment, created_at AS "createdAt" FROM reviews WHERE golf_id = ? AND hidden_at IS NULL ${
       config.showDemo ? '' : 'AND is_demo = 0'
     } ORDER BY created_at DESC LIMIT 100`,
     id,

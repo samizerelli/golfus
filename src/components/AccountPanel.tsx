@@ -2,10 +2,11 @@ import { Camera, Download, KeyRound, Loader2, LogOut, MonitorSmartphone, Trash2,
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { useI18n } from '../i18n';
-import { api, ApiError } from '../lib/api';
+import { api, ApiError, auth } from '../lib/api';
 import { compressAvatar, useAuth } from '../lib/auth';
 import { GlassCard } from './glass';
 import { Button, buttonClass, Dialog, Notice } from './ui';
+import { isNative } from '../lib/platform';
 
 const input = 'frost mt-1.5 h-12 w-full rounded-[16px] px-4 text-base text-ink';
 
@@ -139,7 +140,18 @@ export function AccountPanel() {
           </button>
         ))}
         <h2 className="px-5 pt-3 pb-1 text-sm font-semibold tracking-wide text-muted uppercase">{t('account.data')}</h2>
-        <a href={api.exportUrl()} className="flex min-h-14 items-center gap-3 px-5 py-3 hover:bg-white/30 dark:hover:bg-white/5">
+        <a
+          href={api.exportUrl()}
+          onClick={async (e) => {
+            // App iOS : pas de cookie de session → lien temporaire ouvert dans Safari intégré (enregistrer ou partager)
+            if (!isNative()) return;
+            e.preventDefault();
+            const { url } = await api.exportLink();
+            const { Browser } = await import('@capacitor/browser');
+            await Browser.open({ url });
+          }}
+          className="flex min-h-14 items-center gap-3 px-5 py-3 hover:bg-white/30 dark:hover:bg-white/5"
+        >
           <Download className="size-5 text-muted" aria-hidden />
           <span className="font-medium">{t('account.export')}</span>
         </a>
@@ -214,6 +226,8 @@ function DeleteDialog({ open, onClose, email, busy, setBusy }: { open: boolean; 
           setBusy(true);
           try {
             await api.deleteMe(confirm);
+            // App iOS : oublie aussi le jeton de connexion conservé dans le trousseau
+            if (isNative()) await auth.signOut();
             await refresh();
             onClose();
           } finally {
@@ -222,8 +236,16 @@ function DeleteDialog({ open, onClose, email, busy, setBusy }: { open: boolean; 
         }}
       >
         <p className="text-sm">{t('account.deleteConfirm')}</p>
-        <input className={input} type="email" placeholder={email} value={confirm} onChange={(e) => setConfirm(e.target.value)} aria-label={t('auth.email')} />
-        <Button type="submit" disabled={busy || confirm.trim().toLowerCase() !== email.toLowerCase()} className="w-full !bg-red-700 !text-white">
+        {/* Compte Apple sans e-mail : confirmation par le mot DELETE */}
+        <input
+          className={input}
+          type={email ? 'email' : 'text'}
+          placeholder={email || 'DELETE'}
+          value={confirm}
+          onChange={(e) => setConfirm(e.target.value)}
+          aria-label={email ? t('auth.email') : t('account.deleteTypeWord')}
+        />
+        <Button type="submit" disabled={busy || confirm.trim().toLowerCase() !== (email || 'delete').toLowerCase()} className="w-full !bg-red-700 !text-white">
           {t('account.deleteButton')}
         </Button>
       </form>

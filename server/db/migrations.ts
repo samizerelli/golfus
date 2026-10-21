@@ -224,6 +224,33 @@ CREATE INDEX IF NOT EXISTS push_devices_user ON push_devices(user_id);
 ALTER TABLE outings ADD COLUMN IF NOT EXISTS reminded_at TIMESTAMPTZ;
 `,
   },
+  {
+    id: 9,
+    name: 'modération : signalements, blocages entre joueurs, avis masqués',
+    sql: `
+CREATE TABLE IF NOT EXISTS reports (
+  id SERIAL PRIMARY KEY,
+  kind TEXT NOT NULL CHECK (kind IN ('review','user','outing')),
+  target_id TEXT NOT NULL,
+  reporter_id TEXT REFERENCES users(id) ON DELETE SET NULL,
+  reporter_key TEXT NOT NULL,
+  reason TEXT NOT NULL,
+  details TEXT,
+  status TEXT NOT NULL DEFAULT 'open' CHECK (status IN ('open','resolved','dismissed')),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  resolved_at TIMESTAMPTZ
+);
+CREATE INDEX IF NOT EXISTS reports_status ON reports(status, created_at);
+CREATE TABLE IF NOT EXISTS user_blocks (
+  blocker_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  blocked_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  PRIMARY KEY (blocker_id, blocked_id)
+);
+CREATE INDEX IF NOT EXISTS user_blocks_blocked ON user_blocks(blocked_id);
+ALTER TABLE reviews ADD COLUMN IF NOT EXISTS hidden_at TIMESTAMPTZ;
+`,
+  },
 ];
 
 interface MigDriver {

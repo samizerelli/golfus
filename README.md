@@ -288,13 +288,20 @@ Avant, et après chaque modification du code web : `npm run ios:sync` (reconstru
   Sans les variables `APNS_*`, rien ne part : les notifications restent visibles dans l'app.
 - **Universal Links** : `https://golfus.ch/invitation/…` et `/golf/…` ouvrent l'app si elle est installée
   (fichier `/.well-known/apple-app-site-association`, publié dès que `APPLE_TEAM_ID` est défini).
-- **Connexion Google / Apple / lien par e-mail** : désactivés dans l'app pour l'instant (e-mail + mot de passe seulement).
-  « Se connecter avec Apple » arrivera à l'étape 4 (obligatoire pour l'App Store si d'autres connexions sociales existent).
+- **Connexion** : e-mail + mot de passe, et « Se connecter avec Apple » natif (module Swift interne
+  `ios/App/App/AppleSignInPlugin.swift`, jeton vérifié par le serveur avec les clés publiques d'Apple). Google et le lien
+  par e-mail restent réservés au site (ils reposent sur des cookies).
+- **Compte** : suppression dans l'app ; export des données par un lien de 5 minutes ouvert dans Safari intégré.
+- **Modération** (règle App Store 1.2) : filtre automatique des termes injurieux (`server/lib/moderation.ts`), bouton
+  « Signaler » sur les avis, joueurs et invitations, blocage des joueurs, conditions d'utilisation (`/conditions`),
+  traitement dans /admin › Signalements. Un avis signalé 3 fois est masqué en attendant la décision.
+- **Conformité App Store** (confidentialité, âge, risque 4.2, actions avant soumission) : voir `docs/APP_STORE.md`.
 
 ### Activer les notifications et les Universal Links (compte Apple Developer requis)
 
 1. Xcode › projet **App** › cible **App** › *Signing & Capabilities* : choisir votre équipe (*Team*).
-2. **+ Capability › Push Notifications**, puis **+ Capability › Associated Domains** avec `applinks:golfus.ch`.
+2. **+ Capability › Push Notifications**, **+ Capability › Sign in with Apple**, puis **+ Capability › Associated
+   Domains** avec `applinks:golfus.ch`.
 3. developer.apple.com › *Keys* › **+** › cocher *Apple Push Notifications service (APNs)* › télécharger le `.p8`
    (une seule fois possible) et noter son *Key ID*.
 4. Netlify › *Site configuration › Environment variables* : `APPLE_TEAM_ID`, `APNS_KEY_ID`, `APNS_PRIVATE_KEY`

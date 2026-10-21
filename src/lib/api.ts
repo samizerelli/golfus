@@ -133,7 +133,31 @@ async function nativeSignIn(email: string, password: string) {
   }
 }
 
+/** « Se connecter avec Apple » natif (app iOS) : la feuille Apple d'iOS, puis vérification par le serveur */
+async function nativeAppleSignIn(lang: string) {
+  try {
+    const { registerPlugin } = await import('@capacitor/core');
+    // Module natif interne à l'app : ios/App/App/AppleSignInPlugin.swift
+    const AppleSignIn = registerPlugin<{ authorize(o: { nonce: string }): Promise<{ identityToken: string; authorizationCode: string; givenName: string }> }>('AppleSignIn');
+    const raw = Array.from(crypto.getRandomValues(new Uint8Array(24)), (b) => b.toString(16).padStart(2, '0')).join('');
+    const hashed = Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(raw))), (b) => b.toString(16).padStart(2, '0')).join('');
+    const r = await AppleSignIn.authorize({ nonce: hashed });
+    const res = await fetch(`${BASE}/mobile/apple`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-GF-CSRF': '1' },
+      body: JSON.stringify({ identityToken: r.identityToken, authorizationCode: r.authorizationCode || undefined, nonce: raw, givenName: r.givenName || undefined, lang }),
+    });
+    if (!res.ok) return { ok: false, error: res.status === 429 ? 'rate_limited' : 'apple', url: undefined };
+    await tokenStore.set(((await res.json()) as { token: string }).token);
+    return { ok: true, error: null, url: undefined };
+  } catch (e) {
+    // Feuille Apple fermée par l'utilisateur : pas d'erreur à afficher
+    return { ok: false, error: /cancel|1001/i.test(String((e as Error)?.message ?? e)) ? 'cancelled' : 'apple', url: undefined };
+  }
+}
+
 export const auth = {
+  signInAppleNative: nativeAppleSignIn,
   signInPassword: (email: string, password: string) =>
     isNative() ? nativeSignIn(email, password) : authPost('callback/credentials', { email, password, callbackUrl: location.origin + '/profil' }),
   sendMagicLink: (email: string, callbackUrl: string) => authPost('signin/email', { email, callbackUrl }),
@@ -191,6 +215,18 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 
 const q = (o: Record<string, string | number>) => new URLSearchParams(Object.entries(o).map(([k, v]) => [k, String(v)]));
 
+/** Signalement vu par l'administration (regroupé par contenu signalé) */
+export interface AdminReport {
+  id: number;
+  kind: 'review' | 'user' | 'outing';
+  target_id: string;
+  reason: string;
+  details: string | null;
+  created_at: string;
+  reporters: number;
+  target: Record<string, string | number | null> | null;
+}
+
 export const api = {
   golfs: (lat: number, lon: number, radius: RadiusKm, signal?: AbortSignal) =>
     request<GolfsResponse>(`/golfs?${q({ lat, lon, radius })}`, { signal }),
@@ -226,6 +262,15 @@ export const api = {
   logoutAll: () => request<{ ok: true }>('/me/logout-all', { method: 'POST' }),
   deleteMe: (confirmEmail: string) => request<{ ok: true }>('/me', { method: 'DELETE', body: JSON.stringify({ confirmEmail }) }),
   exportUrl: () => BASE + '/me/export',
+  /** App iOS : lien d'export temporaire (5 min), ouvert dans Safari intégré */
+  exportLink: () => request<{ url: string }>('/me/export-link', { method: 'POST' }),
+
+  // ───── Modération : signalements et blocages ─────
+  report: (body: { kind: 'review' | 'user' | 'outing'; targetId: string; reason: string; details?: string }) =>
+    request<{ ok: true }>('/reports', { method: 'POST', body: JSON.stringify(body) }),
+  blocks: () => request<Friend[]>('/blocks'),
+  block: (userId: string) => request<{ ok: true }>('/blocks', { method: 'POST', body: JSON.stringify({ userId }) }),
+  unblock: (userId: string) => request<{ ok: true }>(`/blocks/${encodeURIComponent(userId)}`, { method: 'DELETE' }),
   /** App iOS : jeton APNs de l'appareil, pour recevoir les notifications des parties */
   registerPushDevice: (token: string, lang: string) => request<{ ok: true }>('/push/devices', { method: 'POST', body: JSON.stringify({ token, lang }) }),
 
@@ -271,6 +316,10 @@ export const api = {
     setRole: (id: string, role: 'user' | 'admin') =>
       request<{ ok: true }>(`/admin/users/${encodeURIComponent(id)}/role`, { method: 'POST', body: JSON.stringify({ role }) }),
     deleteUser: (id: string) => request<{ ok: true }>(`/admin/users/${encodeURIComponent(id)}`, { method: 'DELETE' }),
+    reports: () => request<AdminReport[]>('/admin/reports'),
+    closeReport: (kind: string, targetId: string, status: 'resolved' | 'dismissed') =>
+      request<{ ok: true }>('/admin/reports/close', { method: 'POST', body: JSON.stringify({ kind, targetId, status }) }),
+    deleteOuting: (id: string) => request<{ ok: true }>(`/admin/outings/${encodeURIComponent(id)}`, { method: 'DELETE' }),
     extract: (golfId: string, url?: string) => request<SiteExtraction>('/admin/extract', { method: 'POST', body: JSON.stringify({ golfId, url }) }),
     latestExtraction: (golfId: string) => request<SiteExtraction | null>(`/admin/extractions/latest/${encodeURIComponent(golfId)}`),
     extractions: (status: 'pending' | 'applied' | 'dismissed' = 'pending') =>

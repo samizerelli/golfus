@@ -15,6 +15,7 @@ import { appleDirections, displayHost, googleDirections, telHref } from '../lib/
 import { inDateRange, priceMatrix } from '../lib/prices';
 import { useSettings } from '../lib/settings';
 import { useSearch } from '../state/search';
+import { errorMessage, ReportButton } from '../components/Moderation';
 
 function Section({ title, children, id }: { title: string; children: ReactNode; id: string }) {
   return (
@@ -303,6 +304,7 @@ function ReviewsSection({ golf }: { golf: GolfDetail }) {
               <span className="text-muted">· {new Date(r.createdAt).toLocaleDateString(locale)}</span>
             </p>
             {r.comment && <p className="mt-1 text-sm whitespace-pre-line">{r.comment}</p>}
+            <ReportButton kind="review" targetId={String(r.id)} className="-mb-2" />
           </li>
         ))}
       </ul>
@@ -334,7 +336,7 @@ function ReviewsSection({ golf }: { golf: GolfDetail }) {
             <textarea maxLength={2000} rows={3} value={comment} onChange={(e) => setComment(e.target.value)} className="mt-1.5 w-full rounded-[16px] border border-line bg-white/70 px-3 py-2.5 text-base font-normal dark:bg-white/5" />
           </label>
           <p className="text-xs text-muted">{t('reviews.notice')}</p>
-          {m.isError && <Notice tone="error">{t('reviews.error')}</Notice>}
+          {m.isError && <Notice tone="error">{errorMessage(m.error, t, 'reviews.error')}</Notice>}
           <div className="flex gap-2">
             <Button type="submit" variant="primary" disabled={!author.trim() || !rating || m.isPending}>
               {t('reviews.submit')}

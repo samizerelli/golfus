@@ -1,6 +1,6 @@
 // Espace d'administration (en français uniquement : il est destiné à l'exploitant du site).
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Globe, KeyRound, LogOut, Plus, ShieldCheck, Trash2, Users } from 'lucide-react';
+import { Flag, Globe, KeyRound, LogOut, Plus, ShieldCheck, Trash2, Users } from 'lucide-react';
 import { useEffect, useMemo, useState, type FormEvent, type ReactNode } from 'react';
 import { Link, Route, Routes, useNavigate, useParams } from 'react-router-dom';
 import {
@@ -13,7 +13,7 @@ import {
   type ServiceKey,
 } from '../../../shared/types';
 import { Button, buttonClass, Notice } from '../../components/ui';
-import { api, ApiError } from '../../lib/api';
+import { api, type AdminReport, ApiError } from '../../lib/api';
 import { formatIntervals, intervalsOn, parseHours, useHoursLib, weekStart } from '../../lib/hours';
 import { AdminCollect } from './AdminCollect';
 import { ExtractPanel } from './ExtractPanel';
@@ -118,6 +118,9 @@ function AdminList() {
         <div className="flex flex-wrap gap-2">
         <Link to="/admin/collecte" className={buttonClass('secondary', 'sm')}>
           <Globe className="size-4" aria-hidden /> Collecte sites officiels
+        </Link>
+        <Link to="/admin/signalements" className={buttonClass('secondary', 'sm')}>
+          <Flag className="size-4" aria-hidden /> Signalements
         </Link>
         <Link to="/admin/utilisateurs" className={buttonClass('secondary', 'sm')}>
           <Users className="size-4" aria-hidden /> Utilisateurs
@@ -755,6 +758,69 @@ function AdminUsers() {
   );
 }
 
+/**
+ * Signalements des utilisateurs (règle App Store 1.2) : à traiter sous 24 heures.
+ * Retirer = supprime le contenu (avis, invitation) ou le compte ; Infondé = clôture (un avis masqué redevient visible).
+ */
+function AdminReports() {
+  const qc = useQueryClient();
+  const reports = useQuery({ queryKey: ['admin-reports'], queryFn: api.admin.reports });
+  const done = () => qc.invalidateQueries({ queryKey: ['admin-reports'] });
+  const act = useMutation({
+    mutationFn: async ({ r, action }: { r: AdminReport; action: 'remove' | 'dismiss' }) => {
+      if (action === 'remove') {
+        if (r.kind === 'review') await api.admin.deleteReview(Number(r.target_id));
+        else if (r.kind === 'user') await api.admin.deleteUser(r.target_id);
+        else await api.admin.deleteOuting(r.target_id);
+      }
+      await api.admin.closeReport(r.kind, r.target_id, action === 'remove' ? 'resolved' : 'dismissed');
+    },
+    onSuccess: done,
+  });
+  const kind = { review: 'Avis', user: 'Joueur', outing: 'Invitation' } as const;
+  const show = (r: AdminReport) => {
+    const x = r.target;
+    if (!x) return <em className="text-muted">Contenu déjà supprimé</em>;
+    if (r.kind === 'review') return <>« {String(x.comment || '—')} » — {String(x.author)} ({String(x.rating)}★){x.hiddenAt ? ' · masqué' : ''}</>;
+    if (r.kind === 'user') return <>{String(x.name ?? '—')} · {String(x.email ?? '')}</>;
+    return <>{String(x.golfName)} le {String(x.date)} par {String(x.organizer)} · « {String(x.message ?? '')} »</>;
+  };
+  return (
+    <div className="mx-auto w-full max-w-4xl space-y-4 p-4">
+      <Link to="/admin" className="text-sm text-muted underline underline-offset-2">
+        ← Administration
+      </Link>
+      <h1 className="text-3xl font-semibold">Signalements</h1>
+      <p className="text-sm text-muted">À traiter sous 24 heures. « Retirer » supprime le contenu (ou le compte du joueur) ; « Infondé » clôt le signalement.</p>
+      <Card title={`${reports.data?.length ?? 0} en attente`}>
+        {reports.isLoading && <p className="text-muted">Chargement…</p>}
+        {reports.data?.length === 0 && <p className="text-muted">Aucun signalement en attente.</p>}
+        <ul className="divide-y divide-[var(--line)]">
+          {reports.data?.map((r) => (
+            <li key={`${r.kind}-${r.target_id}`} className="space-y-2 py-3">
+              <p className="text-sm">
+                <span className="mr-2 rounded-full bg-red-100 px-2 py-0.5 text-xs font-semibold text-red-800">{kind[r.kind]}</span>
+                {show(r)}
+              </p>
+              <p className="text-xs text-muted">
+                {r.reporters} signalement(s) · motif : {r.reason} {r.details ? `· ${r.details}` : ''} · depuis le {new Date(r.created_at).toLocaleString('fr-FR')}
+              </p>
+              <div className="flex gap-2">
+                <Button size="sm" onClick={() => confirm('Retirer ce contenu définitivement ?') && act.mutate({ r, action: 'remove' })}>
+                  <Trash2 className="size-4" aria-hidden /> Retirer
+                </Button>
+                <Button size="sm" variant="ghost" onClick={() => act.mutate({ r, action: 'dismiss' })}>
+                  Infondé
+                </Button>
+              </div>
+            </li>
+          ))}
+        </ul>
+      </Card>
+    </div>
+  );
+}
+
 export default function AdminApp() {
   const session = useSession();
   let body: ReactNode;
@@ -776,6 +842,7 @@ export default function AdminApp() {
         <Route path="nouveau" element={<AdminEdit create />} />
         <Route path="golf/:id" element={<AdminEdit />} />
         <Route path="utilisateurs" element={<AdminUsers />} />
+        <Route path="signalements" element={<AdminReports />} />
         <Route path="collecte" element={<AdminCollect />} />
       </Routes>
     );

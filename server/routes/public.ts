@@ -8,6 +8,7 @@ import { addReview, getGolf, getReviews, searchGolfs } from '../services/golfs.t
 import { getRates } from '../services/rates.ts';
 import { travelTimes } from '../services/travel.ts';
 import { availability } from '../services/availability.ts';
+import { hasLink, isObjectionable } from '../lib/moderation.ts';
 
 export const publicRouter = Router();
 
@@ -108,6 +109,8 @@ publicRouter.post('/golfs/:id/reviews', rateLimit(5, 3600_000), async (req, res)
   const comment = String(req.body?.comment ?? '').trim().slice(0, 2000);
   const rating = Number(req.body?.rating);
   if (!author || !Number.isInteger(rating) || rating < 1 || rating > 5) return res.status(400).json({ error: 'invalid' });
+  // Filtre de modération (insultes, propos haineux) et pas de liens (spam)
+  if (isObjectionable(author) || isObjectionable(comment) || hasLink(comment) || hasLink(author)) return res.status(400).json({ error: 'inappropriate' });
   const golfId = String(req.params.id);
   if (!/^(osm-[nwr]\d+|demo-[\w-]+|man-[\w-]+)$/.test(golfId)) return res.status(400).json({ error: 'invalid_id' });
   const id = await addReview(golfId, author, rating, comment);

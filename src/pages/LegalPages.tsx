@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import { Link } from 'react-router-dom';
 import { BackLink } from '../components/BackLink';
 import { useI18n } from '../i18n';
 
@@ -36,7 +37,13 @@ export function LegalPage() {
         À compléter avant toute mise en ligne publique (obligatoire en France : loi n° 2004-575 du 21 juin 2004, art. 6).
       </p>
       <h2>Hébergement</h2>
-      <p>[Nom de l’hébergeur] — [adresse] — [téléphone ou site web].</p>
+      <p>
+        Netlify, Inc. —{' '}
+        <a href="https://www.netlify.com" target="_blank" rel="noopener noreferrer">
+          www.netlify.com
+        </a>
+        . Base de données : Netlify Database.
+      </p>
       <h2>Sources des données</h2>
       <ul>
         <li>
@@ -64,6 +71,50 @@ export function LegalPage() {
       <p>
         Les avis sont publiés sous la responsabilité de leurs auteurs. L’éditeur peut supprimer tout avis illicite, injurieux ou
         hors sujet.
+      </p>
+    </Page>
+  );
+}
+
+export function TermsPage() {
+  return (
+    <Page title="Conditions d’utilisation">
+      <p className="text-sm text-muted">En vigueur au 21 octobre 2026. Elles s’appliquent au site golfus.ch et à l’app GolfUs pour iPhone.</p>
+      <h2>Le service</h2>
+      <p>
+        GolfUs aide à trouver des golfs, à comparer leurs tarifs publics et à organiser des parties entre amis. La réservation se
+        fait toujours sur le site du golf ou d’une plateforme de réservation : GolfUs ne vend rien et n’encaisse aucun paiement.
+        Les tarifs, horaires et disponibilités sont indicatifs ; confirmez-les auprès du golf.
+      </p>
+      <h2>Votre compte</h2>
+      <p>
+        Le compte est gratuit et personnel. Vous êtes responsable de ce que vous publiez avec lui. Vous pouvez supprimer votre
+        compte et télécharger vos données à tout moment depuis Profil › Données.
+      </p>
+      <h2>Contenus publiés : tolérance zéro</h2>
+      <p>
+        Prénom, photo de profil, avis sur les golfs et messages d’invitation doivent rester respectueux. Sont interdits : insultes,
+        propos haineux ou discriminatoires, harcèlement, menaces, contenus sexuels, violents ou illégaux, publicité et spam,
+        usurpation d’identité. Aucun abus n’est toléré.
+      </p>
+      <ul>
+        <li>Un filtre automatique refuse les termes injurieux les plus courants.</li>
+        <li>
+          Chaque avis, joueur ou invitation peut être signalé (bouton « Signaler »). Les signalements sont examinés sous 24 heures :
+          le contenu est retiré et son auteur exclu s’il enfreint ces règles. Un avis signalé par plusieurs personnes est masqué en
+          attendant cet examen.
+        </li>
+        <li>Vous pouvez bloquer un joueur : il ne peut plus vous demander en ami ni vous inviter, et vous ne vous voyez plus dans la recherche.</li>
+      </ul>
+      <h2>Responsabilité</h2>
+      <p>
+        GolfUs s’efforce de fournir des informations exactes mais ne garantit ni les prix, ni les horaires, ni les disponibilités
+        publiés par les golfs et les plateformes. Les partenaires de réservation appliquent leurs propres conditions.
+      </p>
+      <h2>Contact</h2>
+      <p>
+        Pour toute question ou réclamation : voir les <Link to="/mentions-legales">mentions légales</Link>. Données personnelles :
+        voir la <Link to="/confidentialite">politique de confidentialité</Link>.
       </p>
     </Page>
   );

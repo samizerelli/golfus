@@ -9,6 +9,7 @@ import { useI18n } from '../i18n';
 import type { DictKey } from '../i18n/fr';
 import { api, ApiError, auth } from '../lib/api';
 import { useAuth } from '../lib/auth';
+import { isNative } from '../lib/platform';
 
 type Mode = 'login' | 'register' | 'forgot';
 const input = 'frost mt-1.5 h-12 w-full rounded-[16px] px-4 text-base text-ink placeholder:text-muted';
@@ -19,6 +20,7 @@ const ERRORS: Record<string, DictKey> = {
   password_too_short: 'auth.err.passwordShort',
   password_too_weak: 'auth.err.passwordWeak',
   rate_limited: 'auth.err.rateLimited',
+  inappropriate: 'error.inappropriate',
   Verification: 'auth.err.linkExpired',
 };
 
@@ -149,6 +151,10 @@ export function LoginPage() {
                   <input type="checkbox" required checked={terms} onChange={(e) => setTerms(e.target.checked)} className="mt-0.5 size-5 shrink-0 accent-fairway-700" />
                   <span>
                     {t('auth.terms')}{' '}
+                    <Link to="/conditions" className="text-link underline underline-offset-2">
+                      {t('nav.terms')}
+                    </Link>{' '}
+                    {t('auth.termsAnd')}{' '}
                     <Link to="/confidentialite" className="text-link underline underline-offset-2">
                       {t('nav.privacy')}
                     </Link>
@@ -179,6 +185,32 @@ export function LoginPage() {
             </button>
           )}
 
+          {/* App iOS : « Se connecter avec Apple », feuille native (bouton noir/blanc conforme aux règles d'Apple) */}
+          {mode !== 'forgot' && isNative() && (
+            <div className="space-y-2">
+              <p className="flex items-center gap-3 text-xs text-muted before:h-px before:flex-1 before:bg-[var(--line)] after:h-px after:flex-1 after:bg-[var(--line)]">{t('auth.or')}</p>
+              <button
+                type="button"
+                disabled={busy}
+                onClick={async () => {
+                  setError('');
+                  setBusy(true);
+                  const r = await auth.signInAppleNative(lang);
+                  setBusy(false);
+                  if (!r.ok) return r.error === 'cancelled' ? undefined : setError(r.error ?? 'generic');
+                  await refresh();
+                  navigate(after, { replace: true });
+                }}
+                className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-black text-[17px] font-medium text-white dark:bg-white dark:text-black"
+              >
+                <svg viewBox="0 0 17 20" className="size-[18px]" aria-hidden fill="currentColor">
+                  <path d="M14.1 10.6c0-2.6 2.1-3.8 2.2-3.9-1.2-1.8-3.1-2-3.7-2-1.6-.2-3.1.9-3.9.9-.8 0-2-.9-3.4-.9-1.7 0-3.3 1-4.2 2.6-1.8 3.1-.5 7.7 1.3 10.2.8 1.2 1.8 2.6 3.1 2.5 1.3-.1 1.7-.8 3.2-.8s1.9.8 3.2.8c1.3 0 2.2-1.2 3-2.4.9-1.4 1.3-2.7 1.3-2.8 0 0-2.6-1-2.6-4.1zM11.6 3c.7-.8 1.2-2 1-3.1-1 0-2.2.7-2.9 1.5-.6.7-1.2 1.9-1 3 1.1.1 2.2-.6 2.9-1.4z" />
+                </svg>
+                {t('auth.appleNative')}
+              </button>
+              <p className="text-xs text-muted">{t('auth.appleTerms')}</p>
+            </div>
+          )}
           {mode !== 'forgot' && !sent && (p?.email || p?.google || p?.apple) && (
             <div className="space-y-2">
               <p className="flex items-center gap-3 text-xs text-muted before:h-px before:flex-1 before:bg-[var(--line)] after:h-px after:flex-1 after:bg-[var(--line)]">{t('auth.or')}</p>

@@ -8,6 +8,9 @@ import { config } from '../config.ts';
 import { db } from '../db/index.ts';
 import { decodeImageDataUrl } from '../lib/files.ts';
 import { parse, userRateLimit } from '../lib/http-helpers.ts';
+import { clean } from '../lib/moderation.ts';
+import { revokeAppleFor } from '../auth/apple.ts';
+import { signExportToken, verifyExportToken } from '../auth/mobile.ts';
 
 const LANGS = ['fr', 'en', 'es'] as const;
 export const accountRouter = Router();
@@ -20,7 +23,7 @@ accountRouter.post('/account/register', userRateLimit('register', 10, 3600_000),
     z.object({
       email: z.string().trim().toLowerCase().email().max(200),
       password: z.string().max(200),
-      name: z.string().trim().min(1).max(60),
+      name: z.string().trim().min(1).max(60).refine(clean, { message: 'inappropriate' }),
       lang: z.enum(LANGS).default('fr'),
       terms: z.literal(true),
     }),
@@ -82,7 +85,7 @@ accountRouter.get('/me', async (req, res) => {
 accountRouter.patch('/me', requireUser, async (req, res) => {
   const b = parse(
     z.object({
-      name: z.string().trim().min(1).max(60).optional(),
+      name: z.string().trim().min(1).max(60).refine(clean, { message: 'inappropriate' }).optional(),
       handicapIndex: z.number().min(-10).max(54).nullable().optional(),
       lang: z.enum(LANGS).optional(),
     }),
@@ -130,9 +133,18 @@ accountRouter.post('/me/logout-all', requireUser, async (req, res) => {
   res.json({ ok: true });
 });
 
-/** Export RGPD : toutes les données du compte en JSON. */
-accountRouter.get('/me/export', requireUser, userRateLimit('export', 5, 3600_000), async (req, res) => {
-  const id = req.user!.id;
+/** App iOS : lien d'export temporaire (5 min), ouvert dans Safari intégré pour enregistrer ou partager le fichier. */
+accountRouter.post('/me/export-link', requireUser, userRateLimit('export-link', 10, 3600_000), async (req, res) => {
+  const sv = (await db.get<{ session_version: number }>('SELECT session_version FROM users WHERE id = ?', req.user!.id))?.session_version ?? 0;
+  const t = await signExportToken(req.user!.id, sv);
+  res.set('Cache-Control', 'no-store').json({ url: `${req.protocol}://${req.get('host')}/api/me/export?t=${encodeURIComponent(t)}` });
+});
+
+/** Export RGPD : toutes les données du compte en JSON (session du site, ou lien temporaire de l'app). */
+accountRouter.get('/me/export', userRateLimit('export', 5, 3600_000), async (req, res) => {
+  const id = req.user?.id ?? (typeof req.query.t === 'string' ? await verifyExportToken(req.query.t) : null);
+  if (!id) return res.status(401).json({ error: 'auth_required' });
+  res.set('Cache-Control', 'no-store');
   const data = {
     exported_at: new Date().toISOString(),
     account: await meOf(id),
@@ -150,7 +162,11 @@ accountRouter.get('/me/export', requireUser, userRateLimit('export', 5, 3600_000
 accountRouter.delete('/me', requireUser, async (req, res) => {
   const b = parse(z.object({ confirmEmail: z.string().trim().toLowerCase() }), req.body, res);
   if (!b) return;
-  if (b.confirmEmail !== req.user!.email.toLowerCase()) return res.status(400).json({ error: 'confirm_mismatch' });
+  // Confirmation : l'e-mail du compte (ou « DELETE » pour un compte Apple sans e-mail)
+  const expected = req.user!.email ? req.user!.email.toLowerCase() : 'delete';
+  if (b.confirmEmail !== expected) return res.status(400).json({ error: 'confirm_mismatch' });
+  // Compte créé avec Apple : accès révoqué chez Apple avant suppression (si la clé est configurée)
+  await revokeAppleFor(req.user!.id);
   await db.run('DELETE FROM users WHERE id = ?', req.user!.id);
   for (const name of ['authjs.session-token', '__Secure-authjs.session-token']) res.clearCookie(name, { path: '/' });
   res.json({ ok: true });

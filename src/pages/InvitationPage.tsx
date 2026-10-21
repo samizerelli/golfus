@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { CalendarDays, Check, Clock, Flag, HelpCircle, Navigation, Users, X } from 'lucide-react';
 import { useRef, useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useNavigate, useParams } from 'react-router-dom';
 import { Logo } from '../components/Logo';
 import { Badge, buttonClass, cx, haptic } from '../components/ui';
 import { useI18n } from '../i18n';
@@ -10,6 +10,7 @@ import { useAuth } from '../lib/auth';
 import { directionsUrl } from '../lib/links';
 import { readStore, writeStore } from '../lib/storage';
 import { todayStr } from '../state/search';
+import { errorMessage, ReportButton } from '../components/Moderation';
 
 type Resp = 'yes' | 'maybe' | 'no';
 const TONE = { yes: 'green', maybe: 'gold', no: 'red', pending: 'neutral' } as const;
@@ -21,6 +22,7 @@ const tokenKey = (t: string) => `gf.guest.${t}`;
  */
 export function InvitationPage() {
   const { token = '' } = useParams();
+  const navigate = useNavigate();
   const { t, locale } = useI18n();
   const { user } = useAuth();
   const qc = useQueryClient();
@@ -106,6 +108,23 @@ export function InvitationPage() {
                   <Navigation className="size-4" aria-hidden /> {t('action.directions')}
                 </a>
               )}
+              {/* Invitation déplacée ou organisateur importun : signalement (compte requis) et blocage */}
+              {user && !o.isOrganizer && (
+                <div className="mt-2 flex gap-3 text-white/80 [&_button]:text-white/75">
+                  <ReportButton kind="outing" targetId={o.id} />
+                  <button
+                    type="button"
+                    className="min-h-11 text-xs hover:underline"
+                    onClick={async () => {
+                      if (!confirm(t('mod.blockConfirm', { name: o.organizer.name ?? '—' }))) return;
+                      await api.block(o.organizer.id).catch(() => undefined);
+                      navigate('/');
+                    }}
+                  >
+                    {t('mod.block')}
+                  </button>
+                </div>
+              )}
             </div>
 
             {o.status === 'cancelled' || o.date < todayStr() ? (
@@ -169,7 +188,7 @@ export function InvitationPage() {
                     {t('home.decline')}
                   </button>
                 </div>
-                {respond.isError && <p className="text-center text-sm text-gold-200" role="alert">{t('common.error')}</p>}
+                {respond.isError && <p className="text-center text-sm text-gold-200" role="alert">{errorMessage(respond.error, t, 'common.error')}</p>}
                 {!user && (
                   <p className="text-center text-xs text-white/75">
                     {t('inv.haveAccount')}{' '}

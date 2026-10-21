@@ -9,12 +9,16 @@
  * Le jeton porte la version de session du compte : changer de mot de passe ou « se déconnecter partout »
  * l'invalide, comme les sessions du site.
  */
-import { createHash } from 'node:crypto';
+import { createHash, randomUUID } from 'node:crypto';
 import { Router } from 'express';
+import { z } from 'zod';
 import { jwtVerify, SignJWT } from 'jose';
 import { config } from '../config.ts';
 import { db } from '../db/index.ts';
 import { rateLimit } from '../lib/rateLimit.ts';
+import { clean } from '../lib/moderation.ts';
+import { parse } from '../lib/http-helpers.ts';
+import { exchangeAppleCode, verifyAppleIdentity } from './apple.ts';
 import { checkCredentials } from './config.ts';
 
 const AUDIENCE = 'golfus-ios';
@@ -64,7 +68,74 @@ export const mobileRouter = Router();
 mobileRouter.post('/mobile/login', rateLimit(20, 15 * 60_000), async (req, res) => {
   const u = await checkCredentials(req.body?.email, req.body?.password);
   if (!u) return res.status(401).json({ error: 'invalid_credentials' });
-  const row = await db.get<{ session_version: number }>('UPDATE users SET last_login_at = now() WHERE id = ? RETURNING session_version', u.id);
-  const token = await signMobileToken({ uid: u.id, sv: row?.session_version ?? 0, method: 'credentials', authAt: Date.now() });
-  res.set('Cache-Control', 'no-store').json({ token, expiresInDays: TTL_DAYS });
+  await issue(res, u.id, 'credentials');
 });
+
+async function issue(res: import('express').Response, uid: string, method: string) {
+  const row = await db.get<{ session_version: number }>('UPDATE users SET last_login_at = now() WHERE id = ? RETURNING session_version', uid);
+  const token = await signMobileToken({ uid, sv: row?.session_version ?? 0, method, authAt: Date.now() });
+  res.set('Cache-Control', 'no-store').json({ token, expiresInDays: TTL_DAYS });
+}
+
+const AppleBody = z.object({
+  identityToken: z.string().min(20).max(5000),
+  nonce: z.string().min(16).max(128),
+  authorizationCode: z.string().max(500).optional(),
+  // Apple ne transmet le prénom qu'à la toute première connexion
+  givenName: z.string().trim().max(60).refine(clean, { message: 'inappropriate' }).optional(),
+  lang: z.enum(['fr', 'en', 'es']).default('fr'),
+});
+
+/**
+ * « Se connecter avec Apple » : compte retrouvé par l'identifiant Apple, sinon par l'e-mail vérifié par Apple,
+ * sinon créé (les conditions sont acceptées sur l'écran de connexion, comme pour l'inscription).
+ */
+mobileRouter.post('/mobile/apple', rateLimit(20, 15 * 60_000), async (req, res) => {
+  const b = parse(AppleBody, req.body, res);
+  if (!b) return;
+  const id = await verifyAppleIdentity(b.identityToken, b.nonce);
+  if (!id) return res.status(401).json({ error: 'invalid_apple_token' });
+
+  let uid = (await db.get<{ user_id: string }>("SELECT user_id FROM accounts WHERE provider = 'apple' AND provider_account_id = ?", id.sub))?.user_id;
+  if (!uid && id.email && id.emailVerified) uid = (await db.get<{ id: string }>('SELECT id FROM users WHERE lower(email) = ?', id.email))?.id;
+  if (!uid) {
+    uid = randomUUID();
+    await db.run(
+      'INSERT INTO users (id, email, email_verified, name, lang, terms_accepted_at) VALUES (?, ?, ?, ?, ?, now())',
+      uid,
+      id.email,
+      id.emailVerified ? new Date().toISOString() : null,
+      b.givenName || null,
+      b.lang,
+    );
+  }
+  const refresh = b.authorizationCode ? await exchangeAppleCode(b.authorizationCode) : null;
+  await db.run(
+    `INSERT INTO accounts (user_id, type, provider, provider_account_id, refresh_token) VALUES (?, 'oidc', 'apple', ?, ?)
+     ON CONFLICT (provider, provider_account_id) DO UPDATE SET refresh_token = COALESCE(excluded.refresh_token, accounts.refresh_token)`,
+    uid,
+    id.sub,
+    refresh,
+  );
+  await issue(res, uid, 'apple');
+});
+
+// ───────── Export des données depuis l'app ─────────
+
+const EXPORT_AUDIENCE = 'golfus-export';
+
+/** Lien d'export valable 5 minutes : l'app l'ouvre dans Safari intégré, qui n'a pas le jeton de l'app. */
+export async function signExportToken(uid: string, sv: number) {
+  return new SignJWT({ sv }).setProtectedHeader({ alg: 'HS256' }).setSubject(uid).setAudience(EXPORT_AUDIENCE).setIssuedAt().setExpirationTime('5m').sign(key());
+}
+
+export async function verifyExportToken(token: string): Promise<string | null> {
+  try {
+    const { payload } = await jwtVerify(token, key(), { audience: EXPORT_AUDIENCE, algorithms: ['HS256'] });
+    if (typeof payload.sub !== 'string') return null;
+    const row = await db.get<{ session_version: number }>('SELECT session_version FROM users WHERE id = ?', payload.sub);
+    return row && row.session_version === payload.sv ? payload.sub : null;
+  } catch {
+    return null;
+  }
+}

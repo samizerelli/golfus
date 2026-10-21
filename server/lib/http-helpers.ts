@@ -5,6 +5,11 @@ import { z } from 'zod';
 export function parse<T extends z.ZodType>(schema: T, data: unknown, res: Response): z.infer<T> | null {
   const r = schema.safeParse(data);
   if (!r.success) {
+    // Contenu refusé par le filtre de modération : code dédié, l'app affiche un message clair
+    if (r.error.issues.some((i) => i.message === 'inappropriate')) {
+      res.status(400).json({ error: 'inappropriate' });
+      return null;
+    }
     res.status(400).json({ error: 'invalid', issues: r.error.issues.slice(0, 5).map((i) => ({ path: i.path.join('.'), code: i.code, message: i.message })) });
     return null;
   }

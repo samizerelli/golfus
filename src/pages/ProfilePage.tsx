@@ -1,4 +1,4 @@
-import { ChevronRight, Lock, ShieldCheck, Wrench } from 'lucide-react';
+import { FileText, ChevronRight, Lock, ShieldCheck, Wrench } from 'lucide-react';
 import { AccountPanel } from '../components/AccountPanel';
 import { BackLink } from '../components/BackLink';
 import { isNative } from '../lib/platform';
@@ -65,6 +65,7 @@ export function ProfilePage() {
 
         <section className="glass glass-rounded overflow-hidden">
           {[
+            { to: '/conditions', label: t('nav.terms'), Icon: FileText },
             { to: '/confidentialite', label: t('nav.privacy'), Icon: ShieldCheck },
             { to: '/mentions-legales', label: t('nav.legal'), Icon: Lock },
             // Administration : sur le site seulement, pas dans l'app

@@ -18,6 +18,7 @@ import { useRail } from './ActionRail';
 import { shareUrl } from './RailPanels';
 import { PricePerPerson, RatingLine } from './ResultsList';
 import { buttonClass, Button, cx, haptic, Notice } from './ui';
+import { errorMessage } from './Moderation';
 
 /** Golf de l'écran 3 : depuis les résultats déjà chargés, sinon depuis sa fiche. */
 const pin = (label: string) =>
@@ -303,7 +304,7 @@ export function InviteForm({ golf, top }: { golf: GolfSummary | null; top?: Reac
                 className="frost mt-1.5 w-full rounded-[16px] px-4 py-3 text-base font-normal tracking-normal text-ink normal-case"
               />
             </label>
-            {send.isError && <Notice tone="error">{t('s3.error')}</Notice>}
+            {send.isError && <Notice tone="error">{errorMessage(send.error, t, 's3.error')}</Notice>}
           </>
         )}
       </div>
