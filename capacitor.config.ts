@@ -14,6 +14,9 @@ const config: CapacitorConfig = {
     backgroundColor: '#0e2a20',
     // Défilement élastique désactivé sur la page entière : seuls les panneaux défilent, comme sur le site
     scrollEnabled: false,
+    // Comportement d'app, pas de site : ni zoom par pincement, ni aperçu de lien à l'appui long
+    zoomEnabled: false,
+    allowsLinkPreview: false,
   },
   plugins: {
     SplashScreen: {

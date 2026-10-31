@@ -3,7 +3,7 @@
  *
  * - Authentification par jeton : clé .p8 créée dans le compte Apple Developer (APNS_KEY_ID, APPLE_TEAM_ID,
  *   APNS_PRIVATE_KEY). Sans ces variables, rien n'est envoyé et l'app garde ses notifications internes.
- * - Envoyées seulement pour les parties : invitation, réponse, annulation, rappel la veille.
+ * - Envoyées pour les parties (invitation, réponse, annulation, rappel la veille) et les amis (demande, acceptation).
  * - Texte dans la langue de l'appareil ; contenu limité au nécessaire (pas d'e-mail, pas de message libre).
  * - Un appareil refusé par Apple (app supprimée, jeton périmé) est retiré de la base.
  */
@@ -12,7 +12,7 @@ import http2 from 'node:http2';
 import { config } from '../config.ts';
 import { db } from '../db/index.ts';
 
-export const PUSH_TYPES = ['outing_invite', 'outing_response', 'outing_cancelled', 'outing_reminder'] as const;
+export const PUSH_TYPES = ['outing_invite', 'outing_response', 'outing_cancelled', 'outing_reminder', 'friend_request', 'friend_accepted'] as const;
 type PushType = (typeof PUSH_TYPES)[number];
 type Lang = 'fr' | 'en' | 'es';
 
@@ -26,6 +26,8 @@ const TEXTS: Record<Lang, Record<PushType, string> & { yes: string; maybe: strin
     outing_response: '{from} a répondu « {response} » pour le {golf}',
     outing_cancelled: '{from} a annulé la partie au {golf}',
     outing_reminder: 'Demain : votre partie au {golf} à {time}',
+    friend_request: '{name} vous demande en ami',
+    friend_accepted: '{name} a accepté votre demande d’ami',
     yes: 'Partant',
     maybe: 'Peut-être',
     no: 'Absent',
@@ -35,6 +37,8 @@ const TEXTS: Record<Lang, Record<PushType, string> & { yes: string; maybe: strin
     outing_response: '{from} answered “{response}” for {golf}',
     outing_cancelled: '{from} cancelled the round at {golf}',
     outing_reminder: 'Tomorrow: your round at {golf} at {time}',
+    friend_request: '{name} wants to be your friend',
+    friend_accepted: '{name} accepted your friend request',
     yes: 'I’m in',
     maybe: 'Maybe',
     no: 'Can’t make it',
@@ -44,6 +48,8 @@ const TEXTS: Record<Lang, Record<PushType, string> & { yes: string; maybe: strin
     outing_response: '{from} ha respondido «{response}» para {golf}',
     outing_cancelled: '{from} ha cancelado la partida en {golf}',
     outing_reminder: 'Mañana: tu partida en {golf} a las {time}',
+    friend_request: '{name} quiere ser tu amigo',
+    friend_accepted: '{name} ha aceptado tu solicitud de amistad',
     yes: 'Me apunto',
     maybe: 'Quizás',
     no: 'No viene',
@@ -60,7 +66,7 @@ export function pushText(type: PushType, lang: string, p: Record<string, unknown
       ? new Date(`${p.date}T12:00:00Z`).toLocaleDateString(LOCALES[l], { day: 'numeric', month: 'long', timeZone: 'UTC' })
       : '';
   const response = p.response === 'yes' || p.response === 'maybe' || p.response === 'no' ? T[p.response] : '';
-  const vars: Record<string, string> = { from: String(p.from ?? '—'), golf: String(p.golf ?? ''), date, response, time: String(p.timeFrom ?? '') };
+  const vars: Record<string, string> = { from: String(p.from ?? '—'), golf: String(p.golf ?? ''), date, response, time: String(p.timeFrom ?? ''), name: String(p.name ?? '—') };
   return T[type].replace(/\{(\w+)\}/g, (_, k: string) => vars[k] ?? '');
 }
 
@@ -129,7 +135,7 @@ export async function pushToUser(userId: string, type: string, payload: Record<s
           const body = JSON.stringify({
             aps: { alert: { title: 'GolfUs', body: pushText(type as PushType, d.lang, payload) }, sound: 'default' },
             // Ouvre le bon panneau dans l'app
-            panel: 'outings',
+            panel: type.startsWith('friend_') ? 'friends' : 'outings',
           });
           const r = await sendOne(session, d.token, body);
           // Jeton refusé définitivement : l'appareil est oublié

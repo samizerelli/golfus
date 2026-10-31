@@ -5,6 +5,7 @@ import { RailProvider, useRail } from './components/ActionRail';
 import { hadAccount, Intro, introSeen, markSeen } from './components/Intro';
 import { useAuth } from './lib/auth';
 import { useI18n } from './i18n';
+import { OfflineBanner } from './components/OfflineBanner';
 import { PageSkeleton } from './components/PageSkeleton';
 import { isNative, onOpenInApp } from './lib/platform';
 import { refreshPush } from './lib/push';
@@ -67,6 +68,7 @@ export default function App() {
     {isNative() && <NativeBridge />}
     <div className="flex h-dvh flex-col">
       <GlassFx />
+      <OfflineBanner />
       {showIntro && <Intro onClose={() => setIntroOpen(false)} />}
       <a
         href="#main"

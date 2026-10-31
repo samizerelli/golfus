@@ -21,7 +21,7 @@ type Resp = 'yes' | 'maybe' | 'no';
 
 export async function notify(userId: string, type: string, payload: Record<string, unknown>) {
   await db.run('INSERT INTO notifications (user_id, type, payload) VALUES (?, ?, ?)', userId, type, JSON.stringify(payload));
-  // Sur iPhone (si les notifications sont activées) : parties seulement, voir services/push.ts
+  // Sur iPhone (si les notifications sont activées) : parties et amis, voir services/push.ts
   await pushToUser(userId, type, payload);
 }
 

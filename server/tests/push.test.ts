@@ -44,6 +44,7 @@ test('push : textes dans la langue de l’appareil', () => {
   assert.equal(pushText('outing_invite', 'fr', { from: 'Léa', golf: 'La Cala', date: '2026-10-23' }), 'Léa vous invite au La Cala le 23 octobre');
   assert.equal(pushText('outing_response', 'en', { from: 'Tom', golf: 'La Cala', response: 'maybe' }), 'Tom answered “Maybe” for La Cala');
   assert.equal(pushText('outing_reminder', 'es', { golf: 'La Cala', timeFrom: '09:30' }), 'Mañana: tu partida en La Cala a las 09:30');
+  assert.equal(pushText('friend_request', 'fr', { name: 'Léa' }), 'Léa vous demande en ami');
 });
 
 test('Universal Links : pas de fichier d’association sans identifiant d’équipe Apple', async () => {

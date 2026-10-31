@@ -278,13 +278,16 @@ Avant, et après chaque modification du code web : `npm run ios:sync` (reconstru
 - **Jeton** : conservé dans le trousseau iOS (Keychain), jamais dans le localStorage.
 - **Liens externes** (réservation, site du golf, plateformes) : Safari intégré à l'app, avec bouton de fermeture.
 - **Barre d'état** : texte clair sur les écrans sombres (intro, thème sombre), foncé sinon.
+- **Comportement d'app** : pas de zoom, pas d'aperçu de lien ni de sélection de texte à l'appui long (sauf champs
+  et textes longs), pas de rebond de page. Bandeau « Pas de connexion internet » quand le réseau tombe.
 - **Navigation** : bouton « Retour » sur Profil, Favoris et pages légales (pas de bouton Précédent dans une app).
 - **Administration** : lien masqué dans l'app ; elle reste accessible sur le site.
 - **Partage** : feuille de partage iOS (Messages, WhatsApp, Mail…) pour les fiches et les invitations.
 - **Retour haptique** : moteur haptique de l'iPhone (balle de l'intro, boutons principaux).
 - **Notifications push** : proposées dans le panneau Notifications (bouton « Activer », jamais au lancement).
-  Envoyées pour les parties : invitation, réponse, annulation et rappel la veille (tâche planifiée
-  `netlify/functions/reminders.mts`, chaque jour à 16:00 UTC). Texte dans la langue de l'appareil.
+  Envoyées pour les parties (invitation, réponse, annulation, rappel la veille par tâche planifiée
+  `netlify/functions/reminders.mts`, chaque jour à 16:00 UTC) et pour les amis (demande, acceptation).
+  Texte dans la langue de l'appareil.
   Sans les variables `APNS_*`, rien ne part : les notifications restent visibles dans l'app.
 - **Universal Links** : `https://golfus.ch/invitation/…` et `/golf/…` ouvrent l'app si elle est installée
   (fichier `/.well-known/apple-app-site-association`, publié dès que `APPLE_TEAM_ID` est défini).

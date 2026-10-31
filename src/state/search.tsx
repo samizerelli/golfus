@@ -47,7 +47,7 @@ export function defaultSlot(now = new Date()): Pick<Criteria, 'date' | 'timeFrom
     return { date: `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`, timeFrom: '08:00', timeTo: hhmm(8 * 60 + SLOT_LEN) };
   }
   const from = Math.max(SLOT_MIN, rounded);
-  return { date: todayStr(), timeFrom: hhmm(from), timeTo: hhmm(Math.min(SLOT_MAX, from + SLOT_LEN)) };
+  return { date: `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`, timeFrom: hhmm(from), timeTo: hhmm(Math.min(SLOT_MAX, from + SLOT_LEN)) };
 }
 
 // Parcours 18 trous par défaut (modifiable dans les filtres)

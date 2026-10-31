@@ -653,3 +653,18 @@ body:has(:is(input:not([type='checkbox'], [type='radio'], [type='range']), texta
 .leaflet-top {
   top: env(safe-area-inset-top);
 }
+
+/* App iOS : pas de sélection de texte parasite, ni de menu à l'appui long, ni de rebond de la page.
+   Les champs de saisie et les textes longs (avis, conditions) restent sélectionnables. */
+html.native-ios,
+html.native-ios body {
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+  overscroll-behavior: none;
+  -webkit-tap-highlight-color: transparent;
+}
+html.native-ios :is(input, textarea, [contenteditable], article, .selectable) {
+  -webkit-user-select: text;
+  user-select: text;
+}
