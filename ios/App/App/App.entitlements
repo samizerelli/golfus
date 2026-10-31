@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyLists-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!-- Notifications push (Xcode passe en « production » pour TestFlight et l'App Store) -->
+	<key>aps-environment</key>
+	<string>development</string>
+	<!-- Se connecter avec Apple -->
+	<key>com.apple.developer.applesignin</key>
+	<array>
+		<string>Default</string>
+	</array>
+	<!-- Universal Links : https://golfus.ch/invitation/… et /golf/… ouvrent l'app -->
+	<key>com.apple.developer.associated-domains</key>
+	<array>
+		<string>applinks:golfus.ch</string>
+	</array>
+</dict>
+</plist>
