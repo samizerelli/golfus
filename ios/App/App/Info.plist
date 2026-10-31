@@ -32,6 +32,8 @@
 	<false/>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>GolfUs only uses your location while you use the app, to show golf courses around you and the travel time to each one. It is never saved or shared.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>GolfUs uses your location to show golf courses around you and the travel time to each one. It is never saved or shared.</string>
 	<key>UIApplicationSceneManifest</key>

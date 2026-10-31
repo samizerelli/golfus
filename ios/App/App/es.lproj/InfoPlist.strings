@@ -1,3 +1,4 @@
 /* Textes système de l'app (autorisation de localisation) */
 "NSLocationWhenInUseUsageDescription" = "GolfUs usa tu ubicación para mostrar los campos de golf cercanos y el tiempo de trayecto hasta cada uno. Nunca se guarda ni se comparte.";
+"NSLocationAlwaysAndWhenInUseUsageDescription" = "GolfUs solo usa tu ubicación mientras usas la app, para mostrar los campos de golf cercanos y el tiempo de trayecto hasta cada uno. Nunca se guarda ni se comparte.";
 "CFBundleDisplayName" = "GolfUs";
