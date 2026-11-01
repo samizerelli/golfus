@@ -170,13 +170,18 @@ export async function pushToUser(userId: string, type: string, payload: Record<s
 
 /** Administration : notification de test, avec le compte rendu d'Apple (vérifie la clé et l'appareil). */
 export async function pushTest(userId: string): Promise<PushReport & { configured: boolean }> {
-  if (!pushEnabled()) return { configured: false, devices: 0, sent: 0, errors: [] };
+  if (!pushEnabled()) {
+    console.warn('[push] test : clé APNs non configurée');
+    return { configured: false, devices: 0, sent: 0, errors: [] };
+  }
   try {
     const r = await sendToUser(userId, () =>
       JSON.stringify({ aps: { alert: { title: 'GolfUs', body: 'Notification de test ✅ Tout fonctionne.' }, sound: 'default' } }),
     );
+    console.log('[push] test', userId.slice(0, 8), JSON.stringify(r), config.apns.production ? 'production' : 'sandbox');
     return { configured: true, ...r };
   } catch (e) {
+    console.warn('[push] test', userId.slice(0, 8), (e as Error).message);
     return { configured: true, devices: 0, sent: 0, errors: [(e as Error).message] };
   }
 }
