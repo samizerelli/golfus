@@ -68,7 +68,13 @@ export async function getPositionAuto(): Promise<{ lat: number; lon: number }> {
     if (!('geolocation' in navigator)) throw 'unsupported' satisfies GeoErrorCode;
     if ((await geoPermission()) === 'denied') throw 'denied' satisfies GeoErrorCode;
   }
-  return once({ enableHighAccuracy: true, timeout: 8000, maximumAge: 60000 }, 30000);
+  try {
+    return await once({ enableHighAccuracy: true, timeout: 8000, maximumAge: 60000 }, 30000);
+  } catch (e) {
+    if (e === 'denied') throw e;
+    // Premier lancement ou intérieur : le GPS peut dépasser 8 s → nouvel essai en précision normale (Wi-Fi / réseau)
+    return once({ enableHighAccuracy: false, timeout: 10000, maximumAge: 5 * 60_000 }, 15000);
+  }
 }
 
 /** Position par défaut de la carte quand la localisation est impossible (Costa del Sol, où se trouvent les fiches vérifiées) */
