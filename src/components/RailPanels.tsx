@@ -5,7 +5,7 @@ import { Link } from 'react-router-dom';
 import { isNative, PUBLIC_ORIGIN } from '../lib/platform';
 import { shareLink } from '../lib/share';
 import { useAuth } from '../lib/auth';
-import { enablePush, lastPushError, lastPushStatus, pushState, type PushState } from '../lib/push';
+import { enablePush, lastPushError, pushState, type PushState } from '../lib/push';
 import { CURRENCIES, type Currency } from '../../shared/types';
 import { LANGS, useI18n } from '../i18n';
 import { api, type Notification, type Outing } from '../lib/api';
@@ -387,12 +387,6 @@ export function PushCard() {
   return (
     <div className="frost mb-3 space-y-2 rounded-[20px] p-3">
       <p className="text-sm">{t('push.pitch')}</p>
-      {/* Diagnostic (provisoire) : état renvoyé par iOS, pour comprendre un bouton sans effet */}
-      <p className="text-[11px] text-muted">
-        iOS : {state ?? '…'} · natif : {String(isNative())}
-        {lastPushStatus && ` (${lastPushStatus})`}
-        {lastPushError && ` · ${lastPushError}`}
-      </p>
       {state === 'error' && (
         <p className="text-xs text-red-700 dark:text-red-300">
           {t('push.error')} {lastPushError && <span className="opacity-70">({lastPushError})</span>}

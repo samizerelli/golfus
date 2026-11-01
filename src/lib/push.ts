@@ -7,7 +7,10 @@ import { isNative, pushDeviceStore } from './platform';
 
 export type PushState = 'unsupported' | 'prompt' | 'granted' | 'denied';
 
-const plugin = () => import('@capacitor/push-notifications').then((m) => m.PushNotifications);
+// Attention : ne jamais renvoyer l'objet du module natif depuis une promesse (async / then). Capacitor le
+// représente par un Proxy qui répond à « then » : la promesse appelle alors une méthode native « then »
+// inexistante et ne se termine jamais. On renvoie donc le module, et on lit PushNotifications à l'usage.
+const pushModule = () => import('@capacitor/push-notifications');
 
 /** Dernière erreur rencontrée (affichée sous le bouton, pour comprendre un refus d'iOS) */
 export let lastPushError = '';
@@ -21,7 +24,7 @@ export async function pushState(): Promise<PushState> {
   try {
     // iOS doit répondre en quelques millisecondes ; sans réponse sous 3 s, on propose quand même le bouton
     const { receive } = await Promise.race([
-      (await plugin()).checkPermissions(),
+      (await pushModule()).PushNotifications.checkPermissions(),
       new Promise<never>((_, reject) => setTimeout(() => reject(new Error('timeout checkPermissions')), 3000)),
     ]);
     lastPushStatus = String(receive);
@@ -35,7 +38,7 @@ export async function pushState(): Promise<PushState> {
 
 /** Obtient le jeton de l'appareil auprès d'iOS puis l'enregistre sur le serveur pour le compte connecté. */
 async function register(lang: string) {
-  const P = await plugin();
+  const P = (await pushModule()).PushNotifications;
   const token = await new Promise<string>((resolve, reject) => {
     const handles: Promise<{ remove: () => Promise<void> }>[] = [];
     const done = () => handles.forEach((h) => void h.then((x) => x.remove()));
@@ -65,7 +68,7 @@ async function register(lang: string) {
 export async function enablePush(lang: string): Promise<PushState> {
   if (!isNative()) return 'unsupported';
   try {
-    const { receive } = await (await plugin()).requestPermissions();
+    const { receive } = await (await pushModule()).PushNotifications.requestPermissions();
     if (receive !== 'granted') return receive === 'denied' ? 'denied' : 'prompt';
     await register(lang);
     lastPushError = '';
