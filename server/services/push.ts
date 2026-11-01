@@ -120,36 +120,63 @@ function sendOne(session: http2.ClientHttp2Session, deviceToken: string, body: s
   });
 }
 
+export interface PushReport {
+  devices: number;
+  sent: number;
+  errors: string[];
+}
+
+/** Envoi à tous les appareils d'un utilisateur ; les jetons refusés définitivement par Apple sont oubliés. */
+async function sendToUser(userId: string, bodyFor: (lang: string) => string): Promise<PushReport> {
+  const devices = await db.all<{ token: string; lang: string }>('SELECT token, lang FROM push_devices WHERE user_id = ?', userId);
+  const report: PushReport = { devices: devices.length, sent: 0, errors: [] };
+  if (!devices.length) return report;
+  const host = config.apns.production ? 'https://api.push.apple.com' : 'https://api.sandbox.push.apple.com';
+  const session = http2.connect(host);
+  session.on('error', () => undefined);
+  try {
+    await Promise.all(
+      devices.map(async (d) => {
+        const r = await sendOne(session, d.token, bodyFor(d.lang));
+        if (r.status === 200) report.sent++;
+        else report.errors.push(`APNs ${r.status} ${r.reason ?? ''}`.trim());
+        if (r.status === 410 || (r.status === 400 && (r.reason === 'BadDeviceToken' || r.reason === 'DeviceTokenNotForTopic'))) {
+          await db.run('DELETE FROM push_devices WHERE token = ?', d.token);
+        }
+      }),
+    );
+  } finally {
+    session.close();
+  }
+  return report;
+}
+
 /** Envoie une notification à tous les appareils d'un utilisateur. Ne lève jamais d'erreur. */
 export async function pushToUser(userId: string, type: string, payload: Record<string, unknown>) {
   if (!pushEnabled() || !(PUSH_TYPES as readonly string[]).includes(type)) return;
   try {
-    const devices = await db.all<{ token: string; lang: string }>('SELECT token, lang FROM push_devices WHERE user_id = ?', userId);
-    if (!devices.length) return;
-    const host = config.apns.production ? 'https://api.push.apple.com' : 'https://api.sandbox.push.apple.com';
-    const session = http2.connect(host);
-    session.on('error', () => undefined);
-    try {
-      await Promise.all(
-        devices.map(async (d) => {
-          const body = JSON.stringify({
-            aps: { alert: { title: 'GolfUs', body: pushText(type as PushType, d.lang, payload) }, sound: 'default' },
-            // Ouvre le bon panneau dans l'app
-            panel: type.startsWith('friend_') ? 'friends' : 'outings',
-          });
-          const r = await sendOne(session, d.token, body);
-          // Jeton refusé définitivement : l'appareil est oublié
-          if (r.status === 410 || (r.status === 400 && (r.reason === 'BadDeviceToken' || r.reason === 'DeviceTokenNotForTopic'))) {
-            await db.run('DELETE FROM push_devices WHERE token = ?', d.token);
-          } else if (r.status !== 200) {
-            console.warn(`[push] APNs ${r.status} ${r.reason ?? ''}`.trim());
-          }
-        }),
-      );
-    } finally {
-      session.close();
-    }
+    const r = await sendToUser(userId, (lang) =>
+      JSON.stringify({
+        aps: { alert: { title: 'GolfUs', body: pushText(type as PushType, lang, payload) }, sound: 'default' },
+        // Ouvre le bon panneau dans l'app
+        panel: type.startsWith('friend_') ? 'friends' : 'outings',
+      }),
+    );
+    for (const e of r.errors) console.warn('[push]', e);
   } catch (e) {
     console.warn('[push]', (e as Error).message);
+  }
+}
+
+/** Administration : notification de test, avec le compte rendu d'Apple (vérifie la clé et l'appareil). */
+export async function pushTest(userId: string): Promise<PushReport & { configured: boolean }> {
+  if (!pushEnabled()) return { configured: false, devices: 0, sent: 0, errors: [] };
+  try {
+    const r = await sendToUser(userId, () =>
+      JSON.stringify({ aps: { alert: { title: 'GolfUs', body: 'Notification de test ✅ Tout fonctionne.' }, sound: 'default' } }),
+    );
+    return { configured: true, ...r };
+  } catch (e) {
+    return { configured: true, devices: 0, sent: 0, errors: [(e as Error).message] };
   }
 }

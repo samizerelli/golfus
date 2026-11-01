@@ -7,6 +7,7 @@ import { isAdmin, login, logout, requireAdmin } from '../auth.ts';
 import { isValidOpeningHours, sanitizeGolf } from '../lib/validate.ts';
 import { deleteGolf, deleteReview, getEditable, getGolf, getReviews, listCurated, saveGolf } from '../services/golfs.ts';
 import { extractFromSite } from '../services/siteExtract.ts';
+import { pushTest } from '../services/push.ts';
 
 export const adminRouter = Router();
 
@@ -126,6 +127,10 @@ adminRouter.post('/users/:id/role', async (req, res) => {
   const role = req.body?.role === 'admin' ? 'admin' : 'user';
   await db.run('UPDATE users SET role = ? WHERE id = ?', role, req.params.id);
   res.json({ ok: true });
+});
+
+adminRouter.post('/users/:id/push-test', async (req, res) => {
+  res.json(await pushTest(String(req.params.id)));
 });
 
 adminRouter.delete('/users/:id', async (req, res) => {

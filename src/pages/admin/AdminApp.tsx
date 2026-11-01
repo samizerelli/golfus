@@ -1,6 +1,6 @@
 // Espace d'administration (en français uniquement : il est destiné à l'exploitant du site).
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Check, Flag, Globe, KeyRound, LogOut, Mail, Plus, ShieldCheck, Trash2, Users } from 'lucide-react';
+import { Bell, Check, Flag, Globe, KeyRound, LogOut, Mail, Plus, ShieldCheck, Trash2, Users } from 'lucide-react';
 import { useEffect, useMemo, useState, type FormEvent, type ReactNode } from 'react';
 import { Link, Route, Routes, useNavigate, useParams } from 'react-router-dom';
 import {
@@ -711,6 +711,20 @@ function AdminUsers() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ['admin-users'] }),
   });
   const del = useMutation({ mutationFn: (id: string) => api.admin.deleteUser(id), onSuccess: () => qc.invalidateQueries({ queryKey: ['admin-users'] }) });
+  const [pushMsg, setPushMsg] = useState<string | null>(null);
+  const push = useMutation({
+    mutationFn: (u: { id: string; email: string }) => api.admin.pushTest(u.id).then((r) => ({ ...r, email: u.email })),
+    onSuccess: (r) =>
+      setPushMsg(
+        !r.configured
+          ? 'Notifications non configurées sur le serveur (clé APNs absente).'
+          : r.devices === 0
+            ? `${r.email} : aucun iPhone enregistré. Dans l'app : cloche › « Activer les notifications ».`
+            : r.sent === r.devices
+              ? `${r.email} : notification envoyée à ${r.sent} appareil(s).`
+              : `${r.email} : ${r.sent}/${r.devices} envoyée(s). Réponse d'Apple : ${r.errors.join(' · ')}`,
+      ),
+  });
   const date = (d: string | null) => (d ? new Date(d).toLocaleDateString('fr-FR') : '—');
 
   return (
@@ -720,6 +734,7 @@ function AdminUsers() {
       </Link>
       <h1 className="text-3xl font-semibold">Utilisateurs</h1>
       <input className={input} placeholder="Rechercher par e-mail ou prénom…" value={q} onChange={(e) => setQ(e.target.value)} aria-label="Rechercher un utilisateur" />
+      {pushMsg && <Notice>{pushMsg}</Notice>}
       {temp && (
         <Notice tone="warn">
           Mot de passe provisoire pour <strong>{temp.email}</strong> : <code className="rounded bg-white/70 px-1.5 py-0.5 select-all">{temp.pw}</code>
@@ -747,6 +762,9 @@ function AdminUsers() {
                 </Button>
                 <Button size="sm" onClick={() => role.mutate({ id: u.id, role: u.role === 'admin' ? 'user' : 'admin' })}>
                   <ShieldCheck className="size-4" aria-hidden /> {u.role === 'admin' ? 'Retirer admin' : 'Rendre admin'}
+                </Button>
+                <Button size="sm" onClick={() => push.mutate(u)} disabled={push.isPending}>
+                  <Bell className="size-4" aria-hidden /> Notification test
                 </Button>
                 <Button size="sm" variant="ghost" onClick={() => confirm(`Supprimer définitivement le compte ${u.email} ?`) && del.mutate(u.id)}>
                   <Trash2 className="size-4" aria-hidden /> Supprimer

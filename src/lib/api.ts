@@ -318,6 +318,8 @@ export const api = {
     resetPassword: (id: string) => request<{ temporaryPassword: string }>(`/admin/users/${encodeURIComponent(id)}/reset-password`, { method: 'POST' }),
     setRole: (id: string, role: 'user' | 'admin') =>
       request<{ ok: true }>(`/admin/users/${encodeURIComponent(id)}/role`, { method: 'POST', body: JSON.stringify({ role }) }),
+    pushTest: (id: string) =>
+      request<{ configured: boolean; devices: number; sent: number; errors: string[] }>(`/admin/users/${encodeURIComponent(id)}/push-test`, { method: 'POST' }),
     deleteUser: (id: string) => request<{ ok: true }>(`/admin/users/${encodeURIComponent(id)}`, { method: 'DELETE' }),
     reports: () => request<AdminReport[]>('/admin/reports'),
     closeReport: (kind: string, targetId: string, status: 'resolved' | 'dismissed') =>
