@@ -16,9 +16,6 @@ const pushModule = () => import('@capacitor/push-notifications');
 export let lastPushError = '';
 const errText = (e: unknown) => String((e as Error)?.message ?? e).slice(0, 160);
 
-/** Diagnostic affiché sous le bouton (état renvoyé par iOS) */
-export let lastPushStatus = '';
-
 export async function pushState(): Promise<PushState> {
   if (!isNative()) return 'unsupported';
   try {
@@ -27,7 +24,6 @@ export async function pushState(): Promise<PushState> {
       (await pushModule()).PushNotifications.checkPermissions(),
       new Promise<never>((_, reject) => setTimeout(() => reject(new Error('timeout checkPermissions')), 3000)),
     ]);
-    lastPushStatus = String(receive);
     return receive === 'granted' ? 'granted' : receive === 'denied' ? 'denied' : 'prompt';
   } catch (e) {
     lastPushError = errText(e);
@@ -39,7 +35,24 @@ export async function pushState(): Promise<PushState> {
 /** Obtient le jeton de l'appareil auprès d'iOS puis l'enregistre sur le serveur pour le compte connecté. */
 async function register(lang: string) {
   const P = (await pushModule()).PushNotifications;
-  const token = await new Promise<string>((resolve, reject) => {
+  let stage = 'ios';
+  try {
+    const token = await deviceToken(P);
+    stage = 'server';
+    pushDeviceStore.set(token);
+    await api.registerPushDevice(token, lang);
+  } catch (e) {
+    // Le serveur garde une trace de l'échec (étape et message d'iOS), pour pouvoir le corriger
+    void api.pushDiag(stage, errText(e)).catch(() => undefined);
+    throw e;
+  }
+}
+
+type PushPlugin = Awaited<ReturnType<typeof pushModule>>['PushNotifications'];
+
+/** Jeton APNs de l'appareil, donné par iOS */
+function deviceToken(P: PushPlugin) {
+  return new Promise<string>((resolve, reject) => {
     const handles: Promise<{ remove: () => Promise<void> }>[] = [];
     const done = () => handles.forEach((h) => void h.then((x) => x.remove()));
     const timer = setTimeout(() => {
@@ -58,10 +71,12 @@ async function register(lang: string) {
         reject(new Error(e.error));
       }),
     );
-    void P.register();
+    P.register().catch((e: unknown) => {
+      clearTimeout(timer);
+      done();
+      reject(e instanceof Error ? e : new Error(String(e)));
+    });
   });
-  pushDeviceStore.set(token);
-  await api.registerPushDevice(token, lang);
 }
 
 /** Bouton « Activer » : demande l'autorisation (une seule fois, iOS ne la redemande plus ensuite). */
@@ -81,5 +96,23 @@ export async function enablePush(lang: string): Promise<PushState> {
 
 /** À chaque ouverture, compte connecté : iOS peut changer le jeton, on le renvoie sans rien demander. */
 export async function refreshPush(lang: string) {
-  if ((await pushState()) === 'granted') await register(lang).catch(() => undefined);
+  if ((await pushState()) !== 'granted') return;
+  try {
+    await register(lang);
+    lastPushError = '';
+  } catch (e) {
+    lastPushError = errText(e);
+  }
+}
+
+/** Bouton « Réessayer » (autorisation déjà donnée) : refait l'enregistrement et remonte l'erreur. */
+export async function retryPush(lang: string): Promise<PushState> {
+  try {
+    await register(lang);
+    lastPushError = '';
+    return 'granted';
+  } catch (e) {
+    lastPushError = errText(e);
+    throw e;
+  }
 }

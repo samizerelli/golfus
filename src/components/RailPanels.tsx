@@ -5,7 +5,7 @@ import { Link } from 'react-router-dom';
 import { isNative, PUBLIC_ORIGIN } from '../lib/platform';
 import { shareLink } from '../lib/share';
 import { useAuth } from '../lib/auth';
-import { enablePush, lastPushError, pushState, type PushState } from '../lib/push';
+import { enablePush, lastPushError, pushState, retryPush, type PushState } from '../lib/push';
 import { CURRENCIES, type Currency } from '../../shared/types';
 import { LANGS, useI18n } from '../i18n';
 import { api, type Notification, type Outing } from '../lib/api';
@@ -376,14 +376,36 @@ export function NotificationsBody() {
 }
 
 /** App iOS : proposition d'activer les notifications (l'autorisation n'est demandée qu'au clic) */
-export function PushCard() {
+export function PushCard({ showOn = false }: { showOn?: boolean }) {
   const { t, lang } = useI18n();
-  const [state, setState] = useState<PushState | 'busy' | 'error' | null>(null);
+  const [state, setState] = useState<PushState | 'busy' | 'error' | 'retrying' | 'retryError' | null>(null);
   useEffect(() => {
     void pushState().then(setState);
   }, []);
-  if (state === 'granted') return null;
   if (state === 'denied') return <Notice>{t('push.denied')}</Notice>;
+  // Autorisation donnée : on affiche l'état (et l'erreur éventuelle de l'enregistrement, avec « Réessayer »)
+  if (state === 'granted' || state === 'retrying' || state === 'retryError') {
+    const failed = state === 'retryError' || (state === 'granted' && !!lastPushError);
+    if (!failed && !showOn) return null;
+    return (
+      <div className="frost mb-3 space-y-2 rounded-[20px] p-3">
+        <p className="text-sm">{failed ? t('push.error') : t('push.on')}</p>
+        {failed && lastPushError && <p className="text-xs text-red-700 dark:text-red-300">({lastPushError})</p>}
+        <Button
+          size="sm"
+          variant="secondary"
+          disabled={state === 'retrying'}
+          onClick={async () => {
+            haptic(10);
+            setState('retrying');
+            setState(await retryPush(lang).catch(() => 'retryError' as const));
+          }}
+        >
+          <Bell className="size-4" aria-hidden /> {t('push.retry')}
+        </Button>
+      </div>
+    );
+  }
   return (
     <div className="frost mb-3 space-y-2 rounded-[20px] p-3">
       <p className="text-sm">{t('push.pitch')}</p>
@@ -415,7 +437,7 @@ export function SettingsBody({ onNavigate }: { onNavigate: () => void }) {
   return (
     <>
       {/* App iOS, compte connecté : activer les notifications aussi depuis les Réglages */}
-      {isNative() && user && <PushCard />}
+      {isNative() && user && <PushCard showOn />}
       <div className="space-y-4">
         {[
           {

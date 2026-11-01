@@ -275,6 +275,7 @@ export const api = {
   block: (userId: string) => request<{ ok: true }>('/blocks', { method: 'POST', body: JSON.stringify({ userId }) }),
   unblock: (userId: string) => request<{ ok: true }>(`/blocks/${encodeURIComponent(userId)}`, { method: 'DELETE' }),
   /** App iOS : jeton APNs de l'appareil, pour recevoir les notifications des parties */
+  pushDiag: (stage: string, detail = '') => request<{ ok: true }>('/push/diag', { method: 'POST', body: JSON.stringify({ stage, detail: detail.slice(0, 300) }) }),
   registerPushDevice: (token: string, lang: string) => request<{ ok: true }>('/push/devices', { method: 'POST', body: JSON.stringify({ token, lang }) }),
 
   // ───── Amis, parties, notifications ─────

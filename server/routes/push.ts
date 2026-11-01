@@ -34,6 +34,15 @@ pushRouter.post('/push/devices', requireUser, userRateLimit('push-register', 20,
   res.status(201).json({ ok: true });
 });
 
+// Compte rendu de l'app quand l'enregistrement échoue sur l'iPhone (visible dans les journaux du serveur)
+const Diag = z.object({ stage: z.string().max(40), detail: z.string().max(300).default('') });
+pushRouter.post('/push/diag', requireUser, userRateLimit('push-diag', 30, 3600_000), (req, res) => {
+  const b = parse(Diag, req.body, res);
+  if (!b) return;
+  console.log('[push] app :', req.user!.id.slice(0, 8), b.stage, b.detail);
+  res.json({ ok: true });
+});
+
 pushRouter.delete('/push/devices/:token', requireUser, async (req, res) => {
   await db.run('DELETE FROM push_devices WHERE token = ? AND user_id = ?', String(req.params.token).toLowerCase(), req.user!.id);
   res.json({ ok: true });

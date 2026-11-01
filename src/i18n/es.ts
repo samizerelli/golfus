@@ -182,6 +182,8 @@ export const es: Dict = {
   'push.enable': 'Activar notificaciones',
   'push.denied': 'Las notificaciones de GolfUs están desactivadas. Para recibirlas: Ajustes › GolfUs › Notificaciones.',
   'push.error': 'No se pueden activar las notificaciones ahora. Inténtalo más tarde.',
+  'push.on': 'Notificaciones activadas en este iPhone.',
+  'push.retry': 'Volver a registrar este iPhone',
   'offline.title': 'Sin conexión a internet',
   'offline.body': 'Los campos, precios e invitaciones se actualizarán en cuanto vuelva la conexión.',
   'nav.help': 'Ayuda y contacto',

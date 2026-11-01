@@ -182,6 +182,8 @@ export const en: Dict = {
   'push.enable': 'Turn on notifications',
   'push.denied': 'Notifications are off for GolfUs. To get them: Settings › GolfUs › Notifications.',
   'push.error': 'Notifications can’t be turned on right now. Please try again later.',
+  'push.on': 'Notifications are on for this iPhone.',
+  'push.retry': 'Register this iPhone again',
   'offline.title': 'No internet connection',
   'offline.body': 'Courses, prices and invitations will update as soon as you are back online.',
   'nav.help': 'Help & contact',

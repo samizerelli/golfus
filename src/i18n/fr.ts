@@ -180,6 +180,8 @@ export const fr = {
   'push.enable': 'Activer les notifications',
   'push.denied': 'Notifications désactivées pour GolfUs. Pour les recevoir : Réglages › GolfUs › Notifications.',
   'push.error': 'Impossible d’activer les notifications pour le moment. Réessayez plus tard.',
+  'push.on': 'Notifications activées sur cet iPhone.',
+  'push.retry': 'Réenregistrer cet iPhone',
   'offline.title': 'Pas de connexion internet',
   'offline.body': 'Les golfs, prix et invitations se mettront à jour dès le retour du réseau.',
   'nav.help': 'Aide et contact',
