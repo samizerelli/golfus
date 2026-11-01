@@ -108,7 +108,8 @@ adminRouter.get('/users', async (req, res) => {
   const q = String(req.query.q ?? '').trim().toLowerCase();
   res.json(
     await db.all(
-      `SELECT id, email, name, role, created_at AS "createdAt", last_login_at AS "lastLoginAt", (password_hash IS NOT NULL) AS "hasPassword"
+      `SELECT id, email, name, role, created_at AS "createdAt", last_login_at AS "lastLoginAt", (password_hash IS NOT NULL) AS "hasPassword",
+              (SELECT COUNT(*)::int FROM push_devices p WHERE p.user_id = users.id) AS "pushDevices"
        FROM users ${q ? 'WHERE lower(email) LIKE ? OR lower(name) LIKE ?' : ''} ORDER BY created_at DESC LIMIT 200`,
       ...(q ? [`%${q}%`, `%${q}%`] : []),
     ),

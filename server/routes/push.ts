@@ -19,7 +19,11 @@ const Device = z.object({
 
 pushRouter.post('/push/devices', requireUser, userRateLimit('push-register', 20, 3600_000), async (req, res) => {
   const b = parse(Device, req.body, res);
-  if (!b) return;
+  if (!b) {
+    console.warn('[push] enregistrement refusé : jeton invalide', typeof req.body?.token, String(req.body?.token ?? '').length);
+    return;
+  }
+  console.log('[push] appareil enregistré', req.user!.id.slice(0, 8), b.token.length);
   await db.run(
     `INSERT INTO push_devices (token, user_id, platform, lang) VALUES (?, ?, 'ios', ?)
      ON CONFLICT (token) DO UPDATE SET user_id = excluded.user_id, lang = excluded.lang, updated_at = now()`,

@@ -312,7 +312,7 @@ export const api = {
     remove: (id: string) => request<{ ok: true }>(`/admin/golfs/${encodeURIComponent(id)}`, { method: 'DELETE' }),
     deleteReview: (id: number) => request<{ ok: true }>(`/admin/reviews/${id}`, { method: 'DELETE' }),
     users: (q = '') =>
-      request<{ id: string; email: string; name: string | null; role: 'user' | 'admin'; createdAt: string; lastLoginAt: string | null; hasPassword: boolean }[]>(
+      request<{ id: string; email: string; name: string | null; role: 'user' | 'admin'; createdAt: string; lastLoginAt: string | null; hasPassword: boolean; pushDevices?: number }[]>(
         `/admin/users?${new URLSearchParams({ q })}`,
       ),
     resetPassword: (id: string) => request<{ temporaryPassword: string }>(`/admin/users/${encodeURIComponent(id)}/reset-password`, { method: 'POST' }),

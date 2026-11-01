@@ -753,7 +753,7 @@ function AdminUsers() {
                 </p>
                 <p className="truncate text-sm text-muted">{u.email}</p>
                 <p className="text-xs text-muted">
-                  Inscrit le {date(u.createdAt)} · dernière connexion : {date(u.lastLoginAt)}
+                  Inscrit le {date(u.createdAt)} · dernière connexion : {date(u.lastLoginAt)} · iPhone(s) pour les notifications : {u.pushDevices ?? 0}
                 </p>
               </div>
               <div className="flex flex-wrap gap-2">
