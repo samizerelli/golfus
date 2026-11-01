@@ -5,7 +5,7 @@ import { Link } from 'react-router-dom';
 import { isNative, PUBLIC_ORIGIN } from '../lib/platform';
 import { shareLink } from '../lib/share';
 import { useAuth } from '../lib/auth';
-import { enablePush, lastPushError, pushState, type PushState } from '../lib/push';
+import { enablePush, lastPushError, lastPushStatus, pushState, type PushState } from '../lib/push';
 import { CURRENCIES, type Currency } from '../../shared/types';
 import { LANGS, useI18n } from '../i18n';
 import { api, type Notification, type Outing } from '../lib/api';
@@ -274,6 +274,9 @@ function notifText(n: Notification, t: ReturnType<typeof useI18n>['t'], locale: 
   return t(`notif.${n.type}` as 'notif.outing_invite', { name: String(p.name ?? '—'), from: String(p.from ?? '—'), golf: String(p.golf ?? ''), date, response });
 }
 
+/** Dans l'app iOS (même si le pont natif répond mal : le diagnostic l'affichera) */
+const inApp = () => isNative() || !!(window as { Capacitor?: unknown }).Capacitor;
+
 /** Bloquer un joueur (confirmation, puis rafraîchissement des listes) */
 function BlockButton({ id, name, onDone }: { id: string; name: string | null; onDone: () => void }) {
   const { t } = useI18n();
@@ -341,13 +344,13 @@ export function NotificationsBody() {
   if (!q.data?.items.length)
     return (
       <>
-        {isNative() && <PushCard />}
+        {inApp() && <PushCard />}
         <p className="text-sm text-muted">{t('notif.empty')}</p>
       </>
     );
   return (
     <>
-    {isNative() && <PushCard />}
+    {inApp() && <PushCard />}
     <ul className="space-y-2" aria-live="polite">
       {q.data.items.map((n) => (
         <li key={n.id}>
@@ -379,11 +382,17 @@ export function PushCard() {
   useEffect(() => {
     void pushState().then(setState);
   }, []);
-  if (state === null || state === 'unsupported' || state === 'granted') return null;
+  if (state === 'granted') return null;
   if (state === 'denied') return <Notice>{t('push.denied')}</Notice>;
   return (
     <div className="frost mb-3 space-y-2 rounded-[20px] p-3">
       <p className="text-sm">{t('push.pitch')}</p>
+      {/* Diagnostic (provisoire) : état renvoyé par iOS, pour comprendre un bouton sans effet */}
+      <p className="text-[11px] text-muted">
+        iOS : {state ?? '…'} · natif : {String(isNative())}
+        {lastPushStatus && ` (${lastPushStatus})`}
+        {lastPushError && ` · ${lastPushError}`}
+      </p>
       {state === 'error' && (
         <p className="text-xs text-red-700 dark:text-red-300">
           {t('push.error')} {lastPushError && <span className="opacity-70">({lastPushError})</span>}

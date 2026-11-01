@@ -13,10 +13,18 @@ const plugin = () => import('@capacitor/push-notifications').then((m) => m.PushN
 export let lastPushError = '';
 const errText = (e: unknown) => String((e as Error)?.message ?? e).slice(0, 160);
 
+/** Diagnostic affiché sous le bouton (état renvoyé par iOS) */
+export let lastPushStatus = '';
+
 export async function pushState(): Promise<PushState> {
   if (!isNative()) return 'unsupported';
   try {
-    const { receive } = await (await plugin()).checkPermissions();
+    // iOS doit répondre en quelques millisecondes ; sans réponse sous 3 s, on propose quand même le bouton
+    const { receive } = await Promise.race([
+      (await plugin()).checkPermissions(),
+      new Promise<never>((_, reject) => setTimeout(() => reject(new Error('timeout checkPermissions')), 3000)),
+    ]);
+    lastPushStatus = String(receive);
     return receive === 'granted' ? 'granted' : receive === 'denied' ? 'denied' : 'prompt';
   } catch (e) {
     lastPushError = errText(e);
