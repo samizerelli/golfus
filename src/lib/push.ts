@@ -9,13 +9,19 @@ export type PushState = 'unsupported' | 'prompt' | 'granted' | 'denied';
 
 const plugin = () => import('@capacitor/push-notifications').then((m) => m.PushNotifications);
 
+/** Dernière erreur rencontrée (affichée sous le bouton, pour comprendre un refus d'iOS) */
+export let lastPushError = '';
+const errText = (e: unknown) => String((e as Error)?.message ?? e).slice(0, 160);
+
 export async function pushState(): Promise<PushState> {
   if (!isNative()) return 'unsupported';
   try {
     const { receive } = await (await plugin()).checkPermissions();
     return receive === 'granted' ? 'granted' : receive === 'denied' ? 'denied' : 'prompt';
-  } catch {
-    return 'unsupported';
+  } catch (e) {
+    lastPushError = errText(e);
+    // Dans l'app, on propose quand même le bouton : la demande d'autorisation dira ce qu'il en est
+    return 'prompt';
   }
 }
 
@@ -50,10 +56,16 @@ async function register(lang: string) {
 /** Bouton « Activer » : demande l'autorisation (une seule fois, iOS ne la redemande plus ensuite). */
 export async function enablePush(lang: string): Promise<PushState> {
   if (!isNative()) return 'unsupported';
-  const { receive } = await (await plugin()).requestPermissions();
-  if (receive !== 'granted') return receive === 'denied' ? 'denied' : 'prompt';
-  await register(lang);
-  return 'granted';
+  try {
+    const { receive } = await (await plugin()).requestPermissions();
+    if (receive !== 'granted') return receive === 'denied' ? 'denied' : 'prompt';
+    await register(lang);
+    lastPushError = '';
+    return 'granted';
+  } catch (e) {
+    lastPushError = errText(e);
+    throw e;
+  }
 }
 
 /** À chaque ouverture, compte connecté : iOS peut changer le jeton, on le renvoie sans rien demander. */

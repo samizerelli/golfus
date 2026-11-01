@@ -4,7 +4,8 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { isNative, PUBLIC_ORIGIN } from '../lib/platform';
 import { shareLink } from '../lib/share';
-import { enablePush, pushState, type PushState } from '../lib/push';
+import { useAuth } from '../lib/auth';
+import { enablePush, lastPushError, pushState, type PushState } from '../lib/push';
 import { CURRENCIES, type Currency } from '../../shared/types';
 import { LANGS, useI18n } from '../i18n';
 import { api, type Notification, type Outing } from '../lib/api';
@@ -372,7 +373,7 @@ export function NotificationsBody() {
 }
 
 /** App iOS : proposition d'activer les notifications (l'autorisation n'est demandée qu'au clic) */
-function PushCard() {
+export function PushCard() {
   const { t, lang } = useI18n();
   const [state, setState] = useState<PushState | 'busy' | 'error' | null>(null);
   useEffect(() => {
@@ -383,7 +384,11 @@ function PushCard() {
   return (
     <div className="frost mb-3 space-y-2 rounded-[20px] p-3">
       <p className="text-sm">{t('push.pitch')}</p>
-      {state === 'error' && <p className="text-xs text-red-700 dark:text-red-300">{t('push.error')}</p>}
+      {state === 'error' && (
+        <p className="text-xs text-red-700 dark:text-red-300">
+          {t('push.error')} {lastPushError && <span className="opacity-70">({lastPushError})</span>}
+        </p>
+      )}
       <Button
         size="sm"
         variant="primary"
@@ -403,8 +408,11 @@ function PushCard() {
 export function SettingsBody({ onNavigate }: { onNavigate: () => void }) {
   const { t, lang, setLang } = useI18n();
   const { theme, setTheme, currency, setCurrency } = useSettings();
+  const { user } = useAuth();
   return (
     <>
+      {/* App iOS, compte connecté : activer les notifications aussi depuis les Réglages */}
+      {isNative() && user && <PushCard />}
       <div className="space-y-4">
         {[
           {
