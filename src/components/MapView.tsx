@@ -37,7 +37,8 @@ const hasSize = (map: L.Map) => {
 /** Cadrage exact sur le cercle du rayon de recherche autour du point de départ (recadré quand le rayon change). */
 function FitToRadius({ origin, radiusKm, insets, hint }: { origin: Origin | null; radiusKm: number; insets: Insets; hint: { lat: number; lon: number } | null }) {
   const map = useMap();
-  const key = origin ? `${origin.lat},${origin.lon},${radiusKm}` : hint ? `hint:${hint.lat},${hint.lon}` : 'none';
+  // insets.bottom : sur mobile, la carte se recadre quand le tiroir est abaissé ou remonté
+  const key = origin ? `${origin.lat},${origin.lon},${radiusKm},${insets.bottom}` : hint ? `hint:${hint.lat},${hint.lon}` : 'none';
   const last = useRef('');
   useEffect(() => {
     const run = () => {
@@ -151,7 +152,8 @@ function GolfMarkers({
       // Sans animation de regroupement : remplacer les marqueurs pendant un zoom faisait planter la librairie
       animate: false,
       zoomToBoundsOnClick: false,
-      maxClusterRadius: 52,
+      // Petite carte sur mobile : regroupement plus serré pour garder les golfs distincts
+      maxClusterRadius: window.innerWidth < 1024 ? 34 : 52,
       spiderfyDistanceMultiplier: 1.6,
       iconCreateFunction: (c) =>
         L.divIcon({ html: `<div>${c.getChildCount()}</div>`, className: 'glass-cluster', iconSize: [44, 44] }),
@@ -217,10 +219,16 @@ function GolfMarkers({
     }
     const sel = selectedId ? markers.current.get(selectedId) : null;
     // Sur l'écran d'invitation, c'est FocusGolf qui cadre : pas de second zoom concurrent
-    if (sel && follow && hasSize(map) && group.current?.hasLayer(sel.m)) {
+    // Retour depuis l'écran d'invitation (même golf) : FitToRadius recadre sur le cercle, pas de zoom concurrent
+    if (sel && follow && prev !== selectedId && hasSize(map) && group.current?.hasLayer(sel.m)) {
       sel.m.setZIndexOffset(1000);
       group.current.zoomToShowLayer(sel.m, () => {
-        if (!map.getBounds().pad(-0.2).contains(sel.m.getLatLng())) map.panTo(sel.m.getLatLng(), { animate: true, duration: 0.5 });
+        // Le marqueur doit rester dans la partie de la carte que les panneaux ne masquent pas
+        const ins = insetsRef.current;
+        const size = map.getSize();
+        const free = L.bounds([ins.left + 30, ins.top + 30], [size.x - (ins.right ?? 0) - 30, size.y - ins.bottom - 30]);
+        const pt = map.latLngToContainerPoint(sel.m.getLatLng());
+        if (!free.contains(pt)) map.panBy(pt.subtract(free.getCenter()), { animate: true, duration: 0.5 });
       });
     }
     if (prev && prev !== selectedId) markers.current.get(prev)?.m.setZIndexOffset(0);
@@ -295,7 +303,7 @@ export function MapView({
               pathOptions={{ color: '#7fb6e6', weight: 1.5, dashArray: '4 8', fillColor: '#7fb6e6', fillOpacity: 0.06 }}
               interactive={false}
             />}
-            <Marker position={[origin.lat, origin.lon]} icon={userIcon} title={t('map.you')} alt={t('map.you')} keyboard={false}>
+            <Marker position={[origin.lat, origin.lon]} icon={userIcon} title={t('map.you')} alt={t('map.you')} keyboard={false} zIndexOffset={-1000}>
               {/* Étiquette permanente quand la position vient de l'appareil */}
               {origin.source === 'gps' && (
                 <Tooltip permanent direction="top" offset={[0, -12]} className="you-are-here">

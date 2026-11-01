@@ -119,13 +119,109 @@ export function SlotStatus({ golf, match, date }: { golf: GolfSummary; match?: G
   );
 }
 
+/** Prix de la version compacte : montant et mention « indicatif » sur deux lignes, rien d'inventé. */
+function CompactPrice({ golf, criteria }: { golf: GolfSummary; criteria: Criteria }) {
+  const { t } = useI18n();
+  const { money } = useSettings();
+  const p = pricePerPerson(golf, criteria);
+  const alt = cheaperElsewhere(golf, criteria);
+  const shown = p ?? (alt?.amount != null ? { amount: alt.amount, currency: alt.currency, varies: true } : null);
+  if (!shown) {
+    return (
+      <span className="shrink-0 text-right">
+        <span className="block text-xs font-medium whitespace-nowrap text-muted">{t('s2.priceToConfirm')}</span>
+        {golf.phone && (
+          <a href={telHref(golf.phone)} onClick={(e) => e.stopPropagation()} className="inline-flex items-center gap-1 text-xs font-semibold text-link">
+            <Phone className="size-3" aria-hidden /> {t('action.call')}
+          </a>
+        )}
+      </span>
+    );
+  }
+  return (
+    <span className="shrink-0 text-right leading-tight">
+      <span className="block whitespace-nowrap">
+        {shown.varies && <span className="text-[11px] text-muted">{t('s2.from')} </span>}
+        <span className="text-[17px] font-semibold tracking-tight tabular-nums">{money(shown.amount, shown.currency).text}</span>
+        <span className="text-[11px] text-muted"> {t('s2.perPerson')}</span>
+      </span>
+      <span className="block text-[11px] font-medium whitespace-nowrap text-gold-ink">{t('s2.indicative')}</span>
+    </span>
+  );
+}
+
+/** Disponibilité ou horaires du jour, sur une seule ligne (version compacte). */
+function CompactStatus({ golf, match, avail, date }: { golf: GolfSummary; match?: GolfMatch; avail?: Availability; date: string }) {
+  const { t, locale } = useI18n();
+  const ready = useHoursLib();
+  if (avail?.status === 'available') return <AvailabilityLine avail={avail} />;
+  const oh = parseHours(golf.openingHours, golf.lat, golf.lon);
+  if (!golf.openingHours || (ready && !oh)) return <span className="truncate text-xs text-muted">{t('s2.hoursUnknown')}</span>;
+  if (!ready) return <span className="skeleton inline-block h-4 w-28" aria-hidden />;
+  const day = intervalsOn(oh, new Date(`${date}T00:00:00`)) ?? [];
+  const hours = day.length ? formatIntervals(day, locale) : t('hours.closedAllDay');
+  if (match?.openInSlot === false) return <span className="truncate text-xs font-semibold text-red-700 dark:text-red-300">{t('s2.closedSlot')}</span>;
+  return (
+    <span className="truncate text-xs text-muted tabular-nums">
+      {match?.openInSlot === true && <span className="font-semibold text-fairway-700 dark:text-fairway-300">{t('s2.openShort')} · </span>}
+      {hours}
+    </span>
+  );
+}
+
 const ResultCard = forwardRef<
   HTMLLIElement,
-  { golf: GolfSummary; match?: GolfMatch; travel?: TravelInfo; avail?: Availability; selected: boolean; onHover: (on: boolean) => void; onOpen: () => void; style?: CSSProperties }
->(function ResultCard({ golf, match, travel, avail, selected, onHover, onOpen, style }, ref) {
+  { golf: GolfSummary; match?: GolfMatch; travel?: TravelInfo; avail?: Availability; selected: boolean; compact?: boolean; onHover: (on: boolean) => void; onOpen: () => void; style?: CSSProperties }
+>(function ResultCard({ golf, match, travel, avail, selected, compact = false, onHover, onOpen, style }, ref) {
   const { t, locale } = useI18n();
+  const { money } = useSettings();
   const { criteria } = useSearch();
   const name = golf.name || t('card.unnamed');
+  if (compact) {
+    const hasPrice = !!pricePerPerson(golf, criteria);
+    const alt = hasPrice ? cheaperElsewhere(golf, criteria) : null;
+    return (
+      <li ref={ref} style={style} className="animate-rise">
+        <div
+          role="link"
+          tabIndex={0}
+          onClick={onOpen}
+          onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && (e.preventDefault(), onOpen())}
+          aria-label={`${name} — ${t('s2.choose')}`}
+          className={cx('frost glass-interactive flex cursor-pointer items-center gap-2.5 rounded-[18px] p-2', selected && 'shadow-[0_0_0_2px_#7fb6e6]')}
+        >
+          <GolfPhoto src={golf.photo} alt="" className="h-[64px] w-[52px] shrink-0 rounded-[12px]" style={{ viewTransitionName: vtName(golf.id) }} />
+          <div className="min-w-0 flex-1 space-y-0.5">
+            <div className="flex items-start justify-between gap-2">
+              <div className="min-w-0">
+                <h3 className="truncate text-[15px] leading-snug">{name}</h3>
+                <p className="truncate text-xs text-muted tabular-nums">
+                  {[
+                    golf.distanceKm !== undefined ? t('card.km', { d: golf.distanceKm.toLocaleString(locale) }) : null,
+                    travel?.durationMin != null ? (travel.estimated ? t('card.driveEst', { m: travel.durationMin }) : t('card.drive', { m: travel.durationMin })) : null,
+                    golf.holes ? t('card.holes', { n: golf.holes }) : null,
+                  ]
+                    .filter(Boolean)
+                    .join(' · ')}
+                </p>
+              </div>
+              <CompactPrice golf={golf} criteria={criteria} />
+            </div>
+            <div className="flex items-center justify-between gap-2">
+              <span className="flex min-w-0">
+                <CompactStatus golf={golf} match={match} avail={avail} date={criteria.date} />
+              </span>
+              {alt?.amount != null && (
+                <span className="shrink-0 text-[11px] font-semibold text-fairway-700 tabular-nums dark:text-fairway-300">
+                  {t('s2.orElsewhere', { p: money(alt.amount, alt.currency).text, where: alt.kind === 'platform' ? alt.name : t('s2.onlineClub') })}
+                </span>
+              )}
+            </div>
+          </div>
+        </div>
+      </li>
+    );
+  }
   return (
     <li ref={ref} style={style} className="animate-rise">
       <div
@@ -192,7 +288,7 @@ const ResultCard = forwardRef<
 });
 
 /** Golfs disponibles selon les filtres, recalculés à chaque changement. */
-export function ResultsList({ cardRefs }: { cardRefs: MutableRefObject<Map<string, HTMLElement>> }) {
+export function ResultsList({ cardRefs, compact = false }: { cardRefs: MutableRefObject<Map<string, HTMLElement>>; compact?: boolean }) {
   const { t, tp, locale } = useI18n();
   const navigate = useNavigate();
   const { criteria: c, setCriteria, origin, radius, setRadius, selectedId, setSelectedId, hoverId, setHoverId } = useSearch();
@@ -202,12 +298,12 @@ export function ResultsList({ cardRefs }: { cardRefs: MutableRefObject<Map<strin
   const next = RADII_KM.find((r) => r > radius) as RadiusKm | undefined;
 
   return (
-    <div className="space-y-3" ref={topRef}>
-      <h2 className="text-[17px] font-semibold" aria-live="polite">
+    <div className={compact ? 'space-y-2' : 'space-y-3'} ref={topRef}>
+      <h2 className={cx('font-semibold', compact ? 'text-[15px]' : 'text-[17px]')} aria-live="polite">
         {!origin ? t('s2.pickPlace') : golfsQ.data ? tp('s2.count', visible.length) : t('results.loading')}
       </h2>
       {!origin && <p className="text-sm text-muted">{t('s2.pickPlaceBody')}</p>}
-      {origin && golfsQ.data && (
+      {origin && golfsQ.data && (!compact || availLoading || hiddenFull.length > 0) && (
         <p className="text-xs text-muted" aria-live="polite">
           {availLoading
             ? t('s2.availChecking')
@@ -275,6 +371,7 @@ export function ResultsList({ cardRefs }: { cardRefs: MutableRefObject<Map<strin
             travel={travel.get(g.id)}
             avail={avail ? (avail[g.id] ?? { status: 'unknown', source: null }) : undefined}
             selected={g.id === selectedId || g.id === hoverId}
+            compact={compact}
             onHover={(on) => setHoverId(on ? g.id : null)}
             onOpen={() => {
               setSelectedId(g.id);

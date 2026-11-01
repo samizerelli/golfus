@@ -4,10 +4,11 @@ import { Outlet, useMatch, useOutletContext, useSearchParams } from 'react-route
 import type { GolfSummary } from '../../shared/types';
 import { ActionRail } from '../components/ActionRail';
 import { SectionBoundary } from '../components/ErrorBoundary';
-import { BottomSheet, type Snap } from '../components/BottomSheet';
+import { BottomSheet, SHEET_LIST_RATIO, SHEET_PEEK, type Snap } from '../components/BottomSheet';
 import { GolfSideCards, InviteForm } from '../components/InviteScreen';
 import { Logo } from '../components/Logo';
 import { MapView } from '../components/MapView';
+import { MobileSearchBar } from '../components/MobileSearchBar';
 import { ResultsList } from '../components/ResultsList';
 import { SearchForm } from '../components/SearchForm';
 import { haptic } from '../components/ui';
@@ -51,12 +52,7 @@ export function HomeScreen() {
   useFiltersInUrl();
   return (
     <div className="animate-rise flex min-h-full flex-col">
-      <SearchForm />
-      {!desktop && (
-        <div className="mt-6 border-t border-line pt-5">
-          <ResultsList cardRefs={cardRefs} />
-        </div>
-      )}
+      {desktop ? <SearchForm /> : <ResultsList cardRefs={cardRefs} compact />}
     </div>
   );
 }
@@ -93,7 +89,7 @@ export function MapLayout() {
   // Chaque changement d'écran repart du haut du panneau ; sur mobile, le tiroir reprend sa hauteur par défaut
   useEffect(() => {
     document.querySelectorAll<HTMLElement>('[data-scroll]').forEach((el) => el.scrollTo({ top: 0 }));
-    // Recherche : tiroir à mi-hauteur pour voir la carte (cercle du rayon) ; invitation : plein écran
+    // Recherche : la liste d'abord, avec une bande de carte au-dessus ; invitation : plein écran
     if (!desktop) setSnap(inviteId ? 'full' : 'half');
   }, [inviteId, desktop]);
 
@@ -102,8 +98,8 @@ export function MapLayout() {
     () =>
       desktop
         ? { top: 0, bottom: 0, left: !inviteId ? 872 : 460, right: inviteId ? 440 : 90 }
-        : { top: 0, bottom: Math.round(window.innerHeight * 0.5), left: 0, right: 0 },
-    [desktop, inviteId],
+        : { top: 48, bottom: snap === 'peek' ? SHEET_PEEK : Math.round(window.innerHeight * SHEET_LIST_RATIO), left: 0, right: 0 },
+    [desktop, inviteId, snap],
   );
 
   const labelFor = useCallback(
@@ -165,7 +161,7 @@ export function MapLayout() {
           </div>
         </aside>
       ) : (
-        <BottomSheet snap={snap} onSnap={setSnap} header={null}>
+        <BottomSheet snap={snap} onSnap={setSnap} header={inviteId ? null : <MobileSearchBar />}>
           {content}
         </BottomSheet>
       )}

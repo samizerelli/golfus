@@ -96,19 +96,24 @@ export function Stepper({ value, onChange, min = 1, max = 8, label }: { value: n
 
 let autoLocateTried = false;
 
-/** Filtres de la partie : chaque changement met à jour la liste des golfs disponibles (pas de bouton à valider). */
-export function SearchForm() {
-  const { t } = useI18n();
-  const { draft: c, setCriteria, radius, setRadius, origin } = useSearch();
-  const loc = useLocate();
-
-  // Localisation automatique à l'ouverture (une seule fois par chargement de page), sans bouton
+/** Localisation automatique à l'ouverture (une seule fois par chargement de page), sans bouton */
+export function useAutoLocate(loc: ReturnType<typeof useLocate>) {
+  const { origin } = useSearch();
   useEffect(() => {
     if (origin || autoLocateTried) return;
     autoLocateTried = true;
     void loc.locate({ auto: true });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+}
+
+/** Filtres de la partie : chaque changement met à jour la liste des golfs disponibles (pas de bouton à valider). */
+export function SearchForm() {
+  const { t } = useI18n();
+  const { draft: c, setCriteria, radius, setRadius, origin } = useSearch();
+  const loc = useLocate();
+
+  useAutoLocate(loc);
 
   return (
     <form
@@ -152,7 +157,7 @@ export function SearchForm() {
           min={todayStr()}
           value={c.date}
           onChange={(e) => e.target.value && setCriteria({ date: e.target.value })}
-          className="frost h-12 w-full rounded-[16px] px-4 text-base text-ink"
+          className="frost h-12 w-full min-w-0 appearance-none rounded-[16px] px-4 text-left text-base text-ink [&::-webkit-date-and-time-value]:text-left"
         />
       </Field>
 

@@ -165,7 +165,7 @@ GolfUs no vende nada: la reserva y el pago se hacen en la web del campo o de la 
 
 ```
 GolfUs fonctionne sans compte pour la recherche. Compte de démonstration : [e-mail] / [mot de passe] (un ami et une partie déjà créés).
-Parcours conseillé : autoriser la localisation (ou saisir « Marbella ») → choisir une date et un créneau → ouvrir un golf → « Réserver » pour comparer les prix → « Organiser une partie ici » pour inviter un ami.
+Parcours conseillé : autoriser la localisation (ou saisir « Marbella ») → « Filtres » pour choisir une date et un créneau → ouvrir un golf → « Réserver » pour comparer les prix → « Organiser une partie ici » pour inviter un ami.
 Notifications : Notifications › « Activer les notifications ». Signaler / bloquer : sous un avis, dans Amis, ou sur une invitation.
 La réservation se fait sur le site du golf : l'app ne vend rien et n'encaisse aucun paiement.
 ```
@@ -174,7 +174,7 @@ Version anglaise (les examinateurs lisent l'anglais) :
 
 ```
 GolfUs works without an account for searching. Demo account: [email] / [password] (one friend and one round already created).
-Suggested path: allow location (or type "Marbella") → pick a date and time slot → open a course → "Book" to compare prices → "Set up a game here" to invite a friend.
+Suggested path: allow location (or type "Marbella") → "Filtres" to pick a date and time slot → open a course → "Book" to compare prices → "Set up a game here" to invite a friend.
 Notifications: Notifications › "Turn on notifications". Report / block: under a review, in Friends, or on an invitation.
 Booking happens on the course's website: the app sells nothing and takes no payment.
 ```

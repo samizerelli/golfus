@@ -4,12 +4,15 @@ import { cx, haptic } from './ui';
 
 export type Snap = 'peek' | 'half' | 'full';
 const ORDER: Snap[] = ['peek', 'half', 'full'];
+/** Cran par défaut : la liste d'abord, une bande de carte reste visible au-dessus */
+export const SHEET_LIST_RATIO = 0.76;
+export const SHEET_PEEK = 196;
 
 /** Hauteurs des 3 crans, calculées sur la hauteur visible réelle (équivalent 100dvh) */
 function heights() {
   const vh = window.visualViewport?.height ?? window.innerHeight;
   // Plein écran : sous l'encoche / Dynamic Island de l'iPhone (zone sûre du haut), avec une marge
-  return { peek: 196, half: Math.round(vh * 0.5), full: Math.round(vh - Math.max(64, safeTop() + 16)) };
+  return { peek: SHEET_PEEK, half: Math.round(vh * SHEET_LIST_RATIO), full: Math.round(vh - Math.max(64, safeTop() + 16)) };
 }
 
 /** Hauteur de la zone sûre du haut (encoche), lue depuis env(safe-area-inset-top) */
@@ -104,8 +107,8 @@ export function BottomSheet({ snap, onSnap, header, children }: { snap: Snap; on
       >
         <span className="h-[5px] w-10 rounded-full bg-[rgba(15,26,36,0.22)] dark:bg-white/30" aria-hidden />
       </button>
-      {header && <div className="shrink-0 px-4">{header}</div>}
-      <div data-scroll className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-3 pb-[calc(5.5rem+env(safe-area-inset-bottom))]">
+      {header && <div className="shrink-0 px-3 pt-1">{header}</div>}
+      <div data-scroll className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-contain px-3 pb-[calc(5.5rem+env(safe-area-inset-bottom))]">
         {children}
       </div>
     </div>
