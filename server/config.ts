@@ -7,6 +7,17 @@ function bool(v: string | undefined, def: boolean) {
 
 const contact = process.env.CONTACT_EMAIL?.trim();
 
+/**
+ * Clé privée Apple (.p8) collée dans une variable d'environnement : les retours à la ligne sont souvent perdus
+ * (remplacés par des espaces, des « \\n » ou supprimés). On reconstruit un PEM valide à partir du contenu base64.
+ */
+export function pemKey(raw: string | undefined) {
+  const v = (raw || '').replace(/\\n/g, '\n').trim().replace(/^["']|["']$/g, '');
+  if (!v) return '';
+  const body = v.replace(/-----(BEGIN|END)[A-Z ]*-----/g, '').replace(/[^A-Za-z0-9+/=]/g, '');
+  return `-----BEGIN PRIVATE KEY-----\n${body.match(/.{1,64}/g)!.join('\n')}\n-----END PRIVATE KEY-----\n`;
+}
+
 export const config = {
   // API_PORT (développement) prime sur PORT (fourni par l'hébergeur en production)
   port: Number(process.env.API_PORT || process.env.PORT || 8787),
@@ -26,7 +37,7 @@ export const config = {
   apns: {
     keyId: process.env.APNS_KEY_ID?.trim() || '',
     teamId: process.env.APPLE_TEAM_ID?.trim() || '',
-    privateKey: (process.env.APNS_PRIVATE_KEY || '').replace(/\\n/g, '\n').trim(),
+    privateKey: pemKey(process.env.APNS_PRIVATE_KEY),
     bundleId: process.env.APNS_BUNDLE_ID?.trim() || 'ch.golfus.app',
     // false = serveur « sandbox » (app lancée depuis Xcode) ; true = TestFlight et App Store
     production: bool(process.env.APNS_PRODUCTION, true),
@@ -34,7 +45,7 @@ export const config = {
   /** « Se connecter avec Apple » : clé facultative, sert seulement à révoquer l'accès à la suppression du compte */
   appleNative: {
     siwaKeyId: process.env.APPLE_SIWA_KEY_ID?.trim() || '',
-    siwaPrivateKey: (process.env.APPLE_SIWA_PRIVATE_KEY || '').replace(/\\n/g, '\n').trim(),
+    siwaPrivateKey: pemKey(process.env.APPLE_SIWA_PRIVATE_KEY),
   },
   /** Origines de l'app iOS (Capacitor) autorisées à appeler l'API (CORS) */
   appOrigins: (process.env.APP_ORIGINS || 'capacitor://localhost,ionic://localhost')
