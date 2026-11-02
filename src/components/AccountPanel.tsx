@@ -217,6 +217,7 @@ function DeleteDialog({ open, onClose, email, busy, setBusy }: { open: boolean; 
   const { t } = useI18n();
   const { refresh } = useAuth();
   const [confirm, setConfirm] = useState('');
+  const [failed, setFailed] = useState(false);
   return (
     <Dialog open={open} onClose={onClose} title={t('account.delete')}>
       <form
@@ -224,12 +225,15 @@ function DeleteDialog({ open, onClose, email, busy, setBusy }: { open: boolean; 
         onSubmit={async (e) => {
           e.preventDefault();
           setBusy(true);
+          setFailed(false);
           try {
             await api.deleteMe(confirm);
             // App iOS : oublie aussi le jeton de connexion conservé dans le trousseau
             if (isNative()) await auth.signOut();
             await refresh();
             onClose();
+          } catch {
+            setFailed(true);
           } finally {
             setBusy(false);
           }
@@ -245,6 +249,7 @@ function DeleteDialog({ open, onClose, email, busy, setBusy }: { open: boolean; 
           onChange={(e) => setConfirm(e.target.value)}
           aria-label={email ? t('auth.email') : t('account.deleteTypeWord')}
         />
+        {failed && <Notice tone="error">{t('auth.err.generic')}</Notice>}
         <Button type="submit" disabled={busy || confirm.trim().toLowerCase() !== (email || 'delete').toLowerCase()} className="w-full !bg-red-700 !text-white">
           {t('account.deleteButton')}
         </Button>

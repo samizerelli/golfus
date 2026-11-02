@@ -158,7 +158,8 @@ export function Dialog({ open, onClose, title, children, footer }: { open: boole
   if (!open) return null;
   // Portail vers <body> : la boîte de dialogue échappe aux contextes d'empilement (tiroir, cartes)
   return createPortal(
-    <div className="fixed inset-0 z-[1500] flex items-end justify-center sm:items-center" onClick={(e) => e.stopPropagation()}>
+    // Au-dessus des tiroirs mobiles (z-[1600]), depuis lesquels certaines boîtes de dialogue s'ouvrent
+    <div className="fixed inset-0 z-[1700] flex items-end justify-center sm:items-center" onClick={(e) => e.stopPropagation()}>
       <div className="absolute inset-0 bg-[rgba(15,26,36,0.28)] backdrop-blur-[2px]" onClick={onClose} aria-hidden="true" />
       <div
         ref={ref}

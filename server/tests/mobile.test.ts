@@ -18,6 +18,23 @@ after(() => server.close());
 const APP = 'capacitor://localhost';
 const json = { 'Content-Type': 'application/json', 'X-GF-CSRF': '1' };
 
+test('app iOS : inscription sans jeton acceptée en production, site tiers refusé', async () => {
+  // En développement, l'hôte « localhost » de capacitor://localhost passerait le contrôle d'origine
+  const env = process.env.NODE_ENV;
+  process.env.NODE_ENV = 'production';
+  try {
+    const body = (email: string) => JSON.stringify({ email, password: 'Birdie2026', name: 'Nina', lang: 'fr', terms: true });
+    const reg = await fetch(`${base}/account/register`, { method: 'POST', headers: { ...json, Origin: APP }, body: body('nina+test1@example.com') });
+    assert.equal(reg.status, 201);
+    const login = await fetch(`${base}/mobile/login`, { method: 'POST', headers: { ...json, Origin: APP }, body: JSON.stringify({ email: 'nina+test1@example.com', password: 'Birdie2026' }) });
+    assert.equal(login.status, 200);
+    const evil = await fetch(`${base}/account/register`, { method: 'POST', headers: { ...json, Origin: 'https://evil.example' }, body: body('evil@example.com') });
+    assert.equal(evil.status, 403);
+  } finally {
+    process.env.NODE_ENV = env;
+  }
+});
+
 test('app iOS : connexion par jeton, CORS limité, révocation, site tiers refusé', async () => {
   // Compte créé comme sur le site
   const reg = await fetch(`${base}/account/register`, { method: 'POST', headers: json, body: JSON.stringify({ email: 'ios@example.com', password: 'Birdie2026', name: 'Iris', lang: 'fr', terms: true }) });

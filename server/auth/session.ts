@@ -59,9 +59,10 @@ export function requireUser(req: Request, res: Response, next: NextFunction) {
 export function csrfGuard(req: Request, res: Response, next: NextFunction) {
   if (['GET', 'HEAD', 'OPTIONS'].includes(req.method) || req.path.startsWith('/auth/')) return next();
   if (req.get('x-gf-csrf') !== '1') return res.status(403).json({ error: 'csrf' });
-  // App iOS : authentification par jeton (aucun cookie envoyé automatiquement) depuis son origine déclarée
+  // App iOS : aucun cookie envoyé (credentials: omit), et un site tiers ne peut pas se réclamer de cette origine.
+  // Le jeton n'est pas exigé ici : avant la connexion (inscription, formulaire de contact), l'app n'en a pas encore.
   const origin = req.get('origin');
-  if (origin && config.appOrigins.includes(origin) && bearer(req.get('authorization'))) return next();
+  if (origin && config.appOrigins.includes(origin)) return next();
   if (origin) {
     let host = '';
     try {
