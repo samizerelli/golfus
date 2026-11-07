@@ -207,7 +207,7 @@ export const en: Dict = {
   'help.q2': 'Do I book on GolfUs?',
   'help.a2': 'No. “Book” opens the course or platform page, already set to your date when possible. GolfUs never takes any payment.',
   'help.q3': 'Why do some courses disappear from the list?',
-  'help.a3': 'When a course publishes its free tee times and is fully booked for your time slot, it is removed. Courses that do not publish availability stay listed with “Check availability on the website”.',
+  'help.a3': 'When a course publishes its free tee times, GolfUs checks your day, time slot and number of players: if there’s room, it appears under “courses available”; if it’s fully booked, it is removed. Courses that don’t publish tee times are listed separately, faded, under “to confirm with the club”: call them or check their website before you go.',
   'help.q4': 'How do I invite friends?',
   'help.a4': 'Create an account, add your friends (Friends › search by first name or email), then on a course tap “Set up a game here”. You can also share the invitation link with someone without an account.',
   'help.q5': 'How do I report content or block someone?',

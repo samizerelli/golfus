@@ -205,7 +205,7 @@ export const fr = {
   'help.q2': 'Est-ce que je réserve sur GolfUs ?',
   'help.a2': 'Non. « Réserver » ouvre la page du golf ou de la plateforme, déjà réglée sur votre date quand c’est possible. GolfUs n’encaisse aucun paiement.',
   'help.q3': 'Pourquoi certains golfs disparaissent de la liste ?',
-  'help.a3': 'Quand un golf publie ses départs libres et qu’il est complet sur votre créneau, il est retiré. Les golfs qui ne publient pas leurs disponibilités restent proposés, avec « Disponibilité à vérifier sur le site ».',
+  'help.a3': 'Quand un golf publie ses départs libres, GolfUs vérifie votre jour, votre créneau et votre nombre de joueurs : s’il reste de la place, il apparaît dans « parcours disponibles » ; s’il est complet, il est retiré. Les golfs qui ne publient pas leurs départs sont listés à part, estompés, sous « à confirmer avec le club » : appelez-les ou consultez leur site avant de vous déplacer.',
   'help.q4': 'Comment inviter des amis ?',
   'help.a4': 'Créez un compte, ajoutez vos amis (Amis › rechercher par prénom ou e-mail), puis sur un golf touchez « Organiser une partie ici ». Vous pouvez aussi partager le lien de l’invitation à quelqu’un sans compte.',
   'help.q5': 'Comment signaler un contenu ou bloquer quelqu’un ?',

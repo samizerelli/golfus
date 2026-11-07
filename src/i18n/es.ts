@@ -207,7 +207,7 @@ export const es: Dict = {
   'help.q2': '¿Reservo en GolfUs?',
   'help.a2': 'No. «Reservar» abre la página del campo o de la plataforma, ya ajustada a tu fecha cuando es posible. GolfUs no cobra ningún pago.',
   'help.q3': '¿Por qué desaparecen algunos campos de la lista?',
-  'help.a3': 'Cuando un campo publica sus salidas libres y está completo en tu franja, se retira. Los campos que no publican su disponibilidad siguen apareciendo con «Disponibilidad a comprobar en la web».',
+  'help.a3': 'Cuando un campo publica sus salidas libres, GolfUs comprueba tu día, tu franja y tu número de jugadores: si queda sitio, aparece en «campos disponibles»; si está completo, se retira. Los campos que no publican sus salidas aparecen aparte, atenuados, bajo «a confirmar con el club»: llámalos o consulta su web antes de ir.',
   'help.q4': '¿Cómo invito a mis amigos?',
   'help.a4': 'Crea una cuenta, añade a tus amigos (Amigos › buscar por nombre o e-mail) y, en un campo, toca «Organizar una partida aquí». También puedes compartir el enlace de la invitación con alguien sin cuenta.',
   'help.q5': '¿Cómo denuncio un contenido o bloqueo a alguien?',
