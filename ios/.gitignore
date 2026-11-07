@@ -11,4 +11,6 @@ capacitor-cordova-ios-plugins
 # Generated Config files
 App/App/capacitor.config.json
 App/App/config.xml
+# Copies en double (« config 2.xml »…) recréées par macOS lors de cap sync : inutiles
+App/App/config *.xml
 build-device
