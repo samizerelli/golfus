@@ -1,5 +1,5 @@
 import { CalendarCheck, CalendarClock, Car, ChevronRight, CircleHelp, Compass, MapPin, Phone } from 'lucide-react';
-import { forwardRef, useRef, type CSSProperties, type MutableRefObject } from 'react';
+import { Fragment, forwardRef, useRef, type CSSProperties, type MutableRefObject } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { RADII_KM, type Availability, type GolfSummary, type RadiusKm, type TravelInfo } from '../../shared/types';
 import { useI18n } from '../i18n';
@@ -91,7 +91,7 @@ function AvailabilityLine({ avail }: { avail?: Availability }) {
       </span>
     );
   return (
-    <span className="inline-flex items-center gap-1 text-xs text-muted">
+    <span className="inline-flex items-center gap-1 text-xs font-medium text-gold-ink">
       <CalendarClock className="size-3.5" aria-hidden /> {t('s2.availUnknown')}
     </span>
   );
@@ -155,6 +155,7 @@ function CompactStatus({ golf, match, avail, date }: { golf: GolfSummary; match?
   const { t, locale } = useI18n();
   const ready = useHoursLib();
   if (avail?.status === 'available') return <AvailabilityLine avail={avail} />;
+  if (avail && match?.openInSlot !== false) return <span className="truncate text-xs font-medium text-gold-ink">{t('s2.contactClub')}</span>;
   const oh = parseHours(golf.openingHours, golf.lat, golf.lon);
   if (!golf.openingHours || (ready && !oh)) return <span className="truncate text-xs text-muted">{t('s2.hoursUnknown')}</span>;
   if (!ready) return <span className="skeleton inline-block h-4 w-28" aria-hidden />;
@@ -173,6 +174,8 @@ const ResultCard = forwardRef<
   HTMLLIElement,
   { golf: GolfSummary; match?: GolfMatch; travel?: TravelInfo; avail?: Availability; selected: boolean; compact?: boolean; onHover: (on: boolean) => void; onOpen: () => void; style?: CSSProperties }
 >(function ResultCard({ golf, match, travel, avail, selected, compact = false, onHover, onOpen, style }, ref) {
+  // Départs non confirmés (moteur fermé ou non consulté) : carte estompée, à confirmer avec le club
+  const unconfirmed = !!avail && avail.status !== 'available';
   const { t, locale } = useI18n();
   const { money } = useSettings();
   const { criteria } = useSearch();
@@ -188,9 +191,9 @@ const ResultCard = forwardRef<
           onClick={onOpen}
           onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && (e.preventDefault(), onOpen())}
           aria-label={`${name} — ${t('s2.choose')}`}
-          className={cx('frost glass-interactive flex cursor-pointer items-center gap-2.5 rounded-[18px] p-2', selected && 'shadow-[0_0_0_2px_#7fb6e6]')}
+          className={cx('frost glass-interactive flex cursor-pointer items-center gap-2.5 rounded-[18px] p-2', unconfirmed && 'opacity-70', selected && 'shadow-[0_0_0_2px_#7fb6e6]')}
         >
-          <GolfPhoto src={golf.photo} alt="" className="h-[64px] w-[52px] shrink-0 rounded-[12px]" style={{ viewTransitionName: vtName(golf.id) }} />
+          <GolfPhoto src={golf.photo} alt="" className={cx('h-[64px] w-[52px] shrink-0 rounded-[12px]', unconfirmed && 'grayscale')} style={{ viewTransitionName: vtName(golf.id) }} />
           <div className="min-w-0 flex-1 space-y-0.5">
             <div className="flex items-start justify-between gap-2">
               <div className="min-w-0">
@@ -235,10 +238,11 @@ const ResultCard = forwardRef<
         aria-label={`${name} — ${t('s2.choose')}`}
         className={cx(
           'frost glass-interactive flex cursor-pointer gap-3 rounded-[24px] p-2.5 pr-3',
+          unconfirmed && 'opacity-70',
           selected && 'shadow-[0_0_0_2px_#7fb6e6,0_12px_32px_rgba(31,70,110,0.18)]',
         )}
       >
-        <GolfPhoto src={golf.photo} alt="" className="h-[92px] w-[84px] shrink-0 rounded-[18px]" style={{ viewTransitionName: vtName(golf.id) }} />
+        <GolfPhoto src={golf.photo} alt="" className={cx('h-[92px] w-[84px] shrink-0 rounded-[18px]', unconfirmed && 'grayscale')} style={{ viewTransitionName: vtName(golf.id) }} />
         <div className="min-w-0 flex-1 space-y-1">
           <div className="flex items-start justify-between gap-2">
             <h3 className="text-[16px] leading-snug [overflow-wrap:anywhere]">{name}</h3>
@@ -292,7 +296,10 @@ export function ResultsList({ cardRefs, compact = false }: { cardRefs: MutableRe
   const { t, tp, locale } = useI18n();
   const navigate = useNavigate();
   const { criteria: c, setCriteria, origin, radius, setRadius, selectedId, setSelectedId, hoverId, setHoverId } = useSearch();
-  const { golfsQ, all, visible, matches, travel, avail, availLoading, hiddenFull, refreshing } = useResults();
+  const { golfsQ, all, visible, matches, travel, avail, availLoading, availKnown, confirmed, confirmedCount, hiddenFull, refreshing } = useResults();
+  // Premier golf non confirmé : un intertitre sépare les départs libres confirmés de ceux à confirmer avec le club
+  const firstUnconfirmed = availKnown ? visible.findIndex((g) => !confirmed(g.id)) : -1;
+  const unconfirmedCount = firstUnconfirmed >= 0 ? visible.length - confirmedCount : 0;
   const topRef = useRef<HTMLDivElement>(null);
   const err = golfsQ.error as ApiError | null;
   const next = RADII_KM.find((r) => r > radius) as RadiusKm | undefined;
@@ -300,7 +307,7 @@ export function ResultsList({ cardRefs, compact = false }: { cardRefs: MutableRe
   return (
     <div className={compact ? 'space-y-2' : 'space-y-3'} ref={topRef}>
       <h2 className={cx('font-semibold', compact ? 'text-[15px]' : 'text-[17px]')} aria-live="polite">
-        {!origin ? t('s2.pickPlace') : golfsQ.data ? tp('s2.count', visible.length) : t('results.loading')}
+        {!origin ? t('s2.pickPlace') : golfsQ.data ? (availKnown ? tp('s2.count', confirmedCount) : t('s2.availChecking')) : t('results.loading')}
       </h2>
       {!origin && <p className="text-sm text-muted">{t('s2.pickPlaceBody')}</p>}
       {origin && golfsQ.data && (!compact || availLoading || hiddenFull.length > 0) && (
@@ -359,8 +366,14 @@ export function ResultsList({ cardRefs, compact = false }: { cardRefs: MutableRe
       <div className={cx('shimmer-bar h-0.5 rounded-full transition-opacity duration-300', refreshing ? 'opacity-100' : 'opacity-0')} aria-hidden />
       <ul className={cx('space-y-2 transition-opacity duration-300', refreshing && 'opacity-60')} aria-label={t('results.list')} aria-busy={refreshing}>
         {visible.map((g, i) => (
+          <Fragment key={g.id}>
+          {i === firstUnconfirmed && (
+            <li className={cx('space-y-0.5', i > 0 && 'pt-3')}>
+              <h3 className={cx('font-semibold text-gold-ink', compact ? 'text-sm' : 'text-[15px]')}>{tp('s2.toConfirmTitle', unconfirmedCount)}</h3>
+              <p className="text-xs text-muted">{tp('s2.toConfirmBody', c.players)}</p>
+            </li>
+          )}
           <ResultCard
-            key={g.id}
             ref={(el) => {
               if (el) cardRefs.current.set(g.id, el);
               else cardRefs.current.delete(g.id);
@@ -378,6 +391,7 @@ export function ResultsList({ cardRefs, compact = false }: { cardRefs: MutableRe
               navigate(`/inviter/${encodeURIComponent(g.id)}`, { viewTransition: true });
             }}
           />
+          </Fragment>
         ))}
       </ul>
       {all.length > 0 && <p className="pt-2 text-center text-xs text-muted">{t('footer.osm')}</p>}

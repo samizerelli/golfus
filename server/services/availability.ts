@@ -17,7 +17,7 @@ import { cached } from '../lib/cache.ts';
 interface GmSlot {
   date: string;
   slots: number;
-  types?: { price?: number; onlyMembers?: boolean }[];
+  types?: { price?: number; onlyMembers?: boolean; min?: number; max?: number }[];
 }
 
 const TTL = 10 * 60_000;
@@ -28,7 +28,7 @@ const minutes = (hhmm: string) => {
 
 async function golfmanagerDay(host: string, date: string): Promise<GmSlot[]> {
   const { value } = await cached(
-    `avail:gm:${host}:${date}`,
+    `avail:gm2:${host}:${date}`,
     async () => {
       const res = await fetch(`https://${host}/ebookings/searchAvailability.api?idResourceType=1&start=${date}`, {
         headers: { 'User-Agent': config.userAgent, Accept: 'application/json' },
@@ -36,7 +36,7 @@ async function golfmanagerDay(host: string, date: string): Promise<GmSlot[]> {
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = (await res.json()) as { availability?: GmSlot[] };
-      return (data.availability ?? []).map((s) => ({ date: s.date, slots: s.slots, types: (s.types ?? []).map((t) => ({ price: t.price, onlyMembers: t.onlyMembers })) }));
+      return (data.availability ?? []).map((s) => ({ date: s.date, slots: s.slots, types: (s.types ?? []).map((t) => ({ price: t.price, onlyMembers: t.onlyMembers, min: t.min, max: t.max })) }));
     },
     TTL,
   );
@@ -62,6 +62,9 @@ export async function availability(q: AvailabilityQuery): Promise<Record<string,
   // Un départ accueille 4 joueurs : au-delà, il faut plusieurs départs libres dans le créneau
   const perTee = Math.min(4, q.players);
   const teesNeeded = Math.ceil(q.players / 4);
+  // Un tarif n'est réservable que pour un nombre de joueurs compris entre son min et son max :
+  // « max 1 » ou « max 2 » = il ne reste qu'une ou deux places sur ce parcours à cette heure
+  const fitsGroup = (x: { onlyMembers?: boolean; min?: number; max?: number }) => !x.onlyMembers && (x.min ?? 1) <= perTee && (x.max ?? 4) >= perTee;
   const a = minutes(q.from);
   const b = minutes(q.to);
 
@@ -84,9 +87,9 @@ export async function availability(q: AvailabilityQuery): Promise<Record<string,
           // Heure locale du golf : « 2026-10-23T08:00:00+02:00 » → 08:00
           const local = s.date.slice(11, 16);
           const m = /^\d\d:\d\d$/.test(local) ? minutes(local) : -1;
-          return m >= a && m < b && s.slots >= perTee && (s.types ?? []).some((x) => !x.onlyMembers);
+          return m >= a && m < b && s.slots >= perTee && (s.types ?? []).some(fitsGroup);
         });
-        const prices = fits.flatMap((s) => (s.types ?? []).filter((x) => !x.onlyMembers && typeof x.price === 'number').map((x) => x.price!));
+        const prices = fits.flatMap((s) => (s.types ?? []).filter((x) => fitsGroup(x) && typeof x.price === 'number').map((x) => x.price!));
         out[id] =
           fits.length >= teesNeeded
             ? { status: 'available', source: 'golfmanager', count: fits.length, first: fits[0].date.slice(11, 16), minPrice: prices.length ? Math.min(...prices) : null }
