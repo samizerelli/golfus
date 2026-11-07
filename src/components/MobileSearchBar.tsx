@@ -32,7 +32,7 @@ function FiltersPanel({ onClose }: { onClose: () => void }) {
         </div>
         <div className="border-t border-line px-5 py-3">
           <Button variant="primary" className="w-full" onClick={onClose}>
-            {!origin ? t('common.close') : golfsQ.data ? tp('s2.count', visible.length) : t('results.loading')}
+            {!origin ? t('common.close') : golfsQ.data ? tp('s2.showResults', visible.length) : t('results.loading')}
           </Button>
         </div>
       </div>

@@ -69,7 +69,13 @@ export function useResults() {
 
   // Clubs retirés car complets : nommés sous le compteur (rien n'est masqué sans le dire)
   const hiddenFull = avail ? all.filter((g) => avail[g.id]?.status === 'full').map((g) => g.name) : [];
+  // Disponibilité connue : réponse reçue, ou aucun golf dont on peut consulter les départs
+  const availKnown = !!avail || ids.length === 0;
+  // Seuls les départs libres confirmés (jour, créneau, nombre de joueurs) comptent comme « disponibles » ;
+  // les autres golfs sont listés à part, « à confirmer avec le club »
+  const confirmed = (id: string) => avail?.[id]?.status === 'available';
+  const confirmedCount = visible.filter((g) => confirmed(g.id)).length;
   // Rafraîchissement en cours (nouveau rayon, filtres pas encore appliqués, disponibilités) : résultats conservés, état léger
   const refreshing = (golfsQ.isFetching && !!golfsQ.data) || availQ.isFetching || draft !== criteria;
-  return { golfsQ, all, visible, matches, travel, travelLoading, avail, availLoading: availQ.isFetching, hiddenFull, refreshing };
+  return { golfsQ, all, visible, matches, travel, travelLoading, avail, availLoading: availQ.isFetching, availKnown, confirmed, confirmedCount, hiddenFull, refreshing };
 }

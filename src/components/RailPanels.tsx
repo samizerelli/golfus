@@ -430,6 +430,34 @@ export function PushCard({ showOn = false }: { showOn?: boolean }) {
   );
 }
 
+/** Fiche App Store de GolfUs : le lien partagé ouvre l'App Store sur iPhone, la page web ailleurs. */
+export const APP_STORE_URL = 'https://apps.apple.com/app/golfus-golf-entre-amis/id6829306363';
+
+/** Faire connaître l'app : feuille de partage (Messages, WhatsApp, Mail…), ou lien copié si le partage n'existe pas. */
+function ShareAppCard() {
+  const { t } = useI18n();
+  const [copied, setCopied] = useState(false);
+  const share = async () => {
+    haptic();
+    const text = t('shareApp.message', { web: PUBLIC_ORIGIN });
+    if ((await shareLink({ title: 'GolfUs', text, url: APP_STORE_URL })) !== 'unsupported') return;
+    await navigator.clipboard.writeText(`${text}\n${APP_STORE_URL}`).catch(() => undefined);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2500);
+  };
+  return (
+    <div className="frost flex items-center gap-3 rounded-[20px] p-3.5">
+      <div className="min-w-0 flex-1">
+        <p className="text-sm font-semibold">{t('shareApp.title')}</p>
+        <p className="text-xs text-muted">{t('shareApp.body')}</p>
+      </div>
+      <Button size="sm" variant="primary" onClick={share} aria-live="polite">
+        {copied ? <Check className="size-4" aria-hidden /> : <Share2 className="size-4" aria-hidden />} {copied ? t('shareApp.copied') : t('shareApp.cta')}
+      </Button>
+    </div>
+  );
+}
+
 export function SettingsBody({ onNavigate }: { onNavigate: () => void }) {
   const { t, lang, setLang } = useI18n();
   const { theme, setTheme, currency, setCurrency } = useSettings();
@@ -467,6 +495,7 @@ export function SettingsBody({ onNavigate }: { onNavigate: () => void }) {
           </div>
         ))}
       </div>
+      <ShareAppCard />
       <Notice>{t('welcome.privacy')}</Notice>
       <div className="frost overflow-hidden rounded-[20px]">
         {[
