@@ -5,7 +5,7 @@ import type { GolfSummary } from '../../shared/types';
 import { useI18n } from '../i18n';
 import { api } from '../lib/api';
 import { bookingChoices, prefilledBookingUrl, type BookingChoice } from '../lib/booking';
-import { telHref } from '../lib/links';
+import { internationalDigits as whatsappNumber, telHref } from '../lib/links';
 import { useSearch } from '../state/search';
 import { useSettings } from '../lib/settings';
 import { Badge, buttonClass, cx, Dialog, haptic, Notice } from './ui';
@@ -14,14 +14,6 @@ const pad = (n: number) => String(n).padStart(2, '0');
 const toDate = (d: Date) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 const toTime = (d: Date) => `${pad(d.getHours())}:${pad(Math.floor(d.getMinutes() / 15) * 15)}`;
 
-/** Numéro utilisable par WhatsApp : uniquement s'il est au format international (+…), sinon le pays est inconnu. */
-function whatsappNumber(phone: string | null) {
-  if (!phone) return null;
-  const p = phone.trim();
-  if (!p.startsWith('+') && !p.startsWith('00')) return null;
-  const digits = p.replace(/^00/, '').replace(/\D/g, '');
-  return digits.length >= 8 ? digits : null;
-}
 
 function Option({ href, icon, title, hint, external = true, primary = false }: { href: string; icon: ReactNode; title: string; hint?: string; external?: boolean; primary?: boolean }) {
   return (

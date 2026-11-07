@@ -1,5 +1,5 @@
-import { CalendarCheck, CalendarClock, Car, ChevronRight, CircleHelp, Compass, MapPin, Phone } from 'lucide-react';
-import { Fragment, forwardRef, useRef, type CSSProperties, type MutableRefObject } from 'react';
+import { CalendarCheck, CalendarClock, Car, ChevronRight, CircleHelp, Compass, MapPin, MessageCircle, Phone } from 'lucide-react';
+import { Fragment, forwardRef, useRef, type CSSProperties, type MouseEvent, type MutableRefObject } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { RADII_KM, type Availability, type GolfSummary, type RadiusKm, type TravelInfo } from '../../shared/types';
 import { useI18n } from '../i18n';
@@ -7,7 +7,7 @@ import type { ApiError } from '../lib/api';
 import { cheaperElsewhere } from '../lib/booking';
 import { pricePerPerson, type GolfMatch } from '../lib/criteria';
 import { formatIntervals, intervalsOn, parseHours, useHoursLib } from '../lib/hours';
-import { telHref } from '../lib/links';
+import { telHref, whatsappMobile } from '../lib/links';
 import { useSettings } from '../lib/settings';
 import { useResults } from '../lib/useResults';
 import { DEFAULT_CRITERIA, useSearch, type Criteria } from '../state/search';
@@ -97,6 +97,33 @@ function AvailabilityLine({ avail }: { avail?: Availability }) {
   );
 }
 
+/**
+ * Golf « à confirmer avec le club » : appeler ou écrire sur WhatsApp en un geste, message prérempli
+ * (golf, nombre de joueurs, jour, heure). WhatsApp seulement pour un numéro mobile : un fixe n'y est presque jamais.
+ */
+function ContactClub({ golf, compact = false }: { golf: GolfSummary; compact?: boolean }) {
+  const { t, locale } = useI18n();
+  const { criteria } = useSearch();
+  if (!golf.phone) return null;
+  const wa = whatsappMobile(golf.phone);
+  const date = new Date(`${criteria.date}T12:00:00`).toLocaleDateString(locale, { weekday: 'long', day: 'numeric', month: 'long' });
+  const body = t('book.body', { players: criteria.players, date, time: criteria.timeFrom, golf: golf.name });
+  const chip = cx('inline-flex items-center gap-1 rounded-full bg-card-2 px-2.5 text-xs font-semibold text-link', compact ? 'h-7' : 'h-8');
+  const stop = (e: MouseEvent) => e.stopPropagation();
+  return (
+    <span className="flex shrink-0 items-center gap-1">
+      <a href={telHref(golf.phone)} onClick={stop} className={chip} aria-label={`${t('action.call')} ${golf.name}`}>
+        <Phone className="size-3.5" aria-hidden /> {t('action.call')}
+      </a>
+      {wa && (
+        <a href={`https://wa.me/${wa}?text=${encodeURIComponent(body)}`} target="_blank" rel="noopener noreferrer" onClick={stop} className={chip} aria-label={`WhatsApp ${golf.name}`}>
+          <MessageCircle className="size-3.5" aria-hidden /> WhatsApp
+        </a>
+      )}
+    </span>
+  );
+}
+
 /** Horaires du jour choisi + statut sur le créneau. */
 export function SlotStatus({ golf, match, date }: { golf: GolfSummary; match?: GolfMatch; date: string }) {
   const { t, locale } = useI18n();
@@ -120,7 +147,7 @@ export function SlotStatus({ golf, match, date }: { golf: GolfSummary; match?: G
 }
 
 /** Prix de la version compacte : montant et mention « indicatif » sur deux lignes, rien d'inventé. */
-function CompactPrice({ golf, criteria }: { golf: GolfSummary; criteria: Criteria }) {
+function CompactPrice({ golf, criteria, hideCall = false }: { golf: GolfSummary; criteria: Criteria; hideCall?: boolean }) {
   const { t } = useI18n();
   const { money } = useSettings();
   const p = pricePerPerson(golf, criteria);
@@ -130,7 +157,7 @@ function CompactPrice({ golf, criteria }: { golf: GolfSummary; criteria: Criteri
     return (
       <span className="shrink-0 text-right">
         <span className="block text-xs font-medium whitespace-nowrap text-muted">{t('s2.priceToConfirm')}</span>
-        {golf.phone && (
+        {golf.phone && !hideCall && (
           <a href={telHref(golf.phone)} onClick={(e) => e.stopPropagation()} className="inline-flex items-center gap-1 text-xs font-semibold text-link">
             <Phone className="size-3" aria-hidden /> {t('action.call')}
           </a>
@@ -208,13 +235,15 @@ const ResultCard = forwardRef<
                     .join(' · ')}
                 </p>
               </div>
-              <CompactPrice golf={golf} criteria={criteria} />
+              <CompactPrice golf={golf} criteria={criteria} hideCall={unconfirmed} />
             </div>
             <div className="flex items-center justify-between gap-2">
               <span className="flex min-w-0">
                 <CompactStatus golf={golf} match={match} avail={avail} date={criteria.date} />
               </span>
-              {alt?.amount != null && (
+              {unconfirmed && golf.phone ? (
+                <ContactClub golf={golf} compact />
+              ) : alt?.amount != null && (
                 <span className="shrink-0 text-[11px] font-semibold text-fairway-700 tabular-nums dark:text-fairway-300">
                   {t('s2.orElsewhere', { p: money(alt.amount, alt.currency).text, where: alt.kind === 'platform' ? alt.name : t('s2.onlineClub') })}
                 </span>
@@ -272,7 +301,8 @@ const ResultCard = forwardRef<
           <div className="flex items-center justify-between gap-2">
             <SlotStatus golf={golf} match={match} date={criteria.date} />
             <span className="flex shrink-0 items-center gap-1">
-              {golf.phone && !pricePerPerson(golf, criteria) && (
+              {unconfirmed && <ContactClub golf={golf} />}
+              {!unconfirmed && golf.phone && !pricePerPerson(golf, criteria) && (
                 <a
                   href={telHref(golf.phone)}
                   onClick={(e) => e.stopPropagation()}
