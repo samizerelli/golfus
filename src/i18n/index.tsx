@@ -28,7 +28,13 @@ const I18nContext = createContext<Ctx | null>(null);
 function initialLang(): Lang {
   const saved = readStore<Lang | null>('gf.lang', null);
   if (saved && LANGS.includes(saved)) return saved;
-  return 'fr';
+  // Premier lancement : langue du téléphone / navigateur si elle est traduite, sinon l'anglais
+  const prefs = typeof navigator !== 'undefined' ? (navigator.languages?.length ? navigator.languages : [navigator.language]) : [];
+  for (const tag of prefs) {
+    const base = tag?.slice(0, 2).toLowerCase() as Lang;
+    if (LANGS.includes(base)) return base;
+  }
+  return 'en';
 }
 
 function interpolate(s: string, vars?: Vars) {
