@@ -354,6 +354,8 @@ export const fr = {
   'cmp.saving': '{n} € de moins que le tarif officiel',
   'cmp.seePrice': 'Voir le prix',
   'cmp.notice': 'Les prix des plateformes changent chaque jour : celui du jour s’affiche en ouvrant le lien. Vérifiez ce qui est inclus (buggy, chariot) avant de payer.',
+  'cmp.others': 'Chercher ce golf sur d’autres plateformes',
+  'cmp.othersHint': 'Ouvre une recherche limitée à la plateforme : si le golf y est proposé, sa page apparaît en premier, avec les prix et départs du jour.',
   'cmp.slotNotice': 'La page de réservation affiche tous les départs libres de la journée : choisissez-en un entre {from} et {to}. S’il n’y en a aucun dans ce créneau, il est complet.',
   'cmp.later': 'Moins cher en fin de journée : {p} (twilight)',
   'cmp.laterFrom': 'Moins cher dès {time} : {p} (twilight)',

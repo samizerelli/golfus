@@ -193,6 +193,7 @@ export function BookingButton({ golf, size = 'sm' }: { golf: GolfSummary; size?:
               </>
             )}
           </div>
+          <OtherPlatforms golf={golf} />
           <p className="text-xs text-muted">{t('book.notice')}</p>
         </div>
       </Dialog>
@@ -256,6 +257,7 @@ function CompareList({ golf, choices, phone }: { golf: GolfSummary; choices: Boo
           <Phone className="size-4" aria-hidden /> {t('book.call')} · {phone}
         </a>
       )}
+      <OtherPlatforms golf={golf} />
       <p className="text-xs text-muted">{t('cmp.notice')}</p>
     </div>
   );
@@ -270,4 +272,42 @@ export function CheaperLater({ golf, className }: { golf: GolfSummary; className
   if (!tip) return null;
   const price = money(tip.amount, tip.currency).text;
   return <p className={cx('text-sm font-medium text-fairway-700 dark:text-fairway-300', className)}>{tip.fromTime ? t('cmp.laterFrom', { p: price, time: tip.fromTime }) : t('cmp.later', { p: price })}</p>;
+}
+
+/**
+ * Autres plateformes de réservation : recherche limitée au site de chaque plateforme (leurs propres liens de recherche
+ * ne reprennent pas le nom du golf). Prix et départs se lisent sur la plateforme ; celles déjà comparées sont omises.
+ */
+const OTHER_PLATFORMS = [
+  { key: 'greenfee365', name: 'greenfee365', site: 'greenfee365.com' },
+  { key: 'leadingcourses', name: 'Leading Courses', site: 'leadingcourses.com' },
+  { key: 'golfnow', name: 'GolfNow', site: 'golfnow.com' },
+  { key: 'golfscape', name: 'Golfscape', site: 'golfscape.com' },
+] as const;
+
+export function OtherPlatforms({ golf }: { golf: GolfSummary }) {
+  const { t } = useI18n();
+  const known = new Set((golf.offers ?? []).map((o) => o.platform as string));
+  const list = OTHER_PLATFORMS.filter((p) => !known.has(p.key));
+  if (!golf.name || !list.length) return null;
+  return (
+    <div className="space-y-1.5">
+      <p className="text-sm font-medium">{t('cmp.others')}</p>
+      <div className="flex flex-wrap gap-2">
+        {list.map((p) => (
+          <a
+            key={p.key}
+            href={`https://duckduckgo.com/?q=${encodeURIComponent(`site:${p.site} "${golf.name}"`)}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={() => haptic()}
+            className={buttonClass('secondary', 'sm')}
+          >
+            <Search className="size-3.5" aria-hidden /> {p.name}
+          </a>
+        ))}
+      </div>
+      <p className="text-xs text-muted">{t('cmp.othersHint')}</p>
+    </div>
+  );
 }
