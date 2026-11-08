@@ -154,6 +154,7 @@ export const en: Dict = {
   's3.rating': 'Course rating',
   's3.total': 'That is {p} for {n} players',
   's3.defaultMessage': 'Golf at {golf} on {date}, tee time between {from} and {to}{holes} · {players} players. Are you in?',
+  's3.shareText': '{message}\n\n👉 Answer in one tap, no account needed: {url}\n📲 Don’t have the GolfUs app yet? Get it free: {app}',
   's3.holes9': ' · 9 holes',
   's3.holes18': ' · 18 holes',
   's3.details': 'See course details',

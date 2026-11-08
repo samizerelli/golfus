@@ -154,6 +154,7 @@ export const es: Dict = {
   's3.rating': 'Valoración del campo',
   's3.total': 'Es decir, {p} para {n} jugadores',
   's3.defaultMessage': 'Golf en {golf} el {date}, salida entre las {from} y las {to}{holes} · {players} jugadores. ¿Te apuntas?',
+  's3.shareText': '{message}\n\n👉 Responde con un toque, sin cuenta: {url}\n📲 ¿Aún no tienes la app GolfUs? Descárgala gratis: {app}',
   's3.holes9': ' · 9 hoyos',
   's3.holes18': ' · 18 hoyos',
   's3.details': 'Ver la ficha del campo',

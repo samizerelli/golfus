@@ -152,6 +152,7 @@ export const fr = {
   's3.rating': 'Note du golf',
   's3.total': 'Soit {p} pour {n} joueurs',
   's3.defaultMessage': 'Partie de golf au {golf} le {date}, départ entre {from} et {to}{holes} · {players} joueurs. Partant ?',
+  's3.shareText': '{message}\n\n👉 Réponds en un geste, sans compte : {url}\n📲 Pas encore l’app GolfUs ? Télécharge-la gratuitement : {app}',
   's3.holes9': ' · 9 trous',
   's3.holes18': ' · 18 trous',
   's3.details': 'Voir la fiche du golf',

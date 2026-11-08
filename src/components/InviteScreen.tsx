@@ -15,7 +15,7 @@ import { useSearch } from '../state/search';
 import { Avatar } from './AccountPanel';
 import { BookingButton } from './BookingButton';
 import { useRail } from './ActionRail';
-import { shareUrl } from './RailPanels';
+import { APP_STORE_URL, shareUrl } from './RailPanels';
 import { PricePerPerson, RatingLine } from './ResultsList';
 import { buttonClass, Button, cx, haptic, Notice } from './ui';
 import { errorMessage } from './Moderation';
@@ -98,7 +98,8 @@ function Sent({ outing, onHome }: { outing: Outing; onHome: () => void }) {
   const { setOpen } = useRail();
   const [copied, setCopied] = useState(false);
   const url = outing.shareToken ? shareUrl(outing.shareToken) : '';
-  const text = `${outing.message ?? outing.golf.name}\n${url}`;
+  // Texte complet envoyé : message de la partie, lien pour répondre (page dans la langue de l'invité) et lien App Store
+  const text = t('s3.shareText', { message: outing.message ?? outing.golf.name, url, app: APP_STORE_URL });
   return (
     <div className="animate-rise space-y-4 py-2 text-center" role="status">
       <span className="mx-auto grid size-16 place-items-center rounded-full bg-fairway-700 text-white shadow-[0_8px_24px_rgba(31,93,74,0.35)] dark:bg-fairway-300 dark:text-fairway-950">
@@ -121,7 +122,7 @@ function Sent({ outing, onHome }: { outing: Outing; onHome: () => void }) {
             <Button
               size="sm"
               onClick={async () => {
-                await navigator.clipboard.writeText(url).catch(() => undefined);
+                await navigator.clipboard.writeText(text).catch(() => undefined);
                 setCopied(true);
               }}
             >
