@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { Bell, CalendarDays, Heart, UserRound, Users, X } from 'lucide-react';
+import { Bell, CalendarDays, Heart, Settings, Users, X } from 'lucide-react';
 import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { Link } from 'react-router-dom';
@@ -7,7 +7,6 @@ import { useI18n } from '../i18n';
 import { api } from '../lib/api';
 import { useAuth } from '../lib/auth';
 import { useMediaQuery } from '../lib/useMediaQuery';
-import { Avatar } from './AccountPanel';
 import { FavoritesBody, FriendsBody, NotificationsBody, OutingsBody, AccountBody } from './RailPanels';
 import { buttonClass, cx, haptic } from './ui';
 
@@ -25,7 +24,7 @@ export const useRail = () => {
 };
 
 const ITEMS: { key: PanelKey; Icon: typeof Bell; label: 'rail.account' | 'rail.favorites' | 'rail.outings' | 'rail.friends' | 'rail.notifications'; needsAuth: boolean }[] = [
-  { key: 'account', Icon: UserRound, label: 'rail.account', needsAuth: false },
+  { key: 'account', Icon: Settings, label: 'rail.account', needsAuth: false },
   { key: 'favorites', Icon: Heart, label: 'rail.favorites', needsAuth: false },
   { key: 'outings', Icon: CalendarDays, label: 'rail.outings', needsAuth: true },
   { key: 'friends', Icon: Users, label: 'rail.friends', needsAuth: true },
@@ -135,7 +134,7 @@ export function ActionRail() {
                   active ? 'bg-white/85 shadow-[0_4px_14px_rgba(31,70,110,0.18)] dark:bg-white/15' : 'hover:bg-white/40 dark:hover:bg-white/10',
                 )}
               >
-                {key === 'account' && user ? <Avatar src={user.image} name={user.name} size={26} /> : <Icon className="size-[21px]" aria-hidden />}
+                <Icon className="size-[21px]" aria-hidden />
                 {key === 'notifications' && unread > 0 && (
                   <span className="absolute top-1 right-1 grid h-[18px] min-w-[18px] place-items-center rounded-full bg-red-600 px-1 text-[10px] font-bold text-white" aria-label={`${unread}`}>
                     {unread > 9 ? '9+' : unread}
