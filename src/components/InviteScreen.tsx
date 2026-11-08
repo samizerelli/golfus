@@ -93,7 +93,7 @@ export function GolfSideCards({ golf, compact = false }: { golf: GolfSummary; co
   );
 }
 
-function Sent({ outing, external, onHome }: { outing: Outing; external: boolean; onHome: () => void }) {
+function Sent({ outing, onHome }: { outing: Outing; onHome: () => void }) {
   const { t } = useI18n();
   const { setOpen } = useRail();
   const [copied, setCopied] = useState(false);
@@ -107,7 +107,8 @@ function Sent({ outing, external, onHome }: { outing: Outing; external: boolean;
       {/* Aucun ami joint à la partie : rien n'a été envoyé tant que le lien n'est pas partagé */}
       <h2 className="text-2xl">{outing.guests.length > 0 ? t('s3.sentTitle') : t('s3.createdTitle')}</h2>
       <p className="text-sm text-muted">{outing.guests.length > 0 ? t('s3.sentBody') : t('s3.createdBody')}</p>
-      {external && url && (
+      {/* Lien toujours proposé : pour les invités qui n'ont pas l'app ou ne sont pas encore amis */}
+      {url && (
         <div className="frost space-y-2 rounded-[22px] p-4 text-left">
           <p className="text-sm font-medium">{t('s3.shareTitle')}</p>
           <div className="flex flex-wrap gap-2">
@@ -151,7 +152,6 @@ export function InviteForm({ golf, top }: { golf: GolfSummary | null; top?: Reac
   const friends = useQuery({ queryKey: ['friends'], queryFn: api.friends, enabled: !!user });
   const [filter, setFilter] = useState('');
   const [selected, setSelected] = useState<Set<string>>(new Set());
-  const [external, setExternal] = useState(false);
   const niceDate = new Date(`${c.date}T12:00:00`).toLocaleDateString(locale, { weekday: 'long', day: 'numeric', month: 'long' });
   const defaultMessage = useMemo(
     () =>
@@ -208,7 +208,6 @@ export function InviteForm({ golf, top }: { golf: GolfSummary | null; top?: Reac
     return (
       <Sent
         outing={send.data}
-        external={external}
         onHome={() => {
           navigate('/');
           setOpen('outings');
@@ -225,7 +224,7 @@ export function InviteForm({ golf, top }: { golf: GolfSummary | null; top?: Reac
       haptic();
       return n;
     });
-  const canSend = !!golf && (selected.size > 0 || external) && !send.isPending;
+  const canSend = !!golf && !send.isPending;
 
   return (
     <div className="flex min-h-full flex-col">
@@ -292,14 +291,14 @@ export function InviteForm({ golf, top }: { golf: GolfSummary | null; top?: Reac
               </ul>
             </section>
 
-            <label className="frost flex min-h-14 cursor-pointer items-start gap-3 rounded-[20px] p-3">
+            {/* Pas de case à cocher : un lien d'invitation est toujours créé, à partager après l'envoi */}
+            <p className="frost flex items-start gap-3 rounded-[20px] p-3">
               <Link2 className="mt-0.5 size-5 shrink-0 text-glacier-700 dark:text-glacier-300" aria-hidden />
               <span className="flex-1">
                 <span className="block font-medium">{t('s3.external')}</span>
                 <span className="block text-xs text-muted">{t('s3.externalHint')}</span>
               </span>
-              <input type="checkbox" checked={external} onChange={(e) => setExternal(e.target.checked)} className="mt-1 size-6 accent-fairway-700" />
-            </label>
+            </p>
 
             <label className="block text-[13px] font-semibold tracking-wide text-muted uppercase">
               {t('s3.message')}
