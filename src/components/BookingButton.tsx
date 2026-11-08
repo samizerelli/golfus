@@ -5,6 +5,7 @@ import type { GolfSummary } from '../../shared/types';
 import { useI18n } from '../i18n';
 import { api } from '../lib/api';
 import { bookingChoices, prefilledBookingUrl, type BookingChoice } from '../lib/booking';
+import { cheaperLater } from '../lib/criteria';
 import { internationalDigits as whatsappNumber, telHref } from '../lib/links';
 import { useSearch } from '../state/search';
 import { useSettings } from '../lib/settings';
@@ -80,7 +81,7 @@ export function BookingButton({ golf, size = 'sm' }: { golf: GolfSummary; size?:
           {t('action.book')}
         </button>
         <Dialog open={compareOpen} onClose={() => setCompareOpen(false)} title={`${t('cmp.title')} · ${golf.name || t('card.unnamed')}`}>
-          <CompareList choices={choices} phone={golf.phone} />
+          <CompareList golf={golf} choices={choices} phone={golf.phone} />
         </Dialog>
       </>
     );
@@ -200,7 +201,7 @@ export function BookingButton({ golf, size = 'sm' }: { golf: GolfSummary; size?:
 }
 
 /** Comparatif : du moins cher au plus cher, avec la base de chaque prix (tarif du jour ou relevé daté). */
-function CompareList({ choices, phone }: { choices: BookingChoice[]; phone: string | null }) {
+function CompareList({ golf, choices, phone }: { golf: GolfSummary; choices: BookingChoice[]; phone: string | null }) {
   const { t, locale } = useI18n();
   const { money } = useSettings();
   const { criteria } = useSearch();
@@ -209,6 +210,9 @@ function CompareList({ choices, phone }: { choices: BookingChoice[]; phone: stri
   return (
     <div className="space-y-3 pb-2">
       <p className="text-sm text-muted">{t('cmp.intro', { date: day(criteria.date), n: criteria.players })}</p>
+      {/* Les pages de réservation ne filtrent pas l'heure : elles montrent tous les départs libres du jour */}
+      <Notice>{t('cmp.slotNotice', { from: criteria.timeFrom, to: criteria.timeTo })}</Notice>
+      <CheaperLater golf={golf} />
       <ul className="space-y-2">
         {choices.map((c) => {
           const v = c.amount != null ? money(c.amount, c.currency) : null;
@@ -255,4 +259,15 @@ function CompareList({ choices, phone }: { choices: BookingChoice[]; phone: stri
       <p className="text-xs text-muted">{t('cmp.notice')}</p>
     </div>
   );
+}
+
+/** « Moins cher en fin de journée : 136 € (twilight) » quand la plage choisie est le matin. */
+export function CheaperLater({ golf, className }: { golf: GolfSummary; className?: string }) {
+  const { t } = useI18n();
+  const { money } = useSettings();
+  const { criteria } = useSearch();
+  const tip = cheaperLater(golf, criteria);
+  if (!tip) return null;
+  const price = money(tip.amount, tip.currency).text;
+  return <p className={cx('text-sm font-medium text-fairway-700 dark:text-fairway-300', className)}>{tip.fromTime ? t('cmp.laterFrom', { p: price, time: tip.fromTime }) : t('cmp.later', { p: price })}</p>;
 }

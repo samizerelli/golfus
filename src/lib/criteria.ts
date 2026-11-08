@@ -77,3 +77,18 @@ export function pricePerPerson(g: GolfSummary, c: Pick<Criteria, 'date' | 'timeF
   const sorted = options.sort((a, b) => a.amount - b.amount);
   return Object.assign({}, sorted[0], { varies: new Set(sorted.map((p) => p.amount)).size > 1 });
 }
+
+/**
+ * Tarif fin de journée (twilight) moins cher, hors de la plage choisie : à signaler, car la page de réservation
+ * du club montre souvent ces départs de l'après-midi à prix réduit (ex. 136 € au lieu de 177 € le matin).
+ */
+export function cheaperLater(g: GolfSummary, c: Pick<Criteria, 'date' | 'timeFrom' | 'timeTo'>) {
+  const pp = pricePerPerson(g, c);
+  if (!pp) return null;
+  const date = at(c.date, c.timeFrom);
+  const tw = applicablePrices(g.prices.filter((p) => p.category === 'twilight'), 'twilight', g.highSeasonMonths, date).sort((a, b) => a.amount - b.amount)[0];
+  if (!tw || tw.amount >= pp.amount - 0.5) return null;
+  // Déjà dans la plage choisie (heure de début connue et avant la fin de la plage) : rien à signaler
+  if (tw.fromTime && toMin(tw.fromTime) < toMin(c.timeTo)) return null;
+  return { amount: tw.amount, currency: tw.currency, fromTime: tw.fromTime ?? null };
+}

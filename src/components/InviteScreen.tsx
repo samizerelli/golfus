@@ -15,7 +15,7 @@ import { pricePerPerson } from '../lib/criteria';
 import { useSettings } from '../lib/settings';
 import { useSearch } from '../state/search';
 import { Avatar } from './AccountPanel';
-import { BookingButton } from './BookingButton';
+import { BookingButton, CheaperLater } from './BookingButton';
 import { useRail } from './ActionRail';
 import { APP_STORE_URL, shareUrl } from './RailPanels';
 import { PricePerPerson, RatingLine } from './ResultsList';
@@ -75,6 +75,7 @@ export function GolfSideCards({ golf, compact = false }: { golf: GolfSummary; co
           <PricePerPerson golf={golf} criteria={criteria} large={!compact} />
         </div>
         {total && <p className="mt-1 text-right text-xs text-muted">{t('s3.total', { p: total, n: criteria.players })}</p>}
+        <CheaperLater golf={golf} className="mt-1 text-right text-xs" />
       </div>
       <div className="glass glass-rounded flex items-center justify-between gap-3 p-4">
         <span className="shrink-0 text-sm font-medium whitespace-nowrap text-muted">{t('s3.rating')}</span>

@@ -96,7 +96,7 @@ export const CURATED_GOLFS: CuratedGolf[] = [
     services: { buggy: true, clubRental: true, restaurant: true, proShop: true },
     priceUpdatedAt: '2026-10-20',
     offers: [
-      { platform: 'greenfee365', ref: 'los-naranjos-golf-club', amount: 177, observedFor: '2026-10-22', note: '136 € dès 15:30 (twilight)' },
+      { platform: 'greenfee365', ref: 'los-naranjos-golf-club', amount: 177, observedFor: '2026-10-22', note: '136 € l’après-midi (twilight)' },
     ],
     prices: [
       { category: 'green_fee_18', amount: 139, fromDate: '05-14', toDate: '05-24', note: 'Buggy inclus' },
