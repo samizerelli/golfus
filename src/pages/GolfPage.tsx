@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { hasAppHistory } from '../components/BackLink';
 import { ArrowLeft, Check, CircleHelp, ExternalLink, Flag, Mail, MapPin, Pencil, Phone, X } from 'lucide-react';
 import { useState, type FormEvent, type ReactNode } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
@@ -359,7 +360,8 @@ export function GolfPage() {
   const q = useQuery({ queryKey: ['golf', id], queryFn: () => api.golf(id), retry: (n, e) => n < 1 && (e as ApiError).status !== 404 });
   const session = useQuery({ queryKey: ['admin-session'], queryFn: api.admin.session, staleTime: 60_000, retry: false });
 
-  const goBack = () => (window.history.length > 1 ? navigate(-1) : navigate('/'));
+  // Page précédente de l'app, sinon la carte (jamais bloqué sur la fiche, même ouverte par un lien)
+  const goBack = () => (hasAppHistory() ? navigate(-1) : navigate('/'));
   const back = (
     <button type="button" onClick={goBack} className="glass glass-interactive inline-flex h-11 items-center gap-1.5 rounded-full px-4 text-sm font-semibold">
       <ArrowLeft className="size-4" aria-hidden /> {t('detail.back')}

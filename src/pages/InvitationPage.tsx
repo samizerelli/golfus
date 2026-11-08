@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { CalendarDays, Check, Clock, Download, Flag, HelpCircle, Navigation, Users, X } from 'lucide-react';
 import { useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
+import { BackLink } from '../components/BackLink';
 import { Logo } from '../components/Logo';
 import { APP_STORE_URL } from '../components/RailPanels';
 import { isNative } from '../lib/platform';
@@ -65,12 +66,16 @@ export function InvitationPage() {
   return (
     <div className="intro relative min-h-0 flex-1 overflow-y-auto text-white">
       <div className="mx-auto flex min-h-full w-full max-w-md flex-col gap-5 px-5 pt-[max(1.5rem,env(safe-area-inset-top))] pb-[max(1.5rem,env(safe-area-inset-bottom))]">
-        <Link to="/" className="flex items-center gap-2 self-start rounded-full" aria-label="GolfUs">
-          <Logo className="size-9" />
-          <span className="text-lg font-semibold tracking-tight">
-            Golf<span className="text-gold-400">Us</span>
-          </span>
-        </Link>
+        <div className="flex items-center justify-between gap-3">
+          <Link to="/" className="flex items-center gap-2 rounded-full" aria-label="GolfUs">
+            <Logo className="size-9" />
+            <span className="text-lg font-semibold tracking-tight">
+              Golf<span className="text-gold-400">Us</span>
+            </span>
+          </Link>
+          {/* Retour : indispensable dans l'app (ouverte depuis Mes parties, une notification ou un lien) */}
+          <BackLink className="inline-flex h-11 items-center gap-1.5 rounded-full bg-white/15 px-4 text-sm font-semibold hover:bg-white/25" />
+        </div>
 
         {q.isLoading && <div className="h-72 animate-pulse rounded-[28px] bg-white/10" aria-hidden />}
         {q.isError && (
