@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { Bell, CalendarDays, Heart, Settings2, UserRound, Users, X } from 'lucide-react';
+import { Bell, CalendarDays, Heart, UserRound, Users, X } from 'lucide-react';
 import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { Link } from 'react-router-dom';
@@ -8,10 +8,10 @@ import { api } from '../lib/api';
 import { useAuth } from '../lib/auth';
 import { useMediaQuery } from '../lib/useMediaQuery';
 import { Avatar } from './AccountPanel';
-import { FavoritesBody, FriendsBody, NotificationsBody, OutingsBody, SettingsBody, AccountBody } from './RailPanels';
+import { FavoritesBody, FriendsBody, NotificationsBody, OutingsBody, AccountBody } from './RailPanels';
 import { buttonClass, cx, haptic } from './ui';
 
-export type PanelKey = 'account' | 'favorites' | 'outings' | 'friends' | 'notifications' | 'settings';
+export type PanelKey = 'account' | 'favorites' | 'outings' | 'friends' | 'notifications';
 
 const RailContext = createContext<{ open: PanelKey | null; setOpen: (k: PanelKey | null) => void } | null>(null);
 export function RailProvider({ children }: { children: ReactNode }) {
@@ -24,13 +24,12 @@ export const useRail = () => {
   return c;
 };
 
-const ITEMS: { key: PanelKey; Icon: typeof Bell; label: 'rail.account' | 'rail.favorites' | 'rail.outings' | 'rail.friends' | 'rail.notifications' | 'rail.settings'; needsAuth: boolean }[] = [
+const ITEMS: { key: PanelKey; Icon: typeof Bell; label: 'rail.account' | 'rail.favorites' | 'rail.outings' | 'rail.friends' | 'rail.notifications'; needsAuth: boolean }[] = [
   { key: 'account', Icon: UserRound, label: 'rail.account', needsAuth: false },
   { key: 'favorites', Icon: Heart, label: 'rail.favorites', needsAuth: false },
   { key: 'outings', Icon: CalendarDays, label: 'rail.outings', needsAuth: true },
   { key: 'friends', Icon: Users, label: 'rail.friends', needsAuth: true },
   { key: 'notifications', Icon: Bell, label: 'rail.notifications', needsAuth: true },
-  { key: 'settings', Icon: Settings2, label: 'rail.settings', needsAuth: false },
 ];
 
 /** Panneau de verre ouvert depuis le menu (à gauche du menu sur ordinateur, tiroir plein écran sur mobile). */
@@ -64,10 +63,8 @@ function RailPanel({ k, onClose }: { k: PanelKey; onClose: () => void }) {
       <OutingsBody />
     ) : k === 'friends' ? (
       <FriendsBody />
-    ) : k === 'notifications' ? (
-      <NotificationsBody />
     ) : (
-      <SettingsBody onNavigate={onClose} />
+      <NotificationsBody />
     );
 
   const panel = (

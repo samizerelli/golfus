@@ -20,14 +20,14 @@ import { ReportButton } from './Moderation';
 
 const row = 'frost flex items-center gap-3 rounded-[20px] p-2.5 pr-3';
 
+/** Profil et réglages réunis : compte (ou invitation à se connecter), puis préférences, partage et liens utiles. */
 export function AccountBody({ onNavigate }: { onNavigate: () => void }) {
   const { t } = useI18n();
   return (
     <>
       <AccountPanel />
-      <Link to="/profil" onClick={onNavigate} className="flex h-11 items-center justify-end gap-1 text-sm font-medium text-link">
-        {t('nav.profile')} <ChevronRight className="size-4" aria-hidden />
-      </Link>
+      <h3 className="px-1 pt-2 text-sm font-semibold tracking-wide text-muted uppercase">{t('nav.settings')}</h3>
+      <SettingsBody onNavigate={onNavigate} />
     </>
   );
 }
