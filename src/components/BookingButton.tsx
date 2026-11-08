@@ -74,7 +74,7 @@ export function BookingButton({ golf, size = 'sm' }: { golf: GolfSummary; size?:
             haptic();
             setCompareOpen(true);
           }}
-          className={buttonClass('gold', size)}
+          className={buttonClass('primary', size)}
           aria-haspopup="dialog"
         >
           <Ticket className="size-4" aria-hidden />
@@ -100,7 +100,7 @@ export function BookingButton({ golf, size = 'sm' }: { golf: GolfSummary; size?:
           e.stopPropagation();
           haptic();
         }}
-        className={buttonClass('gold', size)}
+        className={buttonClass('primary', size)}
         title={link.filled.date ? t('book.prefilledFor', { date: when, n: criteria.players }) : t('book.onlineHint')}
       >
         <Ticket className="size-4" aria-hidden />
@@ -122,7 +122,7 @@ export function BookingButton({ golf, size = 'sm' }: { golf: GolfSummary; size?:
           setPlayers(criteria.players);
           setOpen(true);
         }}
-        className={buttonClass('gold', size)}
+        className={buttonClass('primary', size)}
         aria-haspopup="dialog"
       >
         <Ticket className="size-4" aria-hidden />
