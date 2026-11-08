@@ -33,6 +33,8 @@ export interface OutingInput {
   players: number;
   message: string | null;
   friendIds: string[];
+  /** E-mails des contacts choisis : ceux qui ont un compte GolfUs reçoivent l'invitation dans l'app */
+  emails?: string[];
 }
 export interface Outing {
   id: string;
@@ -284,7 +286,7 @@ export const api = {
   requestFriend: (userId: string) => request<{ status: string }>('/friends/request', { method: 'POST', body: JSON.stringify({ userId }) }),
   acceptFriend: (id: string) => request<{ ok: true }>(`/friends/${id}/accept`, { method: 'POST' }),
   removeFriend: (id: string) => request<{ ok: true }>(`/friends/${id}`, { method: 'DELETE' }),
-  createOuting: (body: OutingInput) => request<Outing>('/outings', { method: 'POST', body: JSON.stringify(body) }),
+  createOuting: (body: OutingInput) => request<Outing & { matchedEmails?: string[] }>('/outings', { method: 'POST', body: JSON.stringify(body) }),
   outings: () => request<Outing[]>('/outings'),
   respondOuting: (id: string, response: 'yes' | 'maybe' | 'no') =>
     request<Outing>(`/outings/${id}/respond`, { method: 'POST', body: JSON.stringify({ response }) }),

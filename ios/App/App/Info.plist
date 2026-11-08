@@ -32,6 +32,8 @@
 	<false/>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+	<key>NSContactsUsageDescription</key>
+	<string>GolfUs opens your contacts so you can choose who to invite to a round. Nothing is copied or sent to GolfUs: only the person you pick is used, to send your invitation.</string>
 	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
 	<string>GolfUs only uses your location while you use the app, to show golf courses around you and the travel time to each one. It is never saved or shared.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>

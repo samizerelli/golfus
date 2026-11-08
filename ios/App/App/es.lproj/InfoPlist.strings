@@ -2,3 +2,4 @@
 "NSLocationWhenInUseUsageDescription" = "GolfUs usa tu ubicación para mostrar los campos de golf cercanos y el tiempo de trayecto hasta cada uno. Nunca se guarda ni se comparte.";
 "NSLocationAlwaysAndWhenInUseUsageDescription" = "GolfUs solo usa tu ubicación mientras usas la app, para mostrar los campos de golf cercanos y el tiempo de trayecto hasta cada uno. Nunca se guarda ni se comparte.";
 "CFBundleDisplayName" = "GolfUs";
+"NSContactsUsageDescription" = "GolfUs abre tus contactos para elegir a quién invitar a una partida. No se copia ni se envía nada a GolfUs: solo se usa la persona elegida, para enviar tu invitación.";

@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { ArrowLeft, Check, Copy, ExternalLink, Link2, MessageCircle, Navigation, Search, Send, Smartphone } from 'lucide-react';
+import { ArrowLeft, BookUser, Check, Copy, ExternalLink, Mail, MessageCircle, Navigation, Plus, Search, Send, Smartphone, UserPlus, X } from 'lucide-react';
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { MapContainer, Marker, TileLayer } from 'react-leaflet';
 import { Link, useNavigate } from 'react-router-dom';
@@ -7,6 +7,8 @@ import type { GolfSummary } from '../../shared/types';
 import { useI18n } from '../i18n';
 import { api, type Outing } from '../lib/api';
 import { useAuth } from '../lib/auth';
+import { canPickContact, guestFromInput, mailLink, phoneDigits, pickContact, smsLink, whatsappLink, type ExternalGuest } from '../lib/contacts';
+import { isNative } from '../lib/platform';
 import { directionsUrl } from '../lib/links';
 import L from '../lib/leafletGlobal';
 import { pricePerPerson } from '../lib/criteria';
@@ -93,13 +95,22 @@ export function GolfSideCards({ golf, compact = false }: { golf: GolfSummary; co
   );
 }
 
-function Sent({ outing, onHome }: { outing: Outing; onHome: () => void }) {
+function Sent({ outing, guests, matched, onHome }: { outing: Outing; guests: ExternalGuest[]; matched: string[]; onHome: () => void }) {
   const { t } = useI18n();
   const { setOpen } = useRail();
   const [copied, setCopied] = useState(false);
   const url = outing.shareToken ? shareUrl(outing.shareToken) : '';
   // Texte complet envoyé : message de la partie, lien pour répondre (page dans la langue de l'invité) et lien App Store
   const text = t('s3.shareText', { message: outing.message ?? outing.golf.name, url, app: APP_STORE_URL });
+  const subject = t('s3.mailSubject', { golf: outing.golf.name });
+  // Invités à prévenir soi-même (ceux qui ont un compte GolfUs ont déjà reçu la notification dans l'app)
+  const toSend = guests.filter((g) => !(g.email && matched.includes(g.email)));
+  // Un seul invité avec un numéro, dans l'app iPhone : WhatsApp s'ouvre directement sur sa conversation, message prêt
+  useEffect(() => {
+    if (!isNative() || toSend.length !== 1 || !phoneDigits(toSend[0].phone) || !url) return;
+    window.location.href = whatsappLink(toSend[0].phone, text);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   return (
     <div className="animate-rise space-y-4 py-2 text-center" role="status">
       <span className="mx-auto grid size-16 place-items-center rounded-full bg-fairway-700 text-white shadow-[0_8px_24px_rgba(31,93,74,0.35)] dark:bg-fairway-300 dark:text-fairway-950">
@@ -107,8 +118,39 @@ function Sent({ outing, onHome }: { outing: Outing; onHome: () => void }) {
       </span>
       {/* Aucun ami joint à la partie : rien n'a été envoyé tant que le lien n'est pas partagé */}
       <h2 className="text-2xl">{outing.guests.length > 0 ? t('s3.sentTitle') : t('s3.createdTitle')}</h2>
-      <p className="text-sm text-muted">{outing.guests.length > 0 ? t('s3.sentBody') : t('s3.createdBody')}</p>
-      {/* Lien toujours proposé : pour les invités qui n'ont pas l'app ou ne sont pas encore amis */}
+      <p className="text-sm text-muted">{toSend.length > 0 ? t('s3.sendEachBody') : outing.guests.length > 0 ? t('s3.sentBody') : t('s3.createdBody')}</p>
+      {/* Chaque invité hors de l'app : WhatsApp (sa conversation), SMS ou e-mail, avec le message prêt à envoyer */}
+      {url && guests.length > 0 && (
+        <ul className="space-y-2 text-left">
+          {guests.map((g) => (
+            <li key={g.key} className="frost space-y-2 rounded-[22px] p-3.5">
+              <p className="font-semibold [overflow-wrap:anywhere]">{g.name}</p>
+              {g.email && matched.includes(g.email) ? (
+                <p className="flex items-center gap-1.5 text-sm text-fairway-700 dark:text-fairway-300">
+                  <Check className="size-4" aria-hidden /> {t('s3.notifiedInApp')}
+                </p>
+              ) : (
+                <div className="flex flex-wrap gap-2">
+                  <a href={whatsappLink(g.phone, text)} target="_blank" rel="noopener noreferrer" className={buttonClass(phoneDigits(g.phone) ? 'primary' : 'secondary', 'sm')}>
+                    <MessageCircle className="size-4" aria-hidden /> {t('s3.whatsapp')}
+                  </a>
+                  {g.phone && (
+                    <a href={smsLink(g.phone, text)} className={buttonClass('secondary', 'sm')}>
+                      <Smartphone className="size-4" aria-hidden /> {t('s3.sms')}
+                    </a>
+                  )}
+                  {g.email && (
+                    <a href={mailLink(g.email, subject, text)} className={buttonClass('secondary', 'sm')}>
+                      <Mail className="size-4" aria-hidden /> {t('s3.email')}
+                    </a>
+                  )}
+                </div>
+              )}
+            </li>
+          ))}
+        </ul>
+      )}
+      {/* Lien toujours proposé : pour toute autre personne (groupe WhatsApp, autre messagerie) */}
       {url && (
         <div className="frost space-y-2 rounded-[22px] p-4 text-left">
           <p className="text-sm font-medium">{t('s3.shareTitle')}</p>
@@ -153,6 +195,15 @@ export function InviteForm({ golf, top }: { golf: GolfSummary | null; top?: Reac
   const friends = useQuery({ queryKey: ['friends'], queryFn: api.friends, enabled: !!user });
   const [filter, setFilter] = useState('');
   const [selected, setSelected] = useState<Set<string>>(new Set());
+  // Invités hors de l'app : nom / numéro / e-mail saisi, ou contact du téléphone
+  const [guests, setGuests] = useState<ExternalGuest[]>([]);
+  const [guestInput, setGuestInput] = useState('');
+  const addGuest = (g: ExternalGuest | null) => {
+    if (!g) return;
+    haptic();
+    setGuests((list) => (list.some((x) => x.key === g.key) ? list : [...list, g]));
+    setGuestInput('');
+  };
   const niceDate = new Date(`${c.date}T12:00:00`).toLocaleDateString(locale, { weekday: 'long', day: 'numeric', month: 'long' });
   const defaultMessage = useMemo(
     () =>
@@ -185,6 +236,7 @@ export function InviteForm({ golf, top }: { golf: GolfSummary | null; top?: Reac
         players: c.players,
         message: message.trim() || null,
         friendIds: [...selected],
+        emails: guests.map((g) => g.email).filter((e): e is string => !!e),
       }),
     onSuccess: () => {
       haptic(20);
@@ -209,6 +261,8 @@ export function InviteForm({ golf, top }: { golf: GolfSummary | null; top?: Reac
     return (
       <Sent
         outing={send.data}
+        guests={guests}
+        matched={send.data.matchedEmails ?? []}
         onHome={() => {
           navigate('/');
           setOpen('outings');
@@ -292,14 +346,57 @@ export function InviteForm({ golf, top }: { golf: GolfSummary | null; top?: Reac
               </ul>
             </section>
 
-            {/* Pas de case à cocher : un lien d'invitation est toujours créé, à partager après l'envoi */}
-            <p className="frost flex items-start gap-3 rounded-[20px] p-3">
-              <Link2 className="mt-0.5 size-5 shrink-0 text-glacier-700 dark:text-glacier-300" aria-hidden />
-              <span className="flex-1">
-                <span className="block font-medium">{t('s3.external')}</span>
-                <span className="block text-xs text-muted">{t('s3.externalHint')}</span>
-              </span>
-            </p>
+            {/* Autres invités : nom, numéro ou e-mail tapé, ou contact choisi dans le téléphone */}
+            <section className="space-y-2">
+              <h2 className="text-[13px] font-semibold tracking-wide text-muted uppercase">{t('s3.external')}</h2>
+              <form
+                className="flex gap-2"
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  addGuest(guestFromInput(guestInput));
+                }}
+              >
+                <label className="frost flex h-12 min-w-0 flex-1 items-center gap-2 rounded-full px-4">
+                  <UserPlus className="size-4 shrink-0 text-muted" aria-hidden />
+                  <span className="sr-only">{t('s3.guestPlaceholder')}</span>
+                  <input
+                    value={guestInput}
+                    onChange={(e) => setGuestInput(e.target.value)}
+                    placeholder={t('s3.guestPlaceholder')}
+                    autoComplete="off"
+                    className="min-w-0 flex-1 bg-transparent text-base focus:outline-none"
+                  />
+                </label>
+                <Button type="submit" disabled={!guestInput.trim()} aria-label={t('s3.add')} className="h-12 shrink-0 px-4">
+                  <Plus className="size-5" aria-hidden />
+                </Button>
+              </form>
+              {canPickContact() && (
+                <Button className="w-full" onClick={async () => addGuest(await pickContact())}>
+                  <BookUser className="size-4" aria-hidden /> {t('s3.contacts')}
+                </Button>
+              )}
+              {guests.length > 0 && (
+                <ul className="flex flex-wrap gap-1.5">
+                  {guests.map((g) => (
+                    <li key={g.key} className="frost flex h-9 items-center gap-1 rounded-full pr-1 pl-3 text-sm font-medium">
+                      <span className="max-w-[12rem] truncate">{g.name}</span>
+                      {g.phone && <Smartphone className="size-3.5 text-muted" aria-hidden />}
+                      {g.email && <Mail className="size-3.5 text-muted" aria-hidden />}
+                      <button
+                        type="button"
+                        onClick={() => setGuests((list) => list.filter((x) => x.key !== g.key))}
+                        className="grid size-7 place-items-center rounded-full hover:bg-card-2"
+                        aria-label={t('s3.remove', { name: g.name })}
+                      >
+                        <X className="size-3.5" aria-hidden />
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+              <p className="text-xs text-muted">{t('s3.externalHint')}</p>
+            </section>
 
             <label className="block text-[13px] font-semibold tracking-wide text-muted uppercase">
               {t('s3.message')}
@@ -321,7 +418,7 @@ export function InviteForm({ golf, top }: { golf: GolfSummary | null; top?: Reac
           <Button type="button" variant="primary" disabled={!canSend} onClick={() => send.mutate()} className="h-14 w-full text-base">
             <Send className="size-5" aria-hidden />
             {t('s3.send')}
-            {selected.size > 0 && ` (${selected.size})`}
+            {selected.size + guests.length > 0 && ` (${selected.size + guests.length})`}
           </Button>
           {/* Pourquoi le bouton est grisé */}
           {!canSend && !send.isPending && golf && <p className="mt-2 text-center text-xs text-muted">{t('s3.sendHint')}</p>}

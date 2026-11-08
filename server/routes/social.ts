@@ -126,6 +126,8 @@ const outingInput = z.object({
   players: z.number().int().min(1).max(12),
   message: z.string().trim().max(1000).refine(clean, { message: 'inappropriate' }).nullable(),
   friendIds: z.array(z.string().uuid()).max(20),
+  // Contacts du téléphone avec un e-mail : ceux qui ont un compte GolfUs sont invités dans l'app (notification)
+  emails: z.array(z.string().trim().toLowerCase().email().max(254)).max(20).optional(),
 });
 
 interface OutingRow {
@@ -183,6 +185,7 @@ socialRouter.post('/outings', requireUser, userRateLimit('outings', 30, 3600_000
   // On ne peut inviter que ses amis
   for (const fid of b.friendIds) if (!(await areFriends(me, fid))) return res.status(403).json({ error: 'not_friend' });
   const id = crypto.randomUUID();
+  const matchedEmails: string[] = [];
   await db.tx(async () => {
     await db.run(
       `INSERT INTO outings (id, organizer_id, golf_id, golf_name, golf_lat, golf_lon, date, time_from, time_to, holes, players, message, share_token)
@@ -205,8 +208,18 @@ socialRouter.post('/outings', requireUser, userRateLimit('outings', 30, 3600_000
       await db.run('INSERT INTO outing_guests (id, outing_id, user_id) VALUES (?, ?, ?)', crypto.randomUUID(), id, fid);
       await notify(fid, 'outing_invite', { outingId: id, golf: b.golfName, date: b.date, timeFrom: b.timeFrom, from: req.user!.name });
     }
+    const invited = new Set([me, ...b.friendIds]);
+    for (const email of [...new Set(b.emails ?? [])]) {
+      const u = await db.get<{ id: string }>('SELECT id FROM users WHERE lower(email) = ?', email);
+      // Pas de compte, déjà invité ou blocage : rien (l'invitation part par WhatsApp, SMS ou e-mail depuis le téléphone)
+      if (!u || invited.has(u.id) || (await isBlocked(me, u.id))) continue;
+      invited.add(u.id);
+      matchedEmails.push(email);
+      await db.run('INSERT INTO outing_guests (id, outing_id, user_id) VALUES (?, ?, ?)', crypto.randomUUID(), id, u.id);
+      await notify(u.id, 'outing_invite', { outingId: id, golf: b.golfName, date: b.date, timeFrom: b.timeFrom, from: req.user!.name });
+    }
   });
-  res.status(201).json(await outingView((await db.get<OutingRow>(`${OUTING_SELECT} WHERE o.id = ?`, id))!, me));
+  res.status(201).json({ ...(await outingView((await db.get<OutingRow>(`${OUTING_SELECT} WHERE o.id = ?`, id))!, me)), matchedEmails });
 });
 
 /** Mes parties : organisées par moi ou auxquelles je suis invité. */

@@ -70,6 +70,11 @@ export async function initNative() {
       const internal = url.origin === location.origin || url.origin === PUBLIC_ORIGIN;
       if (internal && a.target !== '_blank') return;
       e.preventDefault();
+      // WhatsApp : ouverture directe de l'app WhatsApp sur la conversation (lien universel confié à iOS), pas de page Safari
+      if (url.hostname === 'wa.me' || url.hostname === 'api.whatsapp.com') {
+        window.location.href = url.href;
+        return;
+      }
       void Browser.open({ url: url.href });
     },
     true,
