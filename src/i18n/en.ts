@@ -45,6 +45,7 @@ export const en: Dict = {
   'account.hcpInvalid': 'The index must be between −10 and 54.',
   'account.save': 'Save',
   'account.saved': 'Saved',
+  'account.edit': 'Edit',
   'account.memberSince': 'Member since {date}',
   'account.security': 'Security',
   'account.changePassword': 'Change password',

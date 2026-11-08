@@ -45,6 +45,7 @@ export const es: Dict = {
   'account.hcpInvalid': 'El hándicap debe estar entre −10 y 54.',
   'account.save': 'Guardar',
   'account.saved': 'Guardado',
+  'account.edit': 'Editar',
   'account.memberSince': 'Miembro desde {date}',
   'account.security': 'Seguridad',
   'account.changePassword': 'Cambiar la contraseña',

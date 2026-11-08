@@ -1,4 +1,4 @@
-import { Camera, Download, KeyRound, Loader2, LogOut, MonitorSmartphone, Trash2, UserRound } from 'lucide-react';
+import { Camera, Check, Download, KeyRound, Loader2, LogOut, MonitorSmartphone, Pencil, Trash2, UserRound } from 'lucide-react';
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { useI18n } from '../i18n';
@@ -47,6 +47,8 @@ export function AccountPanel() {
   const [name, setName] = useState('');
   const [hcp, setHcp] = useState('');
   const [saved, setSaved] = useState(false);
+  // Prénom et handicap : en lecture une fois enregistrés, « Modifier » rouvre le formulaire
+  const [editing, setEditing] = useState(false);
   const [msg, setMsg] = useState<{ tone: 'info' | 'error'; text: string } | null>(null);
   const [pwOpen, setPwOpen] = useState(params.get('motdepasse') === '1');
   const [delOpen, setDelOpen] = useState(false);
@@ -56,6 +58,7 @@ export function AccountPanel() {
     if (user) {
       setName(user.name ?? '');
       setHcp(user.handicapIndex?.toString() ?? '');
+      if (!user.name) setEditing(true);
     }
   }, [user]);
 
@@ -68,6 +71,8 @@ export function AccountPanel() {
     if (h !== null && (!Number.isFinite(h) || h < -10 || h > 54)) return setMsg({ tone: 'error', text: t('account.hcpInvalid') });
     await api.updateMe({ name: name.trim(), handicapIndex: h });
     await refresh();
+    setMsg(null);
+    setEditing(false);
     setSaved(true);
     setTimeout(() => setSaved(false), 2500);
   };
@@ -107,15 +112,33 @@ export function AccountPanel() {
         <form onSubmit={save} className="space-y-3">
           <label className="block text-sm font-medium">
             {t('auth.name')}
-            <input className={input} required maxLength={60} value={name} onChange={(e) => setName(e.target.value)} />
+            <input className={input + (editing ? '' : ' opacity-70')} required maxLength={60} readOnly={!editing} value={name} onChange={(e) => setName(e.target.value)} />
           </label>
           <label className="block text-sm font-medium">
             {t('account.handicap')}
-            <input className={input} inputMode="decimal" placeholder="—" value={hcp} onChange={(e) => setHcp(e.target.value)} />
+            <input className={input + (editing ? '' : ' opacity-70')} inputMode="decimal" placeholder="—" readOnly={!editing} value={hcp} onChange={(e) => setHcp(e.target.value)} />
           </label>
-          <Button type="submit" variant="primary">
-            {saved ? `✓ ${t('account.saved')}` : t('account.save')}
-          </Button>
+          {editing ? (
+            <Button type="submit" variant="primary">
+              {t('account.save')}
+            </Button>
+          ) : (
+            <div className="flex items-center gap-3">
+              <Button
+                onClick={() => {
+                  setSaved(false);
+                  setEditing(true);
+                }}
+              >
+                <Pencil className="size-4" aria-hidden /> {t('account.edit')}
+              </Button>
+              {saved && (
+                <span className="flex items-center gap-1 text-sm text-muted" role="status">
+                  <Check className="size-4" aria-hidden /> {t('account.saved')}
+                </span>
+              )}
+            </div>
+          )}
         </form>
         {msg && <Notice tone={msg.tone}>{msg.text}</Notice>}
       </GlassCard>

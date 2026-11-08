@@ -43,6 +43,7 @@ export const fr = {
   'account.hcpInvalid': 'L’index doit être compris entre −10 et 54.',
   'account.save': 'Enregistrer',
   'account.saved': 'Enregistré',
+  'account.edit': 'Modifier',
   'account.memberSince': 'Membre depuis {date}',
   'account.security': 'Sécurité',
   'account.changePassword': 'Changer le mot de passe',
