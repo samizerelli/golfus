@@ -1,8 +1,10 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { CalendarDays, Check, Clock, Flag, HelpCircle, Navigation, Users, X } from 'lucide-react';
+import { CalendarDays, Check, Clock, Download, Flag, HelpCircle, Navigation, Users, X } from 'lucide-react';
 import { useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { Logo } from '../components/Logo';
+import { APP_STORE_URL } from '../components/RailPanels';
+import { isNative } from '../lib/platform';
 import { Badge, buttonClass, cx, haptic } from '../components/ui';
 import { useI18n } from '../i18n';
 import { api, type ApiError } from '../lib/api';
@@ -216,10 +218,30 @@ export function InvitationPage() {
             )}
           </>
         )}
+        {/* Invité sans l'app (lien ouvert dans WhatsApp, Messages, le navigateur) : proposer de la télécharger,
+            dans la langue du téléphone (langue de l'appareil au premier passage) */}
+        {!isNative() && <AppDownloadCard />}
         <Link to="/" className={cx(buttonClass('ghost', 'sm'), 'mt-auto self-center !text-white/70')}>
           GolfUs
         </Link>
       </div>
+    </div>
+  );
+}
+
+/** Carte « Téléchargez GolfUs » : fiche App Store (affichée par Apple dans la langue et le pays de l'iPhone). */
+function AppDownloadCard() {
+  const { t } = useI18n();
+  return (
+    <div className="flex items-center gap-3 rounded-[24px] border border-white/20 bg-white/10 p-4 backdrop-blur-xl">
+      <Logo className="size-12 shrink-0" />
+      <div className="min-w-0 flex-1">
+        <p className="font-semibold">{t('inv.appTitle')}</p>
+        <p className="text-xs text-white/80">{t('inv.appBody')}</p>
+      </div>
+      <a href={APP_STORE_URL} target="_blank" rel="noopener noreferrer" className="inline-flex h-11 shrink-0 items-center gap-1.5 rounded-full bg-white px-4 text-sm font-semibold text-fairway-900">
+        <Download className="size-4" aria-hidden /> {t('inv.appCta')}
+      </a>
     </div>
   );
 }
