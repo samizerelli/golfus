@@ -6,6 +6,7 @@ import type { ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { CURRENCIES, type Currency } from '../../shared/types';
 import { Logo } from '../components/Logo';
+import { ShareAppCard } from '../components/RailPanels';
 import { Segmented } from '../components/ui';
 import { LANGS, useI18n } from '../i18n';
 import { useSettings, type Theme } from '../lib/settings';
@@ -62,6 +63,8 @@ export function ProfilePage() {
             />
           </Row>
         </section>
+
+        <ShareAppCard />
 
         <section className="glass glass-rounded overflow-hidden">
           {[

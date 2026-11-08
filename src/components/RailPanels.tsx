@@ -434,7 +434,7 @@ export function PushCard({ showOn = false }: { showOn?: boolean }) {
 export const APP_STORE_URL = 'https://apps.apple.com/app/golfus-golf-entre-amis/id6829306363';
 
 /** Faire connaître l'app : feuille de partage (Messages, WhatsApp, Mail…), ou lien copié si le partage n'existe pas. */
-function ShareAppCard() {
+export function ShareAppCard() {
   const { t } = useI18n();
   const [copied, setCopied] = useState(false);
   const share = async () => {
