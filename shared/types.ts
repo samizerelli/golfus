@@ -40,7 +40,7 @@ export interface PriceRow {
 }
 
 /** Canaux de réservation comparés : site du club (tarif officiel / remisé en ligne) et plateformes */
-export const BOOKING_PLATFORMS = ['club_online', 'greenfee365'] as const;
+export const BOOKING_PLATFORMS = ['club_online', 'greenfee365', 'leadingcourses', 'golfscape', 'golfnow'] as const;
 export type BookingPlatform = (typeof BOOKING_PLATFORMS)[number];
 
 /**
@@ -49,7 +49,11 @@ export type BookingPlatform = (typeof BOOKING_PLATFORMS)[number];
  */
 export interface BookingOffer {
   platform: BookingPlatform;
-  /** greenfee365 : identifiant de la fiche (greenfee365.com/golf-course/<ref>) ; club_online : non utilisé */
+  /**
+   * greenfee365 : identifiant de la fiche (greenfee365.com/golf-course/<ref>) ;
+   * leadingcourses, golfscape, golfnow : chemin de la page du golf sur la plateforme (après le nom de domaine) ;
+   * club_online : non utilisé
+   */
   ref?: string | null;
   amount: number | null;
   currency: Currency;

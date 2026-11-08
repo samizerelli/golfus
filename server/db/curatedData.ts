@@ -24,6 +24,7 @@ export const CURATED_GOLFS: CuratedGolf[] = [
     offers: [
       { platform: 'greenfee365', ref: 'marbella-golf-and-country-club', amount: 104.38, observedFor: '2026-10-22', note: 'Prix affiché pour tous les départs du jour ; conditions (buggy…) à vérifier sur la plateforme' },
       { platform: 'club_online', amount: 130, observedFor: '2026-10-20', note: 'Remise en ligne de 6 % sur le tarif officiel (buggy partagé inclus)' },
+      { platform: 'leadingcourses', ref: 'clubs/europe+spain+andalusia/higuer%C3%B3n-marbella-golf-resort' },
     ],
     prices: [
       // Haute saison 2026 : 01/03–24/05 et 07/09–15/11 (buggy partagé inclus)
@@ -79,6 +80,9 @@ export const CURATED_GOLFS: CuratedGolf[] = [
       { category: 'trolley', amount: 10, note: 'Chariot manuel, le matin (5 € dès 14 h)' },
       { category: 'club_rental', amount: 40, note: 'Le matin (30 € dès 14 h)' },
     ],
+    offers: [
+      { platform: 'leadingcourses', ref: 'clubs/europe+spain+andalusia/santa-maria-golf-country-club' },
+    ],
   },
   {
     id: 'osm-r3299800',
@@ -97,6 +101,7 @@ export const CURATED_GOLFS: CuratedGolf[] = [
     priceUpdatedAt: '2026-10-20',
     offers: [
       { platform: 'greenfee365', ref: 'los-naranjos-golf-club', amount: 177, observedFor: '2026-10-22', note: '136 € l’après-midi (twilight)' },
+      { platform: 'leadingcourses', ref: 'clubs/europe+spain+andalusia/los-naranjos-golf-club' },
     ],
     prices: [
       { category: 'green_fee_18', amount: 139, fromDate: '05-14', toDate: '05-24', note: 'Buggy inclus' },
@@ -137,6 +142,8 @@ export const CURATED_GOLFS: CuratedGolf[] = [
     offers: [
       { platform: 'greenfee365', ref: 'santa-clara-golf-marbella', amount: 150, observedFor: '2026-10-22', note: 'Conditions (buggy…) à vérifier sur la plateforme' },
       { platform: 'club_online', amount: 190, observedFor: '2026-10-20', note: 'Remise en ligne de 5 % (buggy inclus)' },
+      { platform: 'leadingcourses', ref: 'clubs/europe+spain+andalusia/santa-clara-golf-club-marbella' },
+      { platform: 'golfscape', ref: 'marbella-golf-courses/santa-clara-golf-marbella' },
     ],
     prices: [
       // Seul tarif public : celui affiché par la réservation en ligne (relevé le 20/10/2026)
@@ -163,6 +170,7 @@ export const CURATED_GOLFS: CuratedGolf[] = [
       { platform: 'greenfee365', ref: 'atalaya-golf-and-country-club-nueva', amount: 185, observedFor: '2026-10-22', note: 'New Course' },
       { platform: 'greenfee365', ref: 'atalaya-golf-and-country-club', amount: null, observedFor: null, note: 'Old Course' },
       { platform: 'club_online', amount: 131, observedFor: '2026-10-20', note: 'Old Course : remise en ligne de 25 % sur 175 €' },
+      { platform: 'leadingcourses', ref: 'clubs/europe+spain+andalusia/atalaya-golf-country-club' },
     ],
     prices: [
       // Tarifs officiels visiteurs (remises disponibles en réservation en ligne)
@@ -207,6 +215,9 @@ export const CURATED_GOLFS: CuratedGolf[] = [
       { category: 'trolley', amount: 10 },
       { category: 'range_balls', amount: 2, note: 'Jeton de 17 balles' },
     ],
+    offers: [
+      { platform: 'leadingcourses', ref: 'clubs/europe+spain+andalusia/real-club-de-golf-guadalmina' },
+    ],
   },
   {
     id: 'osm-r3308721',
@@ -227,6 +238,7 @@ export const CURATED_GOLFS: CuratedGolf[] = [
     offers: [
       { platform: 'greenfee365', ref: 'la-cala-campo-asia', amount: 161, observedFor: '2026-10-22', note: 'Campo Asia : 161 à 170 € en journée, 91 € dès 16:00' },
       { platform: 'greenfee365', ref: 'la-cala-campo-europa', amount: 168, observedFor: '2026-10-22', note: 'Campo Europa : 168 € en journée, 91 € dès 16:00' },
+      { platform: 'leadingcourses', ref: 'clubs/europe+spain+andalusia/la-cala-resort' },
     ],
     prices: [
       // Prix dynamiques (variables selon le jour, l'heure et le parcours) : relevés en réservation en ligne le 20/10/2026
@@ -267,6 +279,9 @@ export const CURATED_GOLFS: CuratedGolf[] = [
       { category: 'buggy', amount: 45, note: 'Buggy supplémentaire en haute saison (30 € en moyenne et basse saison)' },
       { category: 'club_rental', amount: 45, note: '1 jour (70 € 2 jours, 100 € la semaine)' },
     ],
+    offers: [
+      { platform: 'leadingcourses', ref: 'clubs/europe+spain+andalusia/calanova-golf-club' },
+    ],
   },
   {
     id: 'osm-w172432255',
@@ -283,6 +298,8 @@ export const CURATED_GOLFS: CuratedGolf[] = [
     priceUpdatedAt: '2026-10-20',
     offers: [
       { platform: 'greenfee365', ref: 'chaparral-golf-club', amount: null, observedFor: null },
+      { platform: 'leadingcourses', ref: 'clubs/europe+spain+andalusia/chaparral-golf-club' },
+      { platform: 'golfscape', ref: 'marbella-golf-courses/chaparral-golf-club' },
     ],
     prices: [
       { category: 'green_fee_18', amount: 135, fromDate: '03-01', toDate: '05-31', note: 'Buggy inclus' },
@@ -332,6 +349,9 @@ export const CURATED_GOLFS: CuratedGolf[] = [
       { category: 'trolley', amount: 3 },
       { category: 'club_rental', amount: 25, note: '18 trous (15 € pour 9 trous)' },
     ],
+    offers: [
+      { platform: 'leadingcourses', ref: 'clubs/europe+spain+andalusia/la-noria-golf-resort' },
+    ],
   },
   {
     id: 'osm-w172433462',
@@ -351,6 +371,9 @@ export const CURATED_GOLFS: CuratedGolf[] = [
       { category: 'green_fee_18', amount: 65, fromDate: '10-01', toDate: '05-31', note: 'Deux tours du 9 trous (95 € avec buggy)' },
       { category: 'buggy', amount: 25, fromDate: '10-01', toDate: '05-31', note: '9 trous : 75 € green fee + buggy, soit 25 € de buggy' },
     ],
+    offers: [
+      { platform: 'leadingcourses', ref: 'clubs/europe+spain+andalusia/cerrado-del-%C3%A1guila-golf-resort' },
+    ],
   },
   {
     id: 'osm-w171834521',
@@ -369,6 +392,9 @@ export const CURATED_GOLFS: CuratedGolf[] = [
       { category: 'green_fee_18', amount: 135, note: 'Buggy non inclus — tarif affiché en réservation en ligne le 20/10/2026 (115 € pour un départ à 14:40)' },
       { category: 'trolley', amount: 15, note: 'Chariot électrique' },
     ],
+    offers: [
+      { platform: 'leadingcourses', ref: 'clubs/europe+spain+andalusia/santana-golf-and-country-club' },
+    ],
   },
   {
     id: 'osm-w139728265',
@@ -385,6 +411,8 @@ export const CURATED_GOLFS: CuratedGolf[] = [
     offers: [
       { platform: 'greenfee365', ref: 'villa-padierna-flamingos', amount: 192, observedFor: '2026-10-22' },
       { platform: 'club_online', amount: 182, observedFor: '2026-10-20', note: 'Remise en ligne de 5 %' },
+      { platform: 'leadingcourses', ref: 'clubs/europe+spain+andalusia/villa-padierna-golf-club' },
+      { platform: 'golfscape', ref: 'marbella-golf-courses/villa-padierna-golf-club-flamingos-course' },
     ],
     prices: [
       { category: 'green_fee_18', amount: 192, note: 'Tarif affiché en réservation en ligne le 20/10/2026 (182 € avec la remise en ligne ; 242 € avec un buggy)' },
@@ -400,6 +428,8 @@ export const CURATED_GOLFS: CuratedGolf[] = [
     bookingUrl: 'https://open.teeone.golf/es/villapadierna/disponibilidad',
     offers: [
       { platform: 'greenfee365', ref: 'villa-padierna-alferini', amount: 205, observedFor: '2026-10-22' },
+      { platform: 'leadingcourses', ref: 'clubs/europe+spain+andalusia/villa-padierna-golf-club' },
+      { platform: 'golfscape', ref: 'marbella-golf-courses/villa-padierna-golf-club-alferini-course' },
     ],
   },
   {
@@ -412,6 +442,8 @@ export const CURATED_GOLFS: CuratedGolf[] = [
     bookingUrl: 'https://open.teeone.golf/es/villapadierna/disponibilidad',
     offers: [
       { platform: 'greenfee365', ref: 'villa-padierna-tramores', amount: 78, observedFor: '2026-10-22', note: 'Parcours 18 trous, par 63' },
+      { platform: 'leadingcourses', ref: 'clubs/europe+spain+andalusia/villa-padierna-golf-club' },
+      { platform: 'golfscape', ref: 'marbella-golf-courses/villa-padierna-golf-club-tramores-course' },
     ],
   },
   {
@@ -503,6 +535,7 @@ export const CURATED_GOLFS: CuratedGolf[] = [
     offers: [
       { platform: 'greenfee365', ref: 'el-paraiso-golf-club', amount: null, observedFor: null },
       { platform: 'club_online', amount: 152, observedFor: '2026-10-21', note: 'Remise en ligne de 5 % sur 160 €' },
+      { platform: 'leadingcourses', ref: 'clubs/europe+spain+andalusia/el-paraiso-golf-club' },
     ],
     prices: [
       { category: 'green_fee_18', amount: 160, note: 'Tarif affiché en réservation en ligne pour le 21/10/2026 (152 € avec la remise en ligne)' },
@@ -542,6 +575,9 @@ export const CURATED_GOLFS: CuratedGolf[] = [
     phone: '+34 95 281 30 21',
     website: 'https://realclubdegolflasbrisas.com/',
     bookingUrl: 'https://open.teeone.golf/es/brisas/disponibilidad',
+    offers: [
+      { platform: 'leadingcourses', ref: 'clubs/europe+spain+andalusia/real-club-de-golf-las-brisas' },
+    ],
   },
   {
     // Pas de tarif publié par le club (site indisponible) : seulement l'offre de la plateforme
@@ -549,7 +585,10 @@ export const CURATED_GOLFS: CuratedGolf[] = [
     name: 'Cabopino Golf',
     lat: 36.494656,
     lon: -4.739034,
-    offers: [{ platform: 'greenfee365', ref: 'cabopino-golf', amount: 116, observedFor: '2026-10-22' }],
+    offers: [
+      { platform: 'greenfee365', ref: 'cabopino-golf', amount: 116, observedFor: '2026-10-22' },
+      { platform: 'leadingcourses', ref: 'clubs/europe+spain+andalusia/cabopino-golf-marbella' },
+    ],
   },
   {
     // Pas de tarif publié par le club (site indisponible) : seulement l'offre de la plateforme
@@ -557,7 +596,10 @@ export const CURATED_GOLFS: CuratedGolf[] = [
     name: 'La Quinta Golf & Country Club',
     lat: 36.517091,
     lon: -5.001428,
-    offers: [{ platform: 'greenfee365', ref: 'la-quinta-golf-club', amount: 152, observedFor: '2026-10-22' }],
+    offers: [
+      { platform: 'greenfee365', ref: 'la-quinta-golf-club', amount: 152, observedFor: '2026-10-22' },
+      { platform: 'leadingcourses', ref: 'clubs/europe+spain+andalusia/la-quinta-golf-&-country-club' },
+    ],
   },
   {
     // Pas de tarif publié par le club (site indisponible) : seulement l'offre de la plateforme
@@ -565,7 +607,10 @@ export const CURATED_GOLFS: CuratedGolf[] = [
     name: 'Magna Marbella Golf',
     lat: 36.505824,
     lon: -4.97874,
-    offers: [{ platform: 'greenfee365', ref: 'magna-marbella', amount: 32.5, observedFor: '2026-10-22', note: 'Parcours 9 trous' }],
+    offers: [
+      { platform: 'greenfee365', ref: 'magna-marbella', amount: 32.5, observedFor: '2026-10-22', note: 'Parcours 9 trous' },
+      { platform: 'leadingcourses', ref: 'clubs/europe+spain+andalusia/magna-marbella-golf' },
+    ],
   },
   {
     // Pas de tarif publié par le club (site indisponible) : seulement l'offre de la plateforme
@@ -581,6 +626,10 @@ export const CURATED_GOLFS: CuratedGolf[] = [
     name: 'Marbella Club Golf Resort',
     lat: 36.498919,
     lon: -5.060034,
-    offers: [{ platform: 'greenfee365', ref: 'marbella-club-golf-resort', amount: null, observedFor: null }],
+    offers: [
+      { platform: 'greenfee365', ref: 'marbella-club-golf-resort', amount: null, observedFor: null },
+      { platform: 'leadingcourses', ref: 'clubs/europe+spain+andalusia/marbella-club-golf-resort' },
+      { platform: 'golfscape', ref: 'marbella-golf-courses/marbella-club-golf-resort' },
+    ],
   },
 ];

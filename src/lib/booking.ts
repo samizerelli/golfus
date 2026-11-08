@@ -77,10 +77,15 @@ export interface BookingChoice {
   cheapest: boolean;
 }
 
-const PLATFORM_NAMES: Record<string, string> = { greenfee365: 'greenfee365' };
+const PLATFORM_NAMES: Record<string, string> = { greenfee365: 'greenfee365', leadingcourses: 'Leading Courses', golfscape: 'Golfscape', golfnow: 'GolfNow' };
+
+/** Page du golf sur chaque plateforme (chemin relevé et vérifié, pas une recherche) */
+const PLATFORM_ORIGINS: Record<string, string> = { leadingcourses: 'https://www.leadingcourses.com', golfscape: 'https://golfscape.com', golfnow: 'https://www.golfnow.com' };
 
 function platformUrl(o: BookingOffer, date: string) {
   if (o.platform === 'greenfee365' && o.ref) return `https://greenfee365.com/golf-course/${encodeURIComponent(o.ref)}?date=${date}`;
+  const origin = PLATFORM_ORIGINS[o.platform];
+  if (origin && o.ref) return `${origin}/${o.ref.replace(/^\/+/, '')}`;
   return null;
 }
 
