@@ -64,7 +64,8 @@ export const config = {
 
   // Comptes (Auth.js)
   authSecret: process.env.AUTH_SECRET || '',
-  appUrl: (process.env.APP_URL || 'http://localhost:5173').replace(/\/$/, ''),
+  // Adresse du site dans les e-mails : golfus.ch en ligne si APP_URL n'est pas défini
+  appUrl: (process.env.APP_URL || (process.env.NODE_ENV === 'production' ? 'https://golfus.ch' : 'http://localhost:5173')).replace(/\/$/, ''),
   emailServer: process.env.EMAIL_SERVER?.trim() || null,
   emailFrom: process.env.EMAIL_FROM?.trim() || 'GolfUs <no-reply@golfus.local>',
   google: process.env.AUTH_GOOGLE_ID && process.env.AUTH_GOOGLE_SECRET ? { id: process.env.AUTH_GOOGLE_ID, secret: process.env.AUTH_GOOGLE_SECRET } : null,
