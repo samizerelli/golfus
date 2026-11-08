@@ -253,6 +253,7 @@ export function FriendsBody() {
       {!!friends.data?.outgoing.length && (
         <section className="space-y-2">
           <h3 className="text-sm font-semibold text-muted">{t('fr.outgoing')}</h3>
+          <p className="text-xs text-muted">{t('fr.outgoingHint')}</p>
           <ul className="flex flex-wrap gap-1.5">
             {friends.data.outgoing.map((f) => (
               <li key={f.id}>

@@ -104,8 +104,9 @@ function Sent({ outing, external, onHome }: { outing: Outing; external: boolean;
       <span className="mx-auto grid size-16 place-items-center rounded-full bg-fairway-700 text-white shadow-[0_8px_24px_rgba(31,93,74,0.35)] dark:bg-fairway-300 dark:text-fairway-950">
         <Check className="size-8" aria-hidden />
       </span>
-      <h2 className="text-2xl">{t('s3.sentTitle')}</h2>
-      {outing.guests.length > 0 && <p className="text-sm text-muted">{t('s3.sentBody')}</p>}
+      {/* Aucun ami joint à la partie : rien n'a été envoyé tant que le lien n'est pas partagé */}
+      <h2 className="text-2xl">{outing.guests.length > 0 ? t('s3.sentTitle') : t('s3.createdTitle')}</h2>
+      <p className="text-sm text-muted">{outing.guests.length > 0 ? t('s3.sentBody') : t('s3.createdBody')}</p>
       {external && url && (
         <div className="frost space-y-2 rounded-[22px] p-4 text-left">
           <p className="text-sm font-medium">{t('s3.shareTitle')}</p>
@@ -256,6 +257,12 @@ export function InviteForm({ golf, top }: { golf: GolfSummary | null; top?: Reac
               </label>
               {friends.isLoading && <div className="skeleton h-14 w-full rounded-[20px]" aria-hidden />}
               {friends.data && friends.data.friends.length === 0 && <p className="text-sm text-muted">{t('s3.noFriends')}</p>}
+              {/* Demandes d'ami pas encore acceptées : ces joueurs ne peuvent pas être invités, on le dit */}
+              {!!friends.data?.outgoing.length && (
+                <p className="frost rounded-[18px] px-3.5 py-2.5 text-sm text-muted">
+                  {t('s3.pendingFriends', { names: friends.data.outgoing.map((f) => f.name ?? '—').join(', ') })}
+                </p>
+              )}
               <ul className="space-y-2">
                 {list.map((f) => {
                   const on = selected.has(f.id);
