@@ -3,6 +3,7 @@ import { Navigate, Route, Routes, useLocation, useNavigate } from 'react-router-
 import { GlassFx } from './components/glass';
 import { RailProvider, useRail } from './components/ActionRail';
 import { hadAccount, Intro, introSeen, markSeen } from './components/Intro';
+import { api } from './lib/api';
 import { useAuth } from './lib/auth';
 import { useI18n } from './i18n';
 import { OfflineBanner } from './components/OfflineBanner';
@@ -50,6 +51,11 @@ export default function App() {
   const { t } = useI18n();
   const { pathname } = useLocation();
   const { user, loading } = useAuth();
+  const { lang } = useI18n();
+  // Langue de l'app enregistrée sur le compte : e-mails de notification dans la bonne langue
+  useEffect(() => {
+    if (user && user.lang !== lang) api.updateMe({ lang }).catch(() => undefined);
+  }, [user, lang]);
   // Intro « I wanna play » : visiteur non connecté, à l'arrivée sur l'accueil, une fois par session
   const [introOpen, setIntroOpen] = useState(() => !introSeen());
   // Affichée d'emblée (sans attendre la session), sauf si l'appareil a déjà servi à se connecter :

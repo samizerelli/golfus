@@ -5,6 +5,7 @@ import { requireUser } from '../auth/session.ts';
 import { db } from '../db/index.ts';
 import { parse, userRateLimit } from '../lib/http-helpers.ts';
 import { pushToUser } from '../services/push.ts';
+import { emailToUser } from '../services/notifyEmail.ts';
 import { clean } from '../lib/moderation.ts';
 import { isBlocked } from './moderation.ts';
 
@@ -23,6 +24,8 @@ export async function notify(userId: string, type: string, payload: Record<strin
   await db.run('INSERT INTO notifications (user_id, type, payload) VALUES (?, ?, ?)', userId, type, JSON.stringify(payload));
   // Sur iPhone (si les notifications sont activées) : parties et amis, voir services/push.ts
   await pushToUser(userId, type, payload);
+  // Par e-mail aussi : demande d'ami et invitation à une partie (services/notifyEmail.ts)
+  await emailToUser(userId, type, payload);
 }
 
 async function areFriends(a: string, b: string) {
