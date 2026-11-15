@@ -1,5 +1,5 @@
-import { CalendarCheck, CalendarClock, Car, ChevronRight, CircleHelp, Compass, MapPin, MessageCircle, Phone } from 'lucide-react';
-import { Fragment, forwardRef, useRef, type CSSProperties, type MouseEvent, type MutableRefObject } from 'react';
+import { CalendarCheck, CalendarClock, Car, ChevronRight, CircleHelp, Compass, MapPin, MessageCircle, Phone, PhoneCall, Search, X } from 'lucide-react';
+import { Fragment, forwardRef, useRef, useState, type CSSProperties, type MouseEvent, type MutableRefObject } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { RADII_KM, type Availability, type GolfSummary, type RadiusKm, type TravelInfo } from '../../shared/types';
 import { useI18n } from '../i18n';
@@ -326,21 +326,78 @@ export function ResultsList({ cardRefs, compact = false }: { cardRefs: MutableRe
   const { t, tp, locale } = useI18n();
   const navigate = useNavigate();
   const { criteria: c, setCriteria, origin, radius, setRadius, selectedId, setSelectedId, hoverId, setHoverId } = useSearch();
-  const { golfsQ, all, visible, matches, travel, avail, availLoading, availKnown, confirmed, confirmedCount, hiddenFull, refreshing } = useResults();
+  const { golfsQ, all, visible: listed, matches, travel, avail, availLoading, availKnown, confirmed, confirmedCount, hiddenFull, refreshing } = useResults();
+  // Recherche d'un parcours par son nom (loupe) : parmi tous les golfs du rayon, sans les autres filtres
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [query, setQuery] = useState('');
+  const fold = (v: string) => v.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+  const q = fold(query.trim());
+  const searching = q.length > 0;
+  const visible = searching ? all.filter((g) => fold(g.name ?? '').includes(q)) : listed;
   // Premier golf non confirmé : un intertitre sépare les départs libres confirmés de ceux à confirmer avec le club
-  const firstUnconfirmed = availKnown ? visible.findIndex((g) => !confirmed(g.id)) : -1;
+  const firstUnconfirmed = availKnown && !searching ? visible.findIndex((g) => !confirmed(g.id)) : -1;
   const unconfirmedCount = firstUnconfirmed >= 0 ? visible.length - confirmedCount : 0;
+  // Aucun départ vérifiable en ligne mais des golfs à contacter : ne pas laisser croire qu'ils sont complets
+  const noneOnline = availKnown && !searching && confirmedCount === 0 && unconfirmedCount > 0;
   const topRef = useRef<HTMLDivElement>(null);
   const err = golfsQ.error as ApiError | null;
   const next = RADII_KM.find((r) => r > radius) as RadiusKm | undefined;
 
   return (
     <div className={compact ? 'space-y-2' : 'space-y-3'} ref={topRef}>
-      <h2 className={cx('font-semibold', compact ? 'text-[15px]' : 'text-[17px]')} aria-live="polite">
-        {!origin ? t('s2.pickPlace') : golfsQ.data ? (availKnown ? tp('s2.count', confirmedCount) : t('s2.availChecking')) : t('results.loading')}
-      </h2>
+      <div className="flex items-center gap-2">
+        <h2 className={cx('min-w-0 flex-1 font-semibold', compact ? 'text-[15px]' : 'text-[17px]')} aria-live="polite">
+          {!origin
+            ? t('s2.pickPlace')
+            : !golfsQ.data
+              ? t('results.loading')
+              : searching
+                ? tp('s2.searchCount', visible.length, { q: query.trim() })
+                : !availKnown
+                  ? t('s2.availChecking')
+                  : noneOnline
+                    ? t('s2.noOnlineTitle')
+                    : tp('s2.count', confirmedCount)}
+        </h2>
+        {origin && golfsQ.data && all.length > 0 && (
+          <button
+            type="button"
+            onClick={() => {
+              setSearchOpen((o) => !o);
+              setQuery('');
+            }}
+            className={cx('glass glass-interactive grid size-10 shrink-0 place-items-center rounded-full', searchOpen && 'bg-white/85 dark:bg-white/15')}
+            aria-label={t('s2.searchOpen')}
+            aria-expanded={searchOpen}
+          >
+            {searchOpen ? <X className="size-4" aria-hidden /> : <Search className="size-4" aria-hidden />}
+          </button>
+        )}
+      </div>
+      {searchOpen && (
+        <label className="frost flex h-12 items-center gap-2 rounded-full px-4">
+          <Search className="size-4 shrink-0 text-muted" aria-hidden />
+          <span className="sr-only">{t('s2.searchOpen')}</span>
+          <input
+            autoFocus
+            type="search"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder={t('s2.searchPlaceholder')}
+            className="min-w-0 flex-1 bg-transparent text-base focus:outline-none"
+          />
+        </label>
+      )}
+      {searching && visible.length === 0 && <p className="text-sm text-muted">{t('s2.searchNone', { q: query.trim() })}</p>}
+      {/* Golfs qui ne publient pas leurs départs : à contacter, pas complets */}
+      {noneOnline && (
+        <p className="flex items-start gap-2 rounded-[18px] border border-red-200 bg-red-50 px-3.5 py-2.5 text-sm font-medium text-red-700 dark:border-red-400/30 dark:bg-red-500/10 dark:text-red-300" role="status">
+          <PhoneCall className="mt-0.5 size-4 shrink-0" aria-hidden />
+          <span>{t('s2.noOnlineBody')}</span>
+        </p>
+      )}
       {!origin && <p className="text-sm text-muted">{t('s2.pickPlaceBody')}</p>}
-      {origin && golfsQ.data && (!compact || availLoading || hiddenFull.length > 0) && (
+      {origin && golfsQ.data && !searching && (!compact || availLoading || hiddenFull.length > 0) && (
         <p className="text-xs text-muted" aria-live="polite">
           {availLoading
             ? t('s2.availChecking')
@@ -370,7 +427,7 @@ export function ResultsList({ cardRefs, compact = false }: { cardRefs: MutableRe
           {t('results.errorBody')}
         </Notice>
       )}
-      {golfsQ.data && visible.length === 0 && (
+      {golfsQ.data && !searching && visible.length === 0 && (
         <div className="frost flex flex-col items-center rounded-[24px] px-5 py-7 text-center" role="status">
           <Compass className="mb-3 size-8 text-glacier-700 dark:text-glacier-300" aria-hidden />
           <p className="text-lg font-semibold">{t('s2.emptyTitle')}</p>
@@ -397,7 +454,7 @@ export function ResultsList({ cardRefs, compact = false }: { cardRefs: MutableRe
       <ul className={cx('space-y-2 transition-opacity duration-300', refreshing && 'opacity-60')} aria-label={t('results.list')} aria-busy={refreshing}>
         {visible.map((g, i) => (
           <Fragment key={g.id}>
-          {i === firstUnconfirmed && (
+          {i === firstUnconfirmed && !noneOnline && (
             <li className={cx('space-y-0.5', i > 0 && 'pt-3')}>
               <h3 className={cx('font-semibold text-gold-ink', compact ? 'text-sm' : 'text-[15px]')}>{tp('s2.toConfirmTitle', unconfirmedCount)}</h3>
               <p className="text-xs text-muted">{tp('s2.toConfirmBody', c.players)}</p>
