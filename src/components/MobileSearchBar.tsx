@@ -23,11 +23,11 @@ function FiltersPanel({ onClose }: { onClose: () => void }) {
   return createPortal(
     <>
       <div className="fixed inset-0 z-[1550] bg-[rgba(15,26,36,0.25)]" onClick={onClose} aria-hidden />
-      <div role="dialog" aria-label={t('s1.title')} className="glass glass-strong animate-rise fixed inset-x-0 bottom-0 z-[1600] mx-auto flex max-h-[88dvh] max-w-[640px] flex-col rounded-t-[28px] pb-[env(safe-area-inset-bottom)]">
+      <div role="dialog" aria-label={t('s1.title')} className="glass glass-strong animate-rise safe-x fixed bottom-0 z-[1600] mx-auto flex max-h-[88dvh] max-w-[640px] flex-col rounded-t-[28px] pb-[env(safe-area-inset-bottom)]">
         <button type="button" onClick={onClose} className="absolute top-3 right-3 z-10 grid size-11 place-items-center rounded-full" aria-label={t('common.close')}>
           <X className="size-5" aria-hidden />
         </button>
-        <div className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-contain px-5 pt-5 pb-4">
+        <div className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-contain px-5 pt-5 [&_h1]:pr-12 pb-4">
           <SearchForm />
         </div>
         <div className="border-t border-line px-5 py-3">

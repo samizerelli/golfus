@@ -73,7 +73,7 @@ function RailPanel({ k, onClose }: { k: PanelKey; onClose: () => void }) {
       aria-label={t(item.label)}
       className={cx(
         'glass glass-strong animate-rise flex flex-col',
-        desktop ? 'fixed top-4 right-[92px] bottom-4 z-[1300] w-[380px] rounded-[28px]' : 'fixed inset-x-0 bottom-0 z-[1600] max-h-[88dvh] rounded-t-[28px] pb-[env(safe-area-inset-bottom)]',
+        desktop ? 'fixed top-4 right-[92px] bottom-4 z-[1300] w-[380px] rounded-[28px]' : 'safe-x fixed bottom-0 z-[1600] max-h-[88dvh] rounded-t-[28px] pb-[env(safe-area-inset-bottom)]',
       )}
     >
       <div className="flex items-center justify-between px-5 pt-4 pb-2">
@@ -113,7 +113,7 @@ export function ActionRail() {
         aria-label={t('rail.menu')}
         className={cx(
           'glass glass-refract fixed z-[1250] flex gap-1 rounded-full p-1.5',
-          desktop ? 'top-1/2 right-4 -translate-y-1/2 flex-col' : 'rail-mobile bottom-[max(0.75rem,env(safe-area-inset-bottom))] left-1/2 -translate-x-1/2 flex-row',
+          desktop ? 'top-1/2 right-4 -translate-y-1/2 flex-col' : 'rail-mobile bottom-[max(0.75rem,env(safe-area-inset-bottom))] -translate-x-1/2 flex-row',
         )}
       >
         {ITEMS.map(({ key, Icon, label }) => {
